@@ -418,10 +418,10 @@ namespace DebuggerTests
     {
         public class TestEvaluate
         {
-            public List<int> numList;
-            public List<string> textList;
-            public int[] numArray;
-            public string[] textArray;
+            public List<int> numList = new List<int> { 1, 2 };
+            public List<string> textList = new List<string> { "1", "2" };
+            public int[] numArray = new int[] { 1, 2 };
+            public string[] textArray = new string[] { "1", "2" };
             public int idx0 = 0;
             public int idx1 = 1;
 
@@ -453,16 +453,6 @@ namespace DebuggerTests
             public string GetTextArrayElementOfIndex(int idx)
             {
                 return this.textArray[idx];
-            }
-
-            public int GetNumberListItemsElementOfIndex(int idx)
-            {
-                return (this.numList.ToArray())[idx];
-            }
-
-            public string GetTextListItemsElementOfIndex(int idx)
-            {
-                return (this.textList.ToArray())[idx];
             }
         }
 

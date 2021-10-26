@@ -567,22 +567,20 @@ namespace DebuggerTests
 
         [Fact]
         public async Task EvaluateExpressionsWithElementAccess() => await CheckInspectLocalsAtBreakpointSite(
-            "DebuggerTests.EvaluateLocalsWithElementAccessTests/TestEvaluate", "run", 5, "run",
+            "DebuggerTests.EvaluateLocalsWithElementAccessTests", "EvaluateLocals", 2, "EvaluateLocals",
             "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.EvaluateLocalsWithElementAccessTests:EvaluateLocals'); })",
             wait_for_event_fn: async (pause_location) =>
            {
                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
 
                await EvaluateOnCallFrameAndCheck(id,
-                   ("this.GetNumberListElementOfIndex(this.idx0)", TNumber(1)),
-                   ("this.GetTextListElementOfIndex(this.idx1)", TString("2")),
-                   ("this.GetNumberArrayElementOfIndex(this.idx1)", TNumber(2)),
-                   ("this.GetTextArrayElementOfIndex(this.idx0)", TString("1")));
+                   ("f.idx0", TNumber(0)),
+                   ("f.numArray[f.idx0]", TNumber(1)));
            });
 
         [Fact]
         public async Task EvaluateSimpleMethodCallsCheckChangedValue() => await CheckInspectLocalsAtBreakpointSite(
-            "DebuggerTests.EvaluateMethodTestsClass/TestEvaluate", "run", 9, "run",
+            "DebuggerTests.EvaluateMethodTestsClass/TestEvaluate", "EvaluateLocals", 9, "EvaluateLocals",
             "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.EvaluateMethodTestsClass:EvaluateMethods'); })",
             wait_for_event_fn: async (pause_location) =>
            {
