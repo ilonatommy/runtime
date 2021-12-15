@@ -2339,27 +2339,16 @@ namespace Microsoft.WebAssembly.Diagnostics
                 // 0th id is for the object itself, and then its parents
                 bool isOwn = i == 0;
 
-                if (!getCommandType.HasFlag(GetObjectCommandOptions.AccessorPropertiesOnly))
+                if (!getCommandType.HasFlag(GetObjectCommandOptions.AccessorPropertiesOnly) || isOwn)
                 {
-                    var fields = await GetTypeFields(typeId, token);
-                    var (regularFields, rootHiddenFields) = await FilterFieldsByDebuggerBrowsable(fields, typeId, token);
-
-                    objectValues.AddRange(await GetFieldsValues(regularFields, isOwn));
-                    objectValues.AddRange(await GetFieldsValues(rootHiddenFields, isOwn, isRootHidden: true));
+                    // !AccessorPropertiesOnly: add *all* fields -
+                    //  AccessorPropertiesOnly: add isOwn fields
+                    var shouldContinue = await AddDebuggerBrowsableFieldValuesFor(typeId, isOwn, objectValues);
+                    if (!shouldContinue)
+                        return objectValues;
                 }
-                if (!getCommandType.HasFlag(GetObjectCommandOptions.WithProperties))
-                    return objectValues;
-                using var commandParamsObjWriter = new MonoBinaryWriter();
-                commandParamsObjWriter.WriteObj(new DotnetObjectId("object", $"{objectId}"), this);
-                var props = await CreateJArrayForProperties(
-                    typeId,
-                    commandParamsObjWriter.GetParameterBuffer(),
-                    objectValues,
-                    getCommandType.HasFlag(GetObjectCommandOptions.ForDebuggerProxyAttribute),
-                    $"dotnet:object:{objectId}",
-                    i == 0,
-                    token);
-                objectValues.AddRange(await GetRegularProperties(props, typeId, token));
+                if (getCommandType.HasFlag(GetObjectCommandOptions.WithProperties))
+                    await AddDebuggerBrowsablePropertyValuesFor(typeId, isOwn, objectValues);
 
                 // ownProperties
                 // Note: ownProperties should mean that we return members of the klass itself,
@@ -2370,42 +2359,54 @@ namespace Microsoft.WebAssembly.Diagnostics
                 /*if (accessorPropertiesOnly)
                     break;*/
             }
-            if (getCommandType.HasFlag(GetObjectCommandOptions.AccessorPropertiesOnly))
-            {
-                List<List<FieldTypeClass>> allFields = new List<List<FieldTypeClass>>();
-                for (int i = 0; i < typeIdsIncludingParents.Count; i++)
-                {
-                    var fields = await GetTypeFields(typeIdsIncludingParents[i], token);
-                    var (regularFields, rootHiddenFields) = await FilterFieldsByDebuggerBrowsable(fields, typeIdsIncludingParents[i], token);
-                    allFields.Add(regularFields);
-                    allFields.Add(rootHiddenFields);
-                }
-                var retAfterRemove = new JArray();
-                foreach (var item in objectValues)
-                {
-                    bool foundField = false;
-                    for (int j = 0; j < allFields.Count; j++)
-                    {
-                        foreach (var field in allFields[j])
-                        {
-                            if (field.Name.Equals(item["name"].Value<string>()))
-                            {
-                                if (item["isOwn"] == null || (item["isOwn"].Value<bool>() && j == 0) || !item["isOwn"].Value<bool>())
-                                    foundField = true;
-                                break;
-                            }
-                        }
-                        if (foundField)
-                            break;
-                    }
-                    if (!foundField)
-                    {
-                        retAfterRemove.Add(item);
-                    }
-                }
-                objectValues = retAfterRemove;
-            }
             return objectValues;
+
+            async Task<bool> AddDebuggerBrowsableFieldValuesFor(int typeId, bool isOwn, JArray objectValues)
+            {
+                var fields = await GetTypeFields(typeId, token);
+                var (regularFields, rootHiddenFields) = await FilterFieldsByDebuggerBrowsable(fields, typeId, token);
+
+                if (!getCommandType.HasFlag(GetObjectCommandOptions.AccessorPropertiesOnly))
+                {
+                    objectValues.AddRange(await GetFieldsValues(regularFields, isOwn));
+                    objectValues.AddRange(await GetFieldsValues(rootHiddenFields, isOwn, isRootHidden: true));
+                    if (getCommandType.HasFlag(GetObjectCommandOptions.WithProperties))
+                        return true;
+                }
+                if (!getCommandType.HasFlag(GetObjectCommandOptions.WithProperties))
+                    return false;
+
+                await AddDebuggerBrowsablePropertyValuesFor(typeId, isOwn, objectValues);
+
+                var propsAfterRemoval = new JArray(objectValues.Where(item =>
+                    (item["isOwn"] != null &&
+                    item["isOwn"].Value<bool>() &&
+                    (item["isOwn"].Value<bool>() != isOwn)) ||
+                    (regularFields.All(f => !f.Name.Equals(item["name"].Value<string>())) &&
+                    rootHiddenFields.All(f => !f.Name.Equals(item["name"].Value<string>())))));
+                objectValues = propsAfterRemoval;
+                return true;
+            }
+
+            async Task AddDebuggerBrowsablePropertyValuesFor(int typeId, bool isOwn, JArray objectValues)
+            {
+                using var commandParamsObjWriter = new MonoBinaryWriter();
+                commandParamsObjWriter.WriteObj(new DotnetObjectId("object", $"{objectId}"), this);
+                var props = await CreateJArrayForProperties(
+                    typeId,
+                    commandParamsObjWriter.GetParameterBuffer(),
+                    objectValues,
+                    getCommandType.HasFlag(GetObjectCommandOptions.ForDebuggerProxyAttribute),
+                    $"dotnet:object:{objectId}",
+                    isOwn,
+                    token);
+
+                var typeInfo = await GetTypeInfo(typeId, token);
+                var typeProperitesBrowsableInfo = typeInfo?.Info?.DebuggerBrowsableProperties;
+                var regularProps = new JArray(props.Where(p =>
+                    !typeProperitesBrowsableInfo.TryGetValue(p["name"].Value<string>(), out DebuggerBrowsableState? state)));
+                objectValues.AddRange(regularProps);
+            }
 
             async Task<JArray> GetFieldsValues(List<FieldTypeClass> fields, bool isOwn, bool isRootHidden = false)
             {
@@ -2524,33 +2525,6 @@ namespace Microsoft.WebAssembly.Diagnostics
                 return (regularFields, rootHiddenFields);
             }
 
-            async Task<JArray> GetRegularProperties(JArray props, int typeId, CancellationToken token)
-            {
-                var typeInfo = await GetTypeInfo(typeId, token);
-                var typeProperitesBrowsableInfo = typeInfo?.Info?.DebuggerBrowsableProperties;
-                var regularProps = new JArray();
-                foreach (var p in props)
-                {
-                    if (!typeProperitesBrowsableInfo.TryGetValue(p["name"].Value<string>(), out DebuggerBrowsableState? state))
-                    {
-                        regularProps.Add(p);
-                        continue;
-                    }
-                    switch (state)
-                    {
-                        case DebuggerBrowsableState.Never:
-                            break;
-                        case DebuggerBrowsableState.RootHidden:
-                            break;
-                        case DebuggerBrowsableState.Collapsed:
-                            regularProps.Add(p);
-                            break;
-                        default:
-                            throw new NotImplementedException($"DebuggerBrowsableState: {state}");
-                    }
-                }
-                return regularProps;
-            }
         }
 
         public async Task<JArray> GetObjectProxy(int objectId, CancellationToken token)
