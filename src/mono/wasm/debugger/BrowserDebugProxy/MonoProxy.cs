@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -829,7 +828,8 @@ namespace Microsoft.WebAssembly.Diagnostics
             using var retDebuggerCmdReader = await context.SdbAgent.SendDebuggerAgentCommand(CmdThread.GetFrameInfo, commandParamsWriter, token);
             var frame_count = retDebuggerCmdReader.ReadInt32();
             //Console.WriteLine("frame_count - " + frame_count);
-            for (int j = 0; j < frame_count; j++) {
+            for (int j = 0; j < frame_count; j++)
+            {
                 var frame_id = retDebuggerCmdReader.ReadInt32();
                 var methodId = retDebuggerCmdReader.ReadInt32();
                 var il_pos = retDebuggerCmdReader.ReadInt32();
@@ -837,50 +837,41 @@ namespace Microsoft.WebAssembly.Diagnostics
                 DebugStore store = await LoadStore(sessionId, token);
                 var method = await context.SdbAgent.GetMethodInfo(methodId, token);
 
-                var shouldReturn = await SkipMethod(
-                    isSkippable: context.IsSkippingHiddenMethod,
-                    shouldBeSkipped: event_kind != EventKind.UserBreak,
-                    StepKind.Over);
-                context.IsSkippingHiddenMethod = false;
-                if (shouldReturn)
+                var shouldStepOver = context.DoStepOver;
+                context.DoStepOver = false;
+                if (await SkipMethod(shouldBeSkipped: shouldStepOver, StepKind.Over))
                     return true;
 
-                shouldReturn = await SkipMethod(
-                    isSkippable: context.IsSteppingThroughMethod,
-                    shouldBeSkipped: event_kind != EventKind.UserBreak && event_kind != EventKind.Breakpoint,
-                    StepKind.Over);
-                context.IsSteppingThroughMethod = false;
-                if (shouldReturn)
-                    return true;
-
-                if (j == 0 &&
-                    (method?.Info.DebuggerAttrInfo.HasStepThrough == true ||
-                    method?.Info.DebuggerAttrInfo.HasDebuggerHidden == true ||
-                    method?.Info.DebuggerAttrInfo.HasStepperBoundary == true ||
-                    (method?.Info.DebuggerAttrInfo.HasNonUserCode == true && JustMyCode)))
+                if (context.DoResume && event_kind == EventKind.Step)
                 {
-                    if (method.Info.DebuggerAttrInfo.HasDebuggerHidden ||
-                        (method.Info.DebuggerAttrInfo.HasStepperBoundary && event_kind == EventKind.Step))
+                    context.DoResume = false;
+                    await SendCommand(sessionId, "Debugger.resume", new JObject(), token);
+                    return true;
+                }
+
+                if (j == 0 && method?.Info.DebuggerAttrInfo.DoAttributesAffectCallStack(JustMyCode) == true)
+                {
+                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOver(event_kind, JustMyCode), StepKind.Out))
+                        return true;
+
+                    if (method.Info.DebuggerAttrInfo.ShouldParentStepOver(event_kind, JustMyCode))
+                        context.DoStepOver = true;
+
+                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOut(), StepKind.Out))
+                        return true;
+
+                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOutThenParentResume(event_kind), StepKind.Out))
                     {
-                        if (event_kind == EventKind.Step)
-                            context.IsSkippingHiddenMethod = true;
-                        if (await SkipMethod(isSkippable: true, shouldBeSkipped: true, StepKind.Out))
-                            return true;
+                        context.DoResume = true;
+                        return true;
                     }
-                    if (!method.Info.DebuggerAttrInfo.HasStepperBoundary)
+
+                    if (method.Info.DebuggerAttrInfo.ShouldResumeOrStepOut(event_kind, JustMyCode))
                     {
-                        if (event_kind == EventKind.Step ||
-                        (JustMyCode && (event_kind == EventKind.Breakpoint || event_kind == EventKind.UserBreak)))
-                        {
-                            if (context.IsResumedAfterBp)
-                                context.IsResumedAfterBp = false;
-                            else if (event_kind != EventKind.UserBreak)
-                                context.IsSteppingThroughMethod = true;
-                            if (await SkipMethod(isSkippable: true, shouldBeSkipped: true, StepKind.Out))
-                                return true;
-                        }
-                        if (event_kind == EventKind.Breakpoint)
-                            context.IsResumedAfterBp = true;
+                        // as long as inside the function there are breakpoints - it will keep stopping on them
+                        // afterwards it will step out from the function
+                        await SkipMethod(shouldBeSkipped: true, StepKind.Out);
+                        return true;
                     }
                 }
 
@@ -962,9 +953,9 @@ namespace Microsoft.WebAssembly.Diagnostics
 
             return true;
 
-            async Task<bool> SkipMethod(bool isSkippable, bool shouldBeSkipped, StepKind stepKind)
+            async Task<bool> SkipMethod(bool shouldBeSkipped, StepKind stepKind)
             {
-                if (isSkippable && shouldBeSkipped)
+                if (shouldBeSkipped)
                 {
                     await context.SdbAgent.Step(context.ThreadId, stepKind, token);
                     await SendCommand(sessionId, "Debugger.resume", new JObject(), token);
@@ -1450,7 +1441,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             {
                 SourceLocation loc = sourceId.First();
                 req.Method = loc.IlLocation.Method;
-                if (req.Method.DebuggerAttrInfo.HasDebuggerHidden)
+                if (req.Method.DebuggerAttrInfo.IsSettingBreakpointForbidden())
                     continue;
 
                 Breakpoint bp = await SetMonoBreakpoint(sessionId, req.Id, loc, req.Condition, token);

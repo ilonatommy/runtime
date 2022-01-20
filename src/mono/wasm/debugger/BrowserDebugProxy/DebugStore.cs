@@ -486,10 +486,50 @@ namespace Microsoft.WebAssembly.Diagnostics
 
         public class DebuggerAttributesInfo
         {
-            public bool HasDebuggerHidden { get; internal set; }
-            public bool HasStepThrough { get; internal set; }
-            public bool HasNonUserCode { get; internal set; }
-            public bool HasStepperBoundary { get; internal set; }
+            internal bool HasDebuggerHidden { get; set; }
+            internal bool HasStepThrough { get; set; }
+            internal bool HasNonUserCode { get; set; }
+            internal bool HasStepperBoundary { get; set; }
+
+            public bool DoAttributesAffectCallStack(bool justMyCodeEnabled)
+            {
+                return HasStepThrough ||
+                    HasDebuggerHidden ||
+                    HasStepperBoundary ||
+                    (HasNonUserCode && justMyCodeEnabled);
+            }
+
+            public bool ShouldParentStepOver(EventKind eventKind, bool justMyCodeEnabled)
+            {
+                return (HasDebuggerHidden || HasNonUserCode || (HasStepThrough && justMyCodeEnabled)) && eventKind == EventKind.Step;
+            }
+
+            public bool ShouldStepOver(EventKind eventKind, bool justMyCodeEnabled)
+            {
+                return (HasStepThrough || HasNonUserCode) &&
+                    justMyCodeEnabled &&
+                    eventKind == EventKind.UserBreak;
+            }
+
+            public bool ShouldStepOut()
+            {
+                return HasDebuggerHidden;
+            }
+
+            public bool ShouldStepOutThenParentResume(EventKind eventKind)
+            {
+                return HasStepperBoundary && eventKind == EventKind.Step;
+            }
+
+            public bool ShouldResumeOrStepOut(EventKind eventKind, bool justMyCodeEnabled)
+            {
+                return HasStepThrough && !justMyCodeEnabled && eventKind == EventKind.Step;
+            }
+
+            public bool IsSettingBreakpointForbidden()
+            {
+                return HasDebuggerHidden;
+            }
         }
     }
 

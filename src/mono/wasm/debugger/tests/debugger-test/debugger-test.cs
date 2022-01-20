@@ -870,7 +870,7 @@ public class DebuggerAttribute
     }
 
     [System.Diagnostics.DebuggerNonUserCode]
-    public static void NonUserCodeBp(Action boundaryTestFun=null)
+    public static void NonUserCodeBp()
     {
         var a = 0;
         currentCount++;

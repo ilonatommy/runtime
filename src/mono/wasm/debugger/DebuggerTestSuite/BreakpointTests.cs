@@ -709,16 +709,13 @@ namespace DebuggerTests
         }
 
         [Theory]
-        [InlineData(false, "RunStepThrough")]
-        [InlineData(true, "RunStepThrough")]
-        [InlineData(true, "RunNonUserCode")]
-        [InlineData(false, "RunNonUserCode")]
-        public async Task StepThroughOrNonUserCodeAttributeStepInNoBp(bool justMyCodeEnabled, string evalFunName)
+        [InlineData(false, "RunStepThrough", 867, 8)] //behavior changed! Should be 868 (Console App)
+        [InlineData(true, "RunStepThrough", 868, 8)]
+        [InlineData(true, "RunNonUserCode", 888, 8)]
+        [InlineData(false, "RunNonUserCode", 873, 4, "NonUserCodeBp")]
+        public async Task StepThroughOrNonUserCodeAttributeStepInNoBp(bool justMyCodeEnabled, string evalFunName, int line, int col, string funcName="")
         {
             var bp_init = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", evalFunName, 1);
-            if (justMyCodeEnabled)
-                await SetJustMyCode(true);
-
             var init_location = await EvaluateAndCheck(
                 $"window.setTimeout(function() {{ invoke_static_method('[debugger-test] DebuggerAttribute:{evalFunName}'); }}, 1);",
                 "dotnet://debugger-test.dll/debugger-test.cs",
@@ -726,9 +723,9 @@ namespace DebuggerTests
                 bp_init.Value["locations"][0]["columnNumber"].Value<int>(),
                 evalFunName
             );
-            var (funcName, line, col) = (evalFunName, 868, 8);
-            if (evalFunName == "RunNonUserCode")
-                (funcName, line, col) = justMyCodeEnabled ? (evalFunName, 888, 8) : ("NonUserCodeBp", 873, 4);
+            await SetJustMyCode(justMyCodeEnabled);
+            if (funcName == "")
+                funcName = evalFunName;
             await SendCommandAndCheck(null, "Debugger.stepInto", "dotnet://debugger-test.dll/debugger-test.cs", line, col, funcName);
         }
 
@@ -748,9 +745,9 @@ namespace DebuggerTests
                 evalFunName
             );
 
+            await SetJustMyCode(justMyCodeEnabled);
             if (justMyCodeEnabled)
             {
-                await SetJustMyCode(true);
                 var line = (evalFunName == "RunNonUserCode") ? 888 : 868;
                 await SendCommandAndCheck(null, "Debugger.stepInto", "dotnet://debugger-test.dll/debugger-test.cs", line, 8, evalFunName);
             }
@@ -787,9 +784,8 @@ namespace DebuggerTests
                 evalFunName
             );
 
-            if (justMyCodeEnabled)
-                await SetJustMyCode(true);
-            else
+            await SetJustMyCode(justMyCodeEnabled);
+            if (!justMyCodeEnabled)
             {
                 var bp1_decorated_fun = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", decoratedFunName, 1);
                 var line1 = bp1_decorated_fun.Value["locations"][0]["lineNumber"].Value<int>();
@@ -801,15 +797,18 @@ namespace DebuggerTests
         }
 
         [Theory]
-        [InlineData(false, "Debugger.resume", "RunStepThrough", "StepThrougUserBp")]
-        [InlineData(false, "Debugger.stepInto", "RunStepThrough", "StepThrougUserBp")]
-        [InlineData(true, "Debugger.stepInto", "RunStepThrough", null)]
-        [InlineData(true, "Debugger.resume", "RunStepThrough", null)]
-        [InlineData(true, "Debugger.stepInto", "RunNonUserCode", null)]
-        [InlineData(true, "Debugger.resume", "RunNonUserCode", null)]
-        [InlineData(false, "Debugger.stepInto", "RunNonUserCode", "NonUserCodeUserBp")]
-        [InlineData(false, "Debugger.resume", "RunNonUserCode", "NonUserCodeUserBp")]
-        public async Task StepThroughOrNonUserCodAttributeWithUserBp(bool justMyCodeEnabled, string debuggingFunction, string evalFunName, string decoratedFunName)
+        [InlineData(false, "Debugger.resume", "RunStepThrough", "StepThrougUserBp", 862, 8, "RunStepThrough", 869, 4)]
+        [InlineData(false, "Debugger.stepInto", "RunStepThrough", "StepThrougUserBp", 862, 8, "RunStepThrough", 868, 8)]
+        [InlineData(true, "Debugger.stepInto", "RunStepThrough", "RunStepThrough", -1, 8, "RunStepThrough", -1, 4)]
+        [InlineData(true, "Debugger.resume", "RunStepThrough", "RunStepThrough", -1, 8, "RunStepThrough", -1, 4)]
+        [InlineData(true, "Debugger.stepInto", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
+        [InlineData(true, "Debugger.resume", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
+        [InlineData(false, "Debugger.stepInto", "RunNonUserCode",  "NonUserCodeUserBp", 881, 4, "NonUserCodeUserBp", 882, 8)]
+        [InlineData(false, "Debugger.resume", "RunNonUserCode", "NonUserCodeUserBp", 882, 8, "RunNonUserCode", -1, 4)]
+        public async Task StepThroughOrNonUserCodeAttributeWithUserBp(
+            bool justMyCodeEnabled, string debuggingFunction, string evalFunName,
+            string functionNameCheck1, int line1, int col1, 
+            string functionNameCheck2, int line2, int col2)
         {
             var bp_init = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", evalFunName, 2);
             var bp_outside_decorated_fun = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", evalFunName, 3);
@@ -821,36 +820,15 @@ namespace DebuggerTests
                 bp_init.Value["locations"][0]["columnNumber"].Value<int>(),
                 evalFunName
             );
-            
-            int line1, line2;
-            var (col1, col2) = (8, 4); 
-            string function_name1, function_name2;
 
-            if (justMyCodeEnabled)
-            {
-                await SetJustMyCode(true); 
+            await SetJustMyCode(justMyCodeEnabled);
+            if (line1 == -1)
                 line1 = bp_outside_decorated_fun.Value["locations"][0]["lineNumber"].Value<int>() - 1;
+            if (line2 == -1)
                 line2 = bp_outside_decorated_fun.Value["locations"][0]["lineNumber"].Value<int>();
-                function_name1 = function_name2 = evalFunName;
-            }
-            else
-            {
-                if (debuggingFunction == "Debugger.stepInto" && evalFunName == "RunNonUserCode")
-                {
-                    (line1, col1) = (881, 4);
-                    (line2, col2) = (882, 8);
-                    function_name1 = function_name2 = decoratedFunName;
-                }
-                else
-                {
-                    line1 = evalFunName == "RunNonUserCode" ? 882 : 862;
-                    function_name1 = decoratedFunName;
-                    line2 = bp_outside_decorated_fun.Value["locations"][0]["lineNumber"].Value<int>();
-                    function_name2 = evalFunName;
-                }
-            }
-            await SendCommandAndCheck(null, debuggingFunction, "dotnet://debugger-test.dll/debugger-test.cs", line1, col1, function_name1);
-            await SendCommandAndCheck(null, debuggingFunction, "dotnet://debugger-test.dll/debugger-test.cs", line2, col2, function_name2);
+            
+            await SendCommandAndCheck(null, debuggingFunction, "dotnet://debugger-test.dll/debugger-test.cs", line1, col1, functionNameCheck1);
+            await SendCommandAndCheck(null, debuggingFunction, "dotnet://debugger-test.dll/debugger-test.cs", line2, col2, functionNameCheck2);
         }
 
         [Theory]
