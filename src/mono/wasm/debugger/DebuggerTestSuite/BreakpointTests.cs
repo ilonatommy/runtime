@@ -739,7 +739,7 @@ namespace DebuggerTests
         [InlineData(false, "RunNonUserCode", "NonUserCodeBp", "NonUserCodeBp", 852, 4)]
         [InlineData(true, "RunNonUserCode", "NonUserCodeBp", "RunNonUserCode", 867, 8)]
         [InlineData(false, "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeBp", "", 932, 8)]
-        [InlineData(true, "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeBp", "RunStepThroughWithNonUserCode", 933, 8)] //not 934?
+        [InlineData(true, "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeBp", "RunStepThroughWithNonUserCode", 933, 8)]
         public async Task StepThroughOrNonUserCodeAttributeStepInWithBp(
             bool justMyCodeEnabled, string evalFunName, string decoratedFunName,
             string funName, int line, int col)
@@ -772,6 +772,8 @@ namespace DebuggerTests
         [InlineData(true, "RunStepThrough", "StepThrougBp")]
         [InlineData(true, "RunNonUserCode", "NonUserCodeBp")]
         [InlineData(false, "RunNonUserCode", "NonUserCodeBp")]
+        [InlineData(false, "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeBp")]
+        [InlineData(true, "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeBp")]
         public async Task StepThroughOrNonUserCodeAttributeResumeWithBp(bool justMyCodeEnabled, string evalFunName, string decoratedFunName)
         {
             var bp_init = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", evalFunName, 1);
@@ -796,14 +798,18 @@ namespace DebuggerTests
         }
 
         [Theory]
-        [InlineData(false, "Debugger.resume", "RunStepThrough", "StepThrougUserBp", 841, 8, "RunStepThrough", 848, 4)]
         [InlineData(false, "Debugger.stepInto", "RunStepThrough", "StepThrougUserBp", 841, 8, "RunStepThrough", 847, 8)]
         [InlineData(true, "Debugger.stepInto", "RunStepThrough", "RunStepThrough", -1, 8, "RunStepThrough", -1, 4)]
+        [InlineData(false, "Debugger.resume", "RunStepThrough", "StepThrougUserBp", 841, 8, "RunStepThrough", 848, 4)]
         [InlineData(true, "Debugger.resume", "RunStepThrough", "RunStepThrough", -1, 8, "RunStepThrough", -1, 4)]
-        [InlineData(true, "Debugger.stepInto", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
-        [InlineData(true, "Debugger.resume", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
         [InlineData(false, "Debugger.stepInto", "RunNonUserCode",  "NonUserCodeUserBp", 860, 4, "NonUserCodeUserBp", 861, 8)]
+        [InlineData(true, "Debugger.stepInto", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
         [InlineData(false, "Debugger.resume", "RunNonUserCode", "NonUserCodeUserBp", 861, 8, "RunNonUserCode", -1, 4)]
+        [InlineData(true, "Debugger.resume", "RunNonUserCode", "RunNonUserCode", -1, 8, "RunNonUserCode", -1, 4)]
+        [InlineData(false, "Debugger.stepInto", "RunStepThroughWithNonUserCode",  "StepThroughWithNonUserCodeUserBp", 927, 8, "RunStepThroughWithNonUserCode", 933, 8)]
+        [InlineData(true, "Debugger.stepInto", "RunStepThroughWithNonUserCode", "RunStepThroughWithNonUserCode", -1, 8, "RunStepThroughWithNonUserCode", -1, 4)]
+        [InlineData(false, "Debugger.resume", "RunStepThroughWithNonUserCode", "StepThroughWithNonUserCodeUserBp", 927, 8, "RunStepThroughWithNonUserCode", -1, 4)]
+        [InlineData(true, "Debugger.resume", "RunStepThroughWithNonUserCode", "RunStepThroughWithNonUserCode", -1, 8, "RunStepThroughWithNonUserCode", -1, 4)]
         public async Task StepThroughOrNonUserCodeAttributeWithUserBp(
             bool justMyCodeEnabled, string debuggingFunction, string evalFunName,
             string functionNameCheck1, int line1, int col1, 
