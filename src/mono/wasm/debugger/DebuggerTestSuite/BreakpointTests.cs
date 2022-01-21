@@ -670,6 +670,7 @@ namespace DebuggerTests
         [Theory]
         [InlineData("RunDebuggerHidden", "HiddenMethod")]
         [InlineData("RunStepThroughWithHidden", "StepThroughWithHiddenBp")] // debuggerHidden shadows the effect of stepThrough
+        [InlineData("RunNonUserCodeWithHidden", "NonUserCodeWithHiddenBp")] // and nonUserCode
         public async Task DebuggerHiddenNoStopOnBp(string evalFunName, string decoratedFunName)
         {
             var bp_hidden = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", decoratedFunName, 1);
@@ -687,6 +688,7 @@ namespace DebuggerTests
         [Theory]
         [InlineData("RunDebuggerHidden")]
         [InlineData("RunStepThroughWithHidden")] // debuggerHidden shadows the effect of stepThrough
+        [InlineData("RunNonUserCodeWithHidden")] // and nonUserCode
         public async Task DebuggerHiddenStopOnUserBp(string evalFunName)
         {
             var bp_init = await SetBreakpointInMethod("debugger-test.dll", "DebuggerAttribute", evalFunName, 2);

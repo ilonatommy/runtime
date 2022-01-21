@@ -933,6 +933,26 @@ public class DebuggerAttribute
         StepThroughWithNonUserCodeBp();
         StepThroughWithNonUserCodeUserBp();
     }
+
+    [System.Diagnostics.DebuggerNonUserCode]
+    [System.Diagnostics.DebuggerHidden]
+    public static void NonUserCodeWithHiddenBp()
+    {
+        var a = 9;
+    }
+
+    [System.Diagnostics.DebuggerNonUserCode]
+    [System.Diagnostics.DebuggerHidden]
+    public static void NonUserCodeWithHiddenUserBp()
+    {
+        System.Diagnostics.Debugger.Break();
+    }
+
+    public static void RunNonUserCodeWithHidden()
+    {
+        NonUserCodeWithHiddenBp();
+        NonUserCodeWithHiddenUserBp();
+    }
 }
 
 public class DebugTypeFull
