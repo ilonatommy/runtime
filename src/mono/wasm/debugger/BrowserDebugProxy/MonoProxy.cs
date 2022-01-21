@@ -854,25 +854,25 @@ namespace Microsoft.WebAssembly.Diagnostics
                     if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOver(event_kind, JustMyCode), StepKind.Out))
                         return true;
 
-                    if (method.Info.DebuggerAttrInfo.ShouldParentStepOver(event_kind, JustMyCode))
-                        context.DoStepOver = true;
-
-                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOut(), StepKind.Out))
-                        return true;
-
-                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOutThenParentResume(event_kind), StepKind.Out))
+                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOutThenParentResume(event_kind), StepKind.Out)) //boundary
                     {
                         context.DoResume = true;
                         return true;
                     }
 
-                    if (method.Info.DebuggerAttrInfo.ShouldResumeOrStepOut(event_kind, JustMyCode))
+                    if (method.Info.DebuggerAttrInfo.ShouldResumeOrStepOut(event_kind, JustMyCode)) //stepThrough
                     {
                         // as long as inside the function there are breakpoints - it will keep stopping on them
                         // afterwards it will step out from the function
                         await SkipMethod(shouldBeSkipped: true, StepKind.Out);
                         return true;
                     }
+
+                    if (method.Info.DebuggerAttrInfo.ShouldParentStepOver(event_kind, JustMyCode))
+                        context.DoStepOver = true;
+
+                    if (await SkipMethod(shouldBeSkipped: method.Info.DebuggerAttrInfo.ShouldStepOut(), StepKind.Out))
+                        return true;
                 }
 
                 SourceLocation location = method?.Info.GetLocationByIl(il_pos);

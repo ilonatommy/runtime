@@ -911,6 +911,28 @@ public class DebuggerAttribute
         StepThroughWithHiddenBp();
         StepThroughWithHiddenUserBp();
     }
+
+    [System.Diagnostics.DebuggerStepThroughAttribute]
+    [System.Diagnostics.DebuggerNonUserCode]
+    public static void StepThroughWithNonUserCodeBp()
+    {
+        var a = 0;
+        a++;
+        var b = 1;
+    }
+
+    [System.Diagnostics.DebuggerStepThroughAttribute]
+    [System.Diagnostics.DebuggerNonUserCode]
+    public static void StepThroughWithNonUserCodeUserBp()
+    {
+        System.Diagnostics.Debugger.Break();
+    }
+
+    public static void RunStepThroughWithNonUserCode()
+    {
+        StepThroughWithNonUserCodeBp();
+        StepThroughWithNonUserCodeUserBp();
+    }
 }
 
 public class DebugTypeFull
