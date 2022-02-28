@@ -1758,15 +1758,16 @@ namespace Microsoft.WebAssembly.Diagnostics
             return CreateJObject<bool>(value == 0 ? false : true, "boolean", value == 0 ? "false" : "true", true);
         }
 
-        public JObject CreateJObjectForNumber<T>(T value)
+        public JObject CreateJObjectForNumber<T>(T value, string detailedType)
         {
-            return CreateJObject<T>(value, "number", value.ToString(), true);
+            return CreateJObject<T>(value, "number", value.ToString(), true, null, null, null, detailedType);
         }
 
         public JObject CreateJObjectForChar(int value)
         {
-            var description = $"{value.ToString()} '{Convert.ToChar(value)}'";
-            return CreateJObject<string>(description, "symbol", description, true);
+            char charValue = Convert.ToChar(value);
+            var description = $"{value} '{charValue}'";
+            return CreateJObject<char>(charValue, "char", description, true);
         }
 
         public async Task<JObject> CreateJObjectForPtr(ElementType etype, MonoBinaryReader retDebuggerCmdReader, string name, CancellationToken token)
@@ -1840,7 +1841,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 description = await GetDelegateMethodDescription(objectId, token);
                 if (description == "")
                 {
-                    return CreateJObject<string>(className.ToString(), "symbol", className.ToString(), false);
+                    return CreateJObject<string>(className.ToString(), "symbol", className.ToString(), false); //back to symbol?
                 }
             }
             return CreateJObject<string>(null, "object", description, false, className, $"dotnet:object:{objectId}");
@@ -1958,38 +1959,43 @@ namespace Microsoft.WebAssembly.Diagnostics
                 case ElementType.I1:
                 {
                     var value = retDebuggerCmdReader.ReadSByte();
-                    ret = CreateJObjectForNumber<int>(value);
+                    ret = CreateJObjectForNumber<int>(value, "SByte");
                     break;
                 }
                 case ElementType.I2:
+                {
+                     var value = retDebuggerCmdReader.ReadInt32();
+                     ret = CreateJObjectForNumber<int>(value, "Short");
+                     break;
+                }
                 case ElementType.I4:
                 {
                     var value = retDebuggerCmdReader.ReadInt32();
-                    ret = CreateJObjectForNumber<int>(value);
+                    ret = CreateJObjectForNumber<int>(value, "Int32");
                     break;
                 }
                 case ElementType.U1:
                 {
                     var value = retDebuggerCmdReader.ReadUByte();
-                    ret = CreateJObjectForNumber<int>(value);
+                    ret = CreateJObjectForNumber<int>(value, "Byte");
                     break;
                 }
                 case ElementType.U2:
                 {
                     var value = retDebuggerCmdReader.ReadUShort();
-                    ret = CreateJObjectForNumber<int>(value);
+                    ret = CreateJObjectForNumber<int>(value, "UShort");
                     break;
                 }
                 case ElementType.U4:
                 {
                     var value = retDebuggerCmdReader.ReadUInt32();
-                    ret = CreateJObjectForNumber<uint>(value);
+                    ret = CreateJObjectForNumber<uint>(value, "UInt32");
                     break;
                 }
                 case ElementType.R4:
                 {
                     float value = retDebuggerCmdReader.ReadSingle();
-                    ret = CreateJObjectForNumber<float>(value);
+                    ret = CreateJObjectForNumber<float>(value, "Single");
                     break;
                 }
                 case ElementType.Char:
@@ -2001,19 +2007,19 @@ namespace Microsoft.WebAssembly.Diagnostics
                 case ElementType.I8:
                 {
                     long value = retDebuggerCmdReader.ReadInt64();
-                    ret = CreateJObjectForNumber<long>(value);
+                    ret = CreateJObjectForNumber<long>(value, "Int64");
                     break;
                 }
                 case ElementType.U8:
                 {
                     ulong value = retDebuggerCmdReader.ReadUInt64();
-                    ret = CreateJObjectForNumber<ulong>(value);
+                    ret = CreateJObjectForNumber<ulong>(value, "UInt64");
                     break;
                 }
                 case ElementType.R8:
                 {
                     double value = retDebuggerCmdReader.ReadDouble();
-                    ret = CreateJObjectForNumber<double>(value);
+                    ret = CreateJObjectForNumber<double>(value, "Double");
                     break;
                 }
                 case ElementType.FnPtr:

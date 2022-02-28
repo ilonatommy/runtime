@@ -528,11 +528,11 @@ namespace DebuggerTests
                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
 
                await EvaluateOnCallFrameAndCheck(id,
-                   ("this.CallMethod()", TNumber(1)),
-                   ("this.CallMethod()", TNumber(1)),
-                   ("this.CallMethodReturningChar()", TString("A")),
-                   ("this.ParmToTestObj.MyMethod()", TString("methodOK")),
-                   ("this.ParmToTestObj.ToString()", TString("DebuggerTests.EvaluateMethodTestsClass+ParmToTest")),
+                    ("this.CallMethod()", TNumber(1)),
+                    ("this.CallMethod()", TNumber(1)),
+                    ("this.CallMethodReturningChar()", TChar('A')),
+                    ("this.ParmToTestObj.MyMethod()", TString("methodOK")),
+                    ("this.ParmToTestObj.ToString()", TString("DebuggerTests.EvaluateMethodTestsClass+ParmToTest")),
                    ("this.objToTest.MyMethod()", TString("methodOK")));
            });
 
@@ -1070,9 +1070,10 @@ namespace DebuggerTests
                    ("test.GetInt64Nullable()", TNumber(1)),
                    ("test.GetUInt64Nullable()", TNumber(1)),
 
-                   ("test.GetChar()", TString("T")),
-                   ("test.GetCharNullable()", TString("T")),
-                   ("test.GetUnicodeChar()", TString("ą")),
+                   ("test.GetChar()", TChar('T')),
+                   ("test.GetCharNullable()", TChar('T')),
+                   ("test.GetUnicodeChar()", TChar('ą')),
+
                    ("test.GetString()", TString("1.23")),
                    ("test.GetUnicodeString()", TString("żółć")),
                    ("test.GetString(null)", TObject("string", is_null: true)),
@@ -1083,9 +1084,9 @@ namespace DebuggerTests
                    ("test.GetSingleNullable()", JObject.FromObject( new { type = "number", value = 1.23, description = "1.23" })),
                    ("test.GetDoubleNullable()", JObject.FromObject( new { type = "number", value = 1.23, description = "1.23" })),
                    
-                   ("test.GetBool()", JObject.FromObject( new { type = "object", value = true, description = "True", className = "System.Boolean" })),
-                   ("test.GetBoolNullable()", JObject.FromObject( new { type = "object", value = true, description = "True", className = "System.Boolean" })),
-                   ("test.GetNull()", JObject.FromObject( new { type = "object", value = true, description = "True", className = "System.Boolean" })),
+                   ("test.GetBool()", TBool(true)),
+                   ("test.GetBoolNullable()", TBool(true)),
+                   ("test.GetNull()", TBool(true)),
                    
                    ("test.GetDefaultAndRequiredParam(2)", TNumber(5)),
                    ("test.GetDefaultAndRequiredParam(3, 2)", TNumber(5)),
@@ -1109,6 +1110,41 @@ namespace DebuggerTests
                    ("test.listToLinq.ToList()", TObject("System.Collections.Generic.List<int>", description: "Count = 11"))
                    );
            });
+
+        [Fact]
+        public async Task EvaluateMethodsOnSimpleTypes() =>  await CheckInspectLocalsAtBreakpointSite(
+            "DebuggerTests.SimpleTypeMethods", "Evaluate", 11, "Evaluate",
+            "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.SimpleTypeMethods:Evaluate'); })",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+                await EvaluateOnCallFrameAndCheck(id,
+                   ("test.propInt.ToString()", TString("12")),
+                   ("test.propUint.ToString()", TString("12")),
+                   ("test.propLong.ToString()", TString("12")),
+                   ("test.propUlong.ToString()", TString("12")), 
+                   ("test.propFloat.ToString()", TString("1,2345678")),
+                   ("test.propDouble.ToString()", TString("1,2345678910111213")),
+                   ("test.propBool.ToString()", TString("True")),
+                   ("test.propChar.ToString()", TString("X")),
+                   ("test.propString.ToString()", TString("s_t_r")),
+                //    ("test.propString.Split('*', 1, System.StringSplitOptions.None)", TObject("StringSplitOptions")),
+                   ("test.propString.EndsWith('r')", TBool(true)),
+                   ("test.propString.StartsWith('S')", TBool(false)),
+                   ("localInt.ToString()", TString("2")),
+                   ("localUint.ToString()", TString("2")),
+                   ("localLong.ToString()", TString("2")),
+                   ("localUlong.ToString()", TString("2")),
+                   ("localFloat.ToString()", TString("0,2345678")),
+                   ("localDouble.ToString()", TString("0,2345678910111213")),
+                   ("localBool.ToString()", TString("False")),
+                   ("localBool.GetHashCode()", TNumber(0)),
+                   ("localBool.GetTypeCode()", TObject("TypeCode", "3")),
+                   ("localChar.ToString()", TString("Y")),
+                   ("localString.ToString()", TString("S*T*R")),
+                   ("localString.EndsWith('r')", TBool(false)),
+                   ("localString.StartsWith('S')", TBool(true)));
+            });
     }
 
 }

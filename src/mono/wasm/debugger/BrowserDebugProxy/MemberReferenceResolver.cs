@@ -11,6 +11,7 @@ using System.IO;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Net.WebSockets;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -381,49 +382,111 @@ namespace Microsoft.WebAssembly.Diagnostics
                     methodName = memberAccessExpressionSyntax.Name.ToString();
                 }
                 else if (expr is IdentifierNameSyntax)
-                    if (scopeCache.ObjectFields.TryGetValue("this", out JObject valueRet)) {
+                    if (scopeCache.ObjectFields.TryGetValue("this", out JObject valueRet))
+                    {
                         rootObject = await GetValueFromObject(valueRet, token);
-                    methodName = expr.ToString();
-                }
+                        methodName = expr.ToString();
+                    }
 
+                JObject retMethod;
                 if (rootObject != null)
                 {
-                    DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId);
-                    var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, true, token);
-                    int methodId = await context.SdbAgent.GetMethodIdByName(typeIds[0], methodName, token);
-                    var className = await context.SdbAgent.GetTypeNameOriginal(typeIds[0], token);
-                    if (methodId == 0) //try to search on System.Linq.Enumerable
+                    // primitive types - invoke locally
+                    if (rootObject?["objectId"] == null)
                     {
-                        if (linqTypeId == -1)
-                            linqTypeId = await context.SdbAgent.GetTypeByName("System.Linq.Enumerable", token);
-                        methodId = await context.SdbAgent.GetMethodIdByName(linqTypeId, methodName, token);
-                        if (methodId != 0)
+                        if (!TryGetType(rootObject, out Type type))
+                            throw new Exception($"Cannot evaluate method {expr} on object: '{rootObject}'. Type name not found.");
+                        object obj = rootObject["value"].ToObject(type);
+                        var paramTypes = new List<Type>();
+                        var parameters = new List<object>();
+                        foreach (var arg in method.ArgumentList.Arguments)
                         {
-                            foreach (var typeId in typeIds)
+                            if (arg.Expression is LiteralExpressionSyntax literal) // working fine
                             {
-                                var genericTypeArgs = await context.SdbAgent.GetTypeParamsOrArgsForGenericType(typeId, token);
-                                if (genericTypeArgs.Count > 0)
+                                paramTypes.Add(literal.Token.Value.GetType());
+                                parameters.Add(literal.Token.Value);
+                            }
+                            else if (arg.Expression is IdentifierNameSyntax identifierName) // a problem here, for e.g. last arg of Split('*', 1, System.StringSplitOptions.None)
+                            {
+                                // ***Experimental region***:
+                                var objValue = memberAccessValues[identifierName.Identifier.Text];
+                                if (!TryStringToSystemType(objValue["type"].Value<string>(), out Type t))
                                 {
-                                    isExtensionMethod = true;
-                                    methodId = await context.SdbAgent.MakeGenericMethod(methodId, genericTypeArgs, token);
-                                    break;
+                                    DotnetObjectId.TryParse(objValue["objectId"]?.Value<string>(), out DotnetObjectId objectId);
+                                    var v = await context.SdbAgent.GetObjectValues(objectId.Value, GetObjectCommandOptions.WithProperties | GetObjectCommandOptions.OwnProperties, token);
+                                    var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, false, token);
+                                    var typeInfo = await context.SdbAgent.GetTypeInfo(typeIds[0], token); //Name = "System.Linq.Enumerable.RangeIterator", should be StringSplitOptions
+                                    paramTypes.Add(Type.GetType($"{typeInfo.Name}, {typeInfo.Info.assembly.Name.Replace(".dll", "")}"));
+                                    // ToDo here: add type to paramTypes
+                                }
+                                else
+                                {
+                                    paramTypes.Add(t);
+                                }
+                                // ToDo here: add value to parameters
+                                // ***Experimental region***:
+                            }
+                            else
+                            {
+                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Not recognized expression type: {arg.Expression.GetType().Name}", "ArgumentError");
+                            }
+                        }
+                        var invokedMethod = type.GetMethod(methodName, paramTypes.ToArray());
+                        var val = invokedMethod.Invoke(obj, parameters.ToArray());
+                        var returnedType = val.GetType();
+                        retMethod = JObject.FromObject(
+                            new
+                            {
+                                value = new
+                                {
+                                    type = TypeToString(returnedType),
+                                    value = val,
+                                    description = val,
+                                    className = returnedType.Name
+                                }
+                            });
+                    }
+                    // other - invoke in debugger
+                    else
+                    {
+                        DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId);
+                        var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, true, token);
+                        int methodId = await context.SdbAgent.GetMethodIdByName(typeIds[0], methodName, token);
+                        var className = await context.SdbAgent.GetTypeNameOriginal(typeIds[0], token);
+                        if (methodId == 0) //try to search on System.Linq.Enumerable
+                        {
+                            if (linqTypeId == -1)
+                                linqTypeId = await context.SdbAgent.GetTypeByName("System.Linq.Enumerable", token);
+                            methodId = await context.SdbAgent.GetMethodIdByName(linqTypeId, methodName, token);
+                            if (methodId != 0)
+                            {
+                                foreach (var typeId in typeIds)
+                                {
+                                    var genericTypeArgs = await context.SdbAgent.GetTypeParamsOrArgsForGenericType(typeId, token);
+                                    if (genericTypeArgs.Count > 0)
+                                    {
+                                        isExtensionMethod = true;
+                                        methodId = await context.SdbAgent.MakeGenericMethod(methodId, genericTypeArgs, token);
+                                        break;
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (methodId == 0) {
-                        var typeName = await context.SdbAgent.GetTypeName(typeIds[0], token);
-                        throw new ReturnAsErrorException($"Method '{methodName}' not found in type '{typeName}'", "ArgumentError");
-                    }
-                    using var commandParamsObjWriter = new MonoBinaryWriter();
-                    if (!isExtensionMethod)
-                    {
-                        // instance method
-                        commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
-                    }
+                        if (methodId == 0)
+                        {
+                            var typeName = await context.SdbAgent.GetTypeName(typeIds[0], token);
+                            throw new ReturnAsErrorException($"Method '{methodName}' not found in type '{typeName}'", "ArgumentError");
+                        }
+                        using var commandParamsObjWriter = new MonoBinaryWriter();
+                        if (!isExtensionMethod)
+                        {
+                            // instance method
+                            commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
+                        }
 
-                    if (method.ArgumentList != null)
-                    {
+                        if (method.ArgumentList == null)
+                            return null;
+
                         int passedArgsCnt = method.ArgumentList.Arguments.Count;
                         int methodParamsCnt = passedArgsCnt;
                         ParameterInfo[] methodParamsInfo = null;
@@ -479,15 +542,54 @@ namespace Microsoft.WebAssembly.Diagnostics
                             if (!await commandParamsObjWriter.WriteConst(methodParamsInfo[argIndex].TypeCode, methodParamsInfo[argIndex].Value, context.SdbAgent, token))
                                 throw new ReturnAsErrorException($"Unable to write optional parameter {methodParamsInfo[argIndex].Name} value in method '{methodName}' to the mono buffer.", "ArgumentError");
                         }
-                        var retMethod = await context.SdbAgent.InvokeMethod(commandParamsObjWriter.GetParameterBuffer(), methodId, "methodRet", token);
-                        return await GetValueFromObject(retMethod, token);
+                        retMethod = await context.SdbAgent.InvokeMethod(commandParamsObjWriter.GetParameterBuffer(), methodId, "methodRet", token);
                     }
+                    return await GetValueFromObject(retMethod, token);
                 }
                 return null;
             }
             catch (Exception ex) when (ex is not ReturnAsErrorException)
             {
                 throw new Exception($"Unable to evaluate method '{methodName}'", ex);
+            }
+
+            static bool TryGetType(JObject obj, out Type type)
+            {
+                type = null;
+                return obj["type"] != null
+                    && (TryStringToSystemType(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(obj?["type"].Value<string>()), out type)
+                    || TryStringToSystemType(obj?["subtype"].Value<string>(), out type));
+            }
+
+            static bool TryStringToSystemType(string typeName, out Type type)
+            {
+                type = Type.GetType($"System.{typeName}, System.Runtime");
+                return type != null;
+            }
+
+            static string TypeToString(Type type)
+            {
+                var typeName = type.Name.ToLower();
+                switch (typeName)
+                {
+                    case "string":
+                    case "boolean":
+                    case "char":
+                        return typeName;
+                    case "sbyte":
+                    case "short":
+                    case "int32":
+                    case "byte":
+                    case "ushort":
+                    case "uint32":
+                    case "single":
+                    case "int64":
+                    case "uint64":
+                    case "double":
+                        return "number";
+                    default:
+                        return "object";
+                }
             }
         }
     }
