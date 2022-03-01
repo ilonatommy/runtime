@@ -394,57 +394,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                     // primitive types - invoke locally
                     if (rootObject?["objectId"] == null)
                     {
-                        if (!TryGetType(rootObject, out Type type))
-                            throw new Exception($"Cannot evaluate method {expr} on object: '{rootObject}'. Type name not found.");
-                        object obj = rootObject["value"].ToObject(type);
-                        var paramTypes = new List<Type>();
-                        var parameters = new List<object>();
-                        foreach (var arg in method.ArgumentList.Arguments)
-                        {
-                            if (arg.Expression is LiteralExpressionSyntax literal) // working fine
-                            {
-                                paramTypes.Add(literal.Token.Value.GetType());
-                                parameters.Add(literal.Token.Value);
-                            }
-                            else if (arg.Expression is IdentifierNameSyntax identifierName) // a problem here, for e.g. last arg of Split('*', 1, System.StringSplitOptions.None)
-                            {
-                                // ***Experimental region***:
-                                var objValue = memberAccessValues[identifierName.Identifier.Text];
-                                if (!TryStringToSystemType(objValue["type"].Value<string>(), out Type t))
-                                {
-                                    DotnetObjectId.TryParse(objValue["objectId"]?.Value<string>(), out DotnetObjectId objectId);
-                                    var v = await context.SdbAgent.GetObjectValues(objectId.Value, GetObjectCommandOptions.WithProperties | GetObjectCommandOptions.OwnProperties, token);
-                                    var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, false, token);
-                                    var typeInfo = await context.SdbAgent.GetTypeInfo(typeIds[0], token); //Name = "System.Linq.Enumerable.RangeIterator", should be StringSplitOptions
-                                    paramTypes.Add(Type.GetType($"{typeInfo.Name}, {typeInfo.Info.assembly.Name.Replace(".dll", "")}"));
-                                    // ToDo here: add type to paramTypes
-                                }
-                                else
-                                {
-                                    paramTypes.Add(t);
-                                }
-                                // ToDo here: add value to parameters
-                                // ***Experimental region***:
-                            }
-                            else
-                            {
-                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Not recognized expression type: {arg.Expression.GetType().Name}", "ArgumentError");
-                            }
-                        }
-                        var invokedMethod = type.GetMethod(methodName, paramTypes.ToArray());
-                        var val = invokedMethod.Invoke(obj, parameters.ToArray());
-                        var returnedType = val.GetType();
-                        retMethod = JObject.FromObject(
-                            new
-                            {
-                                value = new
-                                {
-                                    type = TypeToString(returnedType),
-                                    value = val,
-                                    description = val,
-                                    className = returnedType.Name
-                                }
-                            });
+                        return null;
                     }
                     // other - invoke in debugger
                     else
@@ -543,53 +493,14 @@ namespace Microsoft.WebAssembly.Diagnostics
                                 throw new ReturnAsErrorException($"Unable to write optional parameter {methodParamsInfo[argIndex].Name} value in method '{methodName}' to the mono buffer.", "ArgumentError");
                         }
                         retMethod = await context.SdbAgent.InvokeMethod(commandParamsObjWriter.GetParameterBuffer(), methodId, "methodRet", token);
+                        return await GetValueFromObject(retMethod, token);
                     }
-                    return await GetValueFromObject(retMethod, token);
                 }
                 return null;
             }
             catch (Exception ex) when (ex is not ReturnAsErrorException)
             {
                 throw new Exception($"Unable to evaluate method '{methodName}'", ex);
-            }
-
-            static bool TryGetType(JObject obj, out Type type)
-            {
-                type = null;
-                return obj["type"] != null
-                    && (TryStringToSystemType(System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(obj?["type"].Value<string>()), out type)
-                    || TryStringToSystemType(obj?["subtype"].Value<string>(), out type));
-            }
-
-            static bool TryStringToSystemType(string typeName, out Type type)
-            {
-                type = Type.GetType($"System.{typeName}, System.Runtime");
-                return type != null;
-            }
-
-            static string TypeToString(Type type)
-            {
-                var typeName = type.Name.ToLower();
-                switch (typeName)
-                {
-                    case "string":
-                    case "boolean":
-                    case "char":
-                        return typeName;
-                    case "sbyte":
-                    case "short":
-                    case "int32":
-                    case "byte":
-                    case "ushort":
-                    case "uint32":
-                    case "single":
-                    case "int64":
-                    case "uint64":
-                    case "double":
-                        return "number";
-                    default:
-                        return "object";
-                }
             }
         }
     }

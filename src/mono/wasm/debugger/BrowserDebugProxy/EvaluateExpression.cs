@@ -39,6 +39,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             public List<InvocationExpressionSyntax> methodCall = new List<InvocationExpressionSyntax>();
             public List<MemberAccessExpressionSyntax> memberAccesses = new List<MemberAccessExpressionSyntax>();
             public List<ElementAccessExpressionSyntax> elementAccess = new List<ElementAccessExpressionSyntax>();
+            public List<IdentifierNameSyntax> primitives = new List<IdentifierNameSyntax>();
             public List<object> argValues = new List<object>();
             public Dictionary<string, JObject> memberAccessValues = new Dictionary<string, JObject>();
             private int visitCount;
@@ -73,13 +74,21 @@ namespace Microsoft.WebAssembly.Diagnostics
                     {
                         identifiers.Add(identifier);
                     }
+
+                    if (node is IdentifierNameSyntax primitive
+                        && (primitive.Parent is MemberAccessExpressionSyntax))
+                    {
+                        primitives.Add(primitive);
+                    }
                 }
 
                 if (node is InvocationExpressionSyntax)
                 {
                     if (visitCount == 1)
+                    {
                         methodCall.Add(node as InvocationExpressionSyntax);
-                    hasMethodCalls = true;
+                        hasMethodCalls = true;
+                    }
                 }
 
                 if (node is ElementAccessExpressionSyntax)
@@ -94,11 +103,12 @@ namespace Microsoft.WebAssembly.Diagnostics
                 base.Visit(node);
             }
 
-            public SyntaxTree ReplaceVars(SyntaxTree syntaxTree, IEnumerable<JObject> ma_values, IEnumerable<JObject> id_values, IEnumerable<JObject> method_values, IEnumerable<JObject> ea_values)
+            public SyntaxTree ReplaceVars(SyntaxTree syntaxTree, IEnumerable<JObject> ma_values, IEnumerable<JObject> id_values, IEnumerable<JObject> method_values, IEnumerable<JObject> ea_values, IEnumerable<JObject> p_values=null)
             {
                 var memberAccessToParamName = new Dictionary<string, string>();
                 var methodCallToParamName = new Dictionary<string, string>();
                 var elementAccessToParamName = new Dictionary<string, string>();
+                var literalToParamName = new Dictionary<string, string>();
 
                 CompilationUnitSyntax root = syntaxTree.GetCompilationUnitRoot();
 
@@ -176,6 +186,22 @@ namespace Microsoft.WebAssembly.Diagnostics
                     }
                 }
 
+                if (p_values != null)
+                {
+                    // exchange name to value for primitives
+                    foreach ((IdentifierNameSyntax idns, JObject value) in primitives.Zip(p_values))
+                    {
+                        string eaStr = idns.ToString();
+                        if (!literalToParamName.TryGetValue(eaStr, out string id_name))
+                        {
+                            var (_, val) = ConvertJSToCSharp(value);
+                            id_name = val.ToString();
+                            literalToParamName[eaStr] = id_name;
+                        }
+                        root = root.ReplaceNode(idns, SyntaxFactory.IdentifierName(id_name));
+                    }
+                }
+
                 if (method_values != null)
                 {
                     foreach ((InvocationExpressionSyntax ies, JObject value) in methodCall.Zip(method_values))
@@ -213,7 +239,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 }
             }
 
-            private string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable)
+            private (string, object) ConvertJSToCSharp(JToken variable)
             {
                 string typeRet;
                 object valueRet;
@@ -268,6 +294,12 @@ namespace Microsoft.WebAssembly.Diagnostics
                     default:
                         throw new Exception($"Evaluate of this datatype {type} not implemented yet");//, "Unsupported");
                 }
+                return (typeRet, valueRet);
+            }
+
+            private string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable)
+            {
+                var (typeRet, valueRet) = ConvertJSToCSharp(variable);
                 return $"{typeRet} {idName} = {valueRet};";
             }
         }
@@ -295,12 +327,9 @@ namespace Microsoft.WebAssembly.Diagnostics
             foreach (IdentifierNameSyntax var in identifiers)
             {
                 JObject value = await resolver.Resolve(var.Identifier.Text, token);
-                if (value == null)
-                    throw new ReturnAsErrorException($"The name {var.Identifier.Text} does not exist in the current context", "ReferenceError");
-
-                values.Add(value);
+                if (value != null)
+                    values.Add(value);
             }
-
             return values;
         }
 
@@ -310,10 +339,8 @@ namespace Microsoft.WebAssembly.Diagnostics
             foreach (InvocationExpressionSyntax methodCall in methodCalls)
             {
                 JObject value = await resolver.Resolve(methodCall, memberAccessValues, token);
-                if (value == null)
-                    throw new ReturnAsErrorException($"Failed to resolve member access for {methodCall}", "ReferenceError");
-
-                values.Add(value);
+                if (value != null)
+                    values.Add(value);
             }
             return values;
         }
@@ -369,7 +396,9 @@ namespace Microsoft.WebAssembly.Diagnostics
 
             IList<JObject> identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
 
-            syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, null, null);
+            IList<JObject> primitiveValues = await ResolveIdentifiers(findVarNMethodCall.primitives, resolver, token);
+
+            syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, null, null, primitiveValues);
 
             if (findVarNMethodCall.hasMethodCalls)
             {
