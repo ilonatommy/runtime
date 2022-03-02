@@ -362,11 +362,11 @@ namespace Microsoft.WebAssembly.Diagnostics
             }
             catch (Exception)
             {
-                throw new Exception($"Unable to evaluate method '{elementAccess}'");
+                 throw new Exception($"Unable to evaluate method '{elementAccess}'");
             }
         }
 
-        public async Task<JObject> Resolve(InvocationExpressionSyntax method, Dictionary<string, JObject> memberAccessValues, CancellationToken token)
+        public async Task<JObject> Resolve(InvocationExpressionSyntax method, FindVariableNMethodCall findVarNMethodCall, CancellationToken token)
         {
             var methodName = "";
             bool isExtensionMethod = false;
@@ -388,7 +388,20 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                 if (rootObject != null)
                 {
-                    DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId);
+                    if (!DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId))
+                    {
+                        if (expr is MemberAccessExpressionSyntax mses)
+                        {
+                            if (mses.Expression is MemberAccessExpressionSyntax msesExpr)
+                                findVarNMethodCall.memberAccesses.Add(msesExpr);
+                            else if (mses.Expression is IdentifierNameSyntax primitive)
+                            {
+                                findVarNMethodCall.identifiers.Add(primitive);
+                            }
+                        }
+                        findVarNMethodCall.methodCall.Remove(method);
+                        return null;
+                    }
                     var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, true, token);
                     int methodId = await context.SdbAgent.GetMethodIdByName(typeIds[0], methodName, token);
                     var className = await context.SdbAgent.GetTypeNameOriginal(typeIds[0], token);
@@ -465,7 +478,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                             }
                             else if (arg.Expression is IdentifierNameSyntax identifierName)
                             {
-                                if (!await commandParamsObjWriter.WriteJsonValue(memberAccessValues[identifierName.Identifier.Text], context.SdbAgent, token))
+                                if (!await commandParamsObjWriter.WriteJsonValue(findVarNMethodCall.memberAccessValues[identifierName.Identifier.Text], context.SdbAgent, token))
                                     throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write IdentifierNameSyntax into binary writer.", "ArgumentError");
                             }
                             else

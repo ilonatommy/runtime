@@ -18,6 +18,7 @@ using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Reflection.Metadata;
+using static Microsoft.WebAssembly.Diagnostics.FindVariableNMethodCall;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
