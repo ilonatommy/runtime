@@ -1128,7 +1128,6 @@ namespace DebuggerTests
                    ("test.propBool.ToString()", TString("True")),
                    ("test.propChar.ToString()", TString("X")),
                    ("test.propString.ToString()", TString("s_t_r")),
-                //    ("test.propString.Split('*', 1, System.StringSplitOptions.None)", TObject("StringSplitOptions")),
                    ("test.propString.EndsWith('r')", TBool(true)),
                    ("test.propString.StartsWith('S')", TBool(false)),
                    ("localInt.ToString()", TString("2")),
@@ -1142,9 +1141,12 @@ namespace DebuggerTests
                    ("localBool.GetTypeCode()", TObject("System.TypeCode", "Boolean")),
                    ("localChar.ToString()", TString("Y")),
                    ("localString.ToString()", TString("S*T*R")),
-                // ("localString.Split('*', 1, System.StringSplitOptions.None)", TObject("StringSplitOptions")),
                    ("localString.EndsWith('r')", TBool(false)),
                    ("localString.StartsWith('S')", TBool(true)));
+
+                // var a = await EvaluateOnCallFrame(id,
+                //    ("localString.Split('*', 1, System.StringSplitOptions.None)")); // works differently in tests and in browser because here we are using System namespace
+                //    Console.WriteLine(a);
             });
     }
 

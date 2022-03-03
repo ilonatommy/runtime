@@ -94,7 +94,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             CompilationUnitSyntax root = syntaxTree.GetCompilationUnitRoot();
 
             // 1. Replace all this.a occurrences with this_a_ABDE
-            root = root.ReplaceNodes(memberAccesses, (maes, _) =>
+            foreach (var maes in memberAccesses)
             {
                 string ma_str = maes.ToString();
                 if (!memberAccessToParamName.TryGetValue(ma_str, out string id_name))
@@ -106,9 +106,8 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                     memberAccessToParamName[ma_str] = id_name;
                 }
-
-                return SyntaxFactory.IdentifierName(id_name);
-            });
+                root = root.ReplaceNode(maes, SyntaxFactory.IdentifierName(id_name));
+            }
 
             // 1.1 Replace all this.a() occurrences with this_a_ABDE
             root = root.ReplaceNodes(methodCall, (m, _) =>
@@ -257,7 +256,9 @@ namespace Microsoft.WebAssembly.Diagnostics
                     typeRet = "object";
                     break;
                 default:
-                    throw new Exception($"Evaluate of this datatype {type} not implemented yet");//, "Unsupported");
+                    valueRet = value;
+                    typeRet = type;
+                    break;
             }
             return $"{typeRet} {idName} = {valueRet};";
         }
@@ -273,20 +274,17 @@ namespace Microsoft.WebAssembly.Diagnostics
                 typeof(JObject).Assembly
                     ));
 
-            private static async Task<IList<JObject>> ResolveMemberAccessExpressions(IEnumerable<MemberAccessExpressionSyntax> member_accesses,
+            private static async Task<IList<JObject>> ResolveMemberAccessExpressions(FindVariableNMethodCall findVarNMethodCall,
                                     MemberReferenceResolver resolver, CancellationToken token)
             {
                 var memberAccessValues = new List<JObject>();
-                foreach (MemberAccessExpressionSyntax maes in member_accesses)
+                foreach (MemberAccessExpressionSyntax maes in findVarNMethodCall.memberAccesses.ToArray())
                 {
                     string memberAccessString = maes.ToString();
                     JObject value = await resolver.Resolve(memberAccessString, token);
-                    if (value == null)
-                        throw new ReturnAsErrorException($"Failed to resolve member access for {memberAccessString}", "ReferenceError");
-
-                    memberAccessValues.Add(value);
+                    if (value != null)
+                        memberAccessValues.Add(value);
                 }
-
                 return memberAccessValues;
             }
 
@@ -355,18 +353,7 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                     return value;
                 }
-
-                IList<JObject> memberAccessValues = await ResolveMemberAccessExpressions(findVarNMethodCall.memberAccesses, resolver, token);
-
-                IList<JObject> identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
-
-                syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, null, null);
-
-                // eg. "this.dateTime", "  dateTime.TimeOfDay"
-                if (expressionTree.Kind() == SyntaxKind.SimpleMemberAccessExpression && findVarNMethodCall.memberAccesses.Count == 1)
-                {
-                    return memberAccessValues[0];
-                }
+                IList<JObject> methodValues = null;
 
                 if (findVarNMethodCall.hasMethodCalls)
                 {
@@ -374,10 +361,19 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                     findVarNMethodCall.VisitInternal(expressionTree);
 
-                    IList<JObject> methodValues = await ResolveMethodCalls(findVarNMethodCall, resolver, token);
-                    memberAccessValues = await ResolveMemberAccessExpressions(findVarNMethodCall.memberAccesses, resolver, token);
-                    identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
-                    syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, methodValues, null);
+                    methodValues = await ResolveMethodCalls(findVarNMethodCall, resolver, token);
+                }
+
+                IList<JObject> memberAccessValues = await ResolveMemberAccessExpressions(findVarNMethodCall, resolver, token);
+
+                IList<JObject> identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
+
+                syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, methodValues, null);
+
+                // eg. "this.dateTime", "  dateTime.TimeOfDay"
+                if (expressionTree.Kind() == SyntaxKind.SimpleMemberAccessExpression && findVarNMethodCall.memberAccesses.Count == 1)
+                {
+                    return memberAccessValues[0];
                 }
 
                 // eg. "elements[0]"
@@ -400,6 +396,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 {
                     var newScript = script.ContinueWith(
                         string.Join("\n", findVarNMethodCall.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
+                    Console.WriteLine(string.Join("\n", findVarNMethodCall.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
                     var state = await newScript.RunAsync(cancellationToken: token);
                     return JObject.FromObject(ConvertCSharpToJSType(state.ReturnValue, state.ReturnValue?.GetType()));
                 }

@@ -211,6 +211,17 @@ namespace Microsoft.WebAssembly.Diagnostics
                 }
             }
 
+            // try to check external enums, what about other possibilities?
+            if (retObject == null)
+            {
+                var typeName = string.Join(".", parts.SkipLast(1));
+                var type = Type.GetType(typeName);
+                if (Enum.TryParse(type, parts.LastOrDefault(), out object result))
+                {
+                    retObject = JObject.FromObject(new { value = result, type = typeName });
+                }
+            }
+
             scopeCache.MemberReferences[varName] = retObject;
             return retObject;
 
