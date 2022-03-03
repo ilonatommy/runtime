@@ -11,6 +11,7 @@ using System.IO;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Net.WebSockets;
+using BrowserDebugProxy;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -373,139 +374,134 @@ namespace Microsoft.WebAssembly.Diagnostics
             }
             catch (Exception)
             {
-                 throw new Exception($"Unable to evaluate method '{elementAccess}'");
+                throw new Exception($"Unable to evaluate method '{elementAccess}'");
             }
         }
 
-        public async Task<JObject> Resolve(InvocationExpressionSyntax method, FindVariableNMethodCall findVarNMethodCall, CancellationToken token)
+        public async Task<(JObject, string)> ResolveInvokationInfo(InvocationExpressionSyntax method, CancellationToken token)
+        {
+            var methodName = "";
+            try
+            {
+                JObject rootObject = null;
+                var expr = method.Expression;
+                if (expr is MemberAccessExpressionSyntax maes)
+                {
+                    rootObject = await Resolve(maes.Expression.ToString(), token);
+                    methodName = maes.Name.ToString();
+                }
+                else if (expr is IdentifierNameSyntax && scopeCache.ObjectFields.TryGetValue("this", out JObject valueRet))
+                {
+                    rootObject = await GetValueFromObject(valueRet, token);
+                    methodName = expr.ToString();
+                }
+                return (rootObject, methodName);
+            }
+            catch (Exception ex) when (ex is not ReturnAsErrorException)
+            {
+                throw new Exception($"Unable to evaluate method '{methodName}'", ex);
+            }
+        }
+
+        public async Task<JObject> Resolve(DotnetObjectId objectId, InvocationExpressionSyntax method, Dictionary<string, JObject> memberAccessValues, ExpressionSyntaxReplacer findVarNMethodCall, CancellationToken token)
         {
             var methodName = "";
             bool isExtensionMethod = false;
             try
             {
-                JObject rootObject = null;
-                var expr = method.Expression;
-                if (expr is MemberAccessExpressionSyntax)
+                var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, true, token);
+                int methodId = await context.SdbAgent.GetMethodIdByName(typeIds[0], methodName, token);
+                var className = await context.SdbAgent.GetTypeNameOriginal(typeIds[0], token);
+                if (methodId == 0) //try to search on System.Linq.Enumerable
                 {
-                    var memberAccessExpressionSyntax = expr as MemberAccessExpressionSyntax;
-                    rootObject = await Resolve(memberAccessExpressionSyntax.Expression.ToString(), token);
-                    methodName = memberAccessExpressionSyntax.Name.ToString();
+                    if (linqTypeId == -1)
+                        linqTypeId = await context.SdbAgent.GetTypeByName("System.Linq.Enumerable", token);
+                    methodId = await context.SdbAgent.GetMethodIdByName(linqTypeId, methodName, token);
+                    if (methodId != 0)
+                    {
+                        foreach (var typeId in typeIds)
+                        {
+                            var genericTypeArgs = await context.SdbAgent.GetTypeParamsOrArgsForGenericType(typeId, token);
+                            if (genericTypeArgs.Count > 0)
+                            {
+                                isExtensionMethod = true;
+                                methodId = await context.SdbAgent.MakeGenericMethod(methodId, genericTypeArgs, token);
+                                break;
+                            }
+                        }
+                    }
                 }
-                else if (expr is IdentifierNameSyntax)
-                    if (scopeCache.ObjectFields.TryGetValue("this", out JObject valueRet)) {
-                        rootObject = await GetValueFromObject(valueRet, token);
-                    methodName = expr.ToString();
-                }
-
-                if (rootObject != null)
+                if (methodId == 0)
                 {
-                    if (!DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId))
-                    {
-                        if (expr is MemberAccessExpressionSyntax mses)
-                        {
-                            if (mses.Expression is MemberAccessExpressionSyntax msesExpr)
-                                findVarNMethodCall.memberAccesses.Add(msesExpr);
-                            else if (mses.Expression is IdentifierNameSyntax primitive)
-                            {
-                                findVarNMethodCall.identifiers.Add(primitive);
-                            }
-                        }
-                        findVarNMethodCall.methodCall.Remove(method);
-                        return null;
-                    }
-                    var typeIds = await context.SdbAgent.GetTypeIdFromObject(objectId.Value, true, token);
-                    int methodId = await context.SdbAgent.GetMethodIdByName(typeIds[0], methodName, token);
-                    var className = await context.SdbAgent.GetTypeNameOriginal(typeIds[0], token);
-                    if (methodId == 0) //try to search on System.Linq.Enumerable
-                    {
-                        if (linqTypeId == -1)
-                            linqTypeId = await context.SdbAgent.GetTypeByName("System.Linq.Enumerable", token);
-                        methodId = await context.SdbAgent.GetMethodIdByName(linqTypeId, methodName, token);
-                        if (methodId != 0)
-                        {
-                            foreach (var typeId in typeIds)
-                            {
-                                var genericTypeArgs = await context.SdbAgent.GetTypeParamsOrArgsForGenericType(typeId, token);
-                                if (genericTypeArgs.Count > 0)
-                                {
-                                    isExtensionMethod = true;
-                                    methodId = await context.SdbAgent.MakeGenericMethod(methodId, genericTypeArgs, token);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (methodId == 0) {
-                        var typeName = await context.SdbAgent.GetTypeName(typeIds[0], token);
-                        throw new ReturnAsErrorException($"Method '{methodName}' not found in type '{typeName}'", "ArgumentError");
-                    }
-                    using var commandParamsObjWriter = new MonoBinaryWriter();
-                    if (!isExtensionMethod)
-                    {
-                        // instance method
-                        commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
-                    }
+                    var typeName = await context.SdbAgent.GetTypeName(typeIds[0], token);
+                    throw new ReturnAsErrorException($"Method '{methodName}' not found in type '{typeName}'", "ArgumentError");
+                }
+                using var commandParamsObjWriter = new MonoBinaryWriter();
+                if (!isExtensionMethod)
+                {
+                    // instance method
+                    commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
+                }
 
-                    if (method.ArgumentList != null)
+                if (method.ArgumentList != null)
+                {
+                    int passedArgsCnt = method.ArgumentList.Arguments.Count;
+                    int methodParamsCnt = passedArgsCnt;
+                    ParameterInfo[] methodParamsInfo = null;
+                    logger.LogInformation($"passed: {passedArgsCnt}, isExtensionMethod: {isExtensionMethod}");
+                    var methodInfo = await context.SdbAgent.GetMethodInfo(methodId, token);
+                    if (methodInfo != null) //FIXME: #65670
                     {
-                        int passedArgsCnt = method.ArgumentList.Arguments.Count;
-                        int methodParamsCnt = passedArgsCnt;
-                        ParameterInfo[] methodParamsInfo = null;
-                        logger.LogInformation($"passed: {passedArgsCnt}, isExtensionMethod: {isExtensionMethod}");
-                        var methodInfo = await context.SdbAgent.GetMethodInfo(methodId, token);
-                        if (methodInfo != null) //FIXME: #65670
-                        {
-                            methodParamsInfo = methodInfo.Info.GetParametersInfo();
-                            methodParamsCnt = methodParamsInfo.Length;
-                            logger.LogInformation($"got method info with {methodParamsCnt} params");
-                            if (isExtensionMethod)
-                            {
-                                // implicit *this* parameter
-                                methodParamsCnt--;
-                            }
-                            if (passedArgsCnt > methodParamsCnt)
-                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Too many arguments passed.", "ArgumentError");
-                        }
-
+                        methodParamsInfo = methodInfo.Info.GetParametersInfo();
+                        methodParamsCnt = methodParamsInfo.Length;
+                        logger.LogInformation($"got method info with {methodParamsCnt} params");
                         if (isExtensionMethod)
                         {
-                            commandParamsObjWriter.Write(methodParamsCnt + 1);
-                            commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
+                            // implicit *this* parameter
+                            methodParamsCnt--;
+                        }
+                        if (passedArgsCnt > methodParamsCnt)
+                            throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Too many arguments passed.", "ArgumentError");
+                    }
+
+                    if (isExtensionMethod)
+                    {
+                        commandParamsObjWriter.Write(methodParamsCnt + 1);
+                        commandParamsObjWriter.WriteObj(objectId, context.SdbAgent);
+                    }
+                    else
+                    {
+                        commandParamsObjWriter.Write(methodParamsCnt);
+                    }
+
+                    int argIndex = 0;
+                    // explicitly passed arguments
+                    for (; argIndex < passedArgsCnt; argIndex++)
+                    {
+                        var arg = method.ArgumentList.Arguments[argIndex];
+                        if (arg.Expression is LiteralExpressionSyntax literal)
+                        {
+                            if (!await commandParamsObjWriter.WriteConst(literal, context.SdbAgent, token))
+                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write LiteralExpressionSyntax into binary writer.", "ArgumentError");
+                        }
+                        else if (arg.Expression is IdentifierNameSyntax identifierName)
+                        {
+                            if (!await commandParamsObjWriter.WriteJsonValue(memberAccessValues[identifierName.Identifier.Text], context.SdbAgent, token))
+                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write IdentifierNameSyntax into binary writer.", "ArgumentError");
                         }
                         else
                         {
-                            commandParamsObjWriter.Write(methodParamsCnt);
+                            throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write into binary writer, not recognized expression type: {arg.Expression.GetType().Name}", "ArgumentError");
                         }
-
-                        int argIndex = 0;
-                        // explicitly passed arguments
-                        for (; argIndex < passedArgsCnt; argIndex++)
-                        {
-                            var arg = method.ArgumentList.Arguments[argIndex];
-                            if (arg.Expression is LiteralExpressionSyntax literal)
-                            {
-                                if (!await commandParamsObjWriter.WriteConst(literal, context.SdbAgent, token))
-                                    throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write LiteralExpressionSyntax into binary writer.", "ArgumentError");
-                            }
-                            else if (arg.Expression is IdentifierNameSyntax identifierName)
-                            {
-                                if (!await commandParamsObjWriter.WriteJsonValue(findVarNMethodCall.memberAccessValues[identifierName.Identifier.Text], context.SdbAgent, token))
-                                    throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write IdentifierNameSyntax into binary writer.", "ArgumentError");
-                            }
-                            else
-                            {
-                                throw new ReturnAsErrorException($"Unable to evaluate method '{methodName}'. Unable to write into binary writer, not recognized expression type: {arg.Expression.GetType().Name}", "ArgumentError");
-                            }
-                        }
-                        // optional arguments that were not overwritten
-                        for (; argIndex < methodParamsCnt; argIndex++)
-                        {
-                            if (!await commandParamsObjWriter.WriteConst(methodParamsInfo[argIndex].TypeCode, methodParamsInfo[argIndex].Value, context.SdbAgent, token))
-                                throw new ReturnAsErrorException($"Unable to write optional parameter {methodParamsInfo[argIndex].Name} value in method '{methodName}' to the mono buffer.", "ArgumentError");
-                        }
-                        var retMethod = await context.SdbAgent.InvokeMethod(commandParamsObjWriter.GetParameterBuffer(), methodId, "methodRet", token);
-                        return await GetValueFromObject(retMethod, token);
                     }
+                    // optional arguments that were not overwritten
+                    for (; argIndex < methodParamsCnt; argIndex++)
+                    {
+                        if (!await commandParamsObjWriter.WriteConst(methodParamsInfo[argIndex].TypeCode, methodParamsInfo[argIndex].Value, context.SdbAgent, token))
+                            throw new ReturnAsErrorException($"Unable to write optional parameter {methodParamsInfo[argIndex].Name} value in method '{methodName}' to the mono buffer.", "ArgumentError");
+                    }
+                    var retMethod = await context.SdbAgent.InvokeMethod(commandParamsObjWriter.GetParameterBuffer(), methodId, "methodRet", token);
+                    return await GetValueFromObject(retMethod, token);
                 }
                 return null;
             }
