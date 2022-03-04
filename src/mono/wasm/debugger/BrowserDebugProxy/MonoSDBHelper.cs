@@ -18,7 +18,6 @@ using System.Text;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Reflection.Metadata;
-using static Microsoft.WebAssembly.Diagnostics.FindVariableNMethodCall;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -1416,7 +1415,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 expr = "$\"" + dispAttrStr + "\"";
                 JObject retValue = await resolver.Resolve(expr, token);
                 if (retValue == null)
-                    retValue = await EvaluateExpression.CompileAndRunTheExpression(expr, resolver, token);
+                    retValue = await ExpressionEvaluator.CompileAndRunTheExpression(expr, resolver, token);
 
                 return retValue?["value"]?.Value<string>();
             }
