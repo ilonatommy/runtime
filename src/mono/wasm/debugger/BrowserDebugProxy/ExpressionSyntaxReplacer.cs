@@ -24,8 +24,8 @@ namespace BrowserDebugProxy
         public List<object> argValues = new List<object>();
         public Dictionary<string, JObject> memberAccessValues = new Dictionary<string, JObject>();
         private int visitCount;
-        public bool hasMethodCalls;
-        public bool hasElementAccesses;
+        public bool detectedMethodCalls;
+        public bool detectedElementAccesses;
         internal List<string> variableDefinitions = new List<string>();
 
         private string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable)
@@ -121,14 +121,14 @@ namespace BrowserDebugProxy
             {
                 if (visitCount == 1)
                     methodCall.Add(node as InvocationExpressionSyntax);
-                hasMethodCalls = true;
+                detectedMethodCalls = true;
             }
 
             if (node is ElementAccessExpressionSyntax)
             {
                 if (visitCount == 1)
                     elementAccess.Add(node as ElementAccessExpressionSyntax);
-                hasElementAccesses = true;
+                detectedElementAccesses = true;
             }
 
             if (node is AssignmentExpressionSyntax)
