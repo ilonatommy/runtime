@@ -3,22 +3,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Scripting;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Text.RegularExpressions;
 using System.Globalization;
 using BrowserDebugProxy;
 
@@ -69,7 +62,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             var values = new List<JObject>();
             foreach (InvocationExpressionSyntax methodCall in replacer.methodCall.ToArray())
             {
-                (JObject rootObject, string method) = await resolver.ResolveInvokationInfo(methodCall, token);
+                (JObject rootObject, string methodName) = await resolver.ResolveInvokationInfo(methodCall, token);
                 if (rootObject == null)
                     throw new ReturnAsErrorException($"Failed to resolve root object for {methodCall}", "ReferenceError");
                 // primitives don't have objectId
@@ -78,7 +71,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                     replacer.UpdateForMethodsCalledOnPrimitives(methodCall, rootObject);
                     continue;
                 }
-                JObject value = await resolver.Resolve(objectId, methodCall, replacer.memberAccessValues, replacer, token);
+                JObject value = await resolver.Resolve(objectId, methodName, methodCall, replacer.memberAccessValues, token);
                 if (value == null)
                     throw new ReturnAsErrorException($"Failed to resolve member access for {methodCall}", "ReferenceError");
                 values.Add(value);

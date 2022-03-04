@@ -146,6 +146,8 @@ namespace BrowserDebugProxy
                     memberAccessValues[id_name] = value;
                     AddLocalVariableWithValue(id_name, value);
                 }
+                // do not replace memberAccesses that were already replaced
+                memberAccesses = new List<MemberAccessExpressionSyntax>();
             }
 
             if (id_values != null)

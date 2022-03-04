@@ -7,11 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.IO;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-using System.Net.WebSockets;
-using BrowserDebugProxy;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -284,7 +281,6 @@ namespace Microsoft.WebAssembly.Diagnostics
 
         public async Task<JObject> Resolve(ElementAccessExpressionSyntax elementAccess, Dictionary<string, JObject> memberAccessValues, JObject indexObject, CancellationToken token)
         {
-            Console.WriteLine("AAAAA");
             try
             {
                 JObject rootObject = null;
@@ -393,9 +389,8 @@ namespace Microsoft.WebAssembly.Diagnostics
             }
         }
 
-        public async Task<JObject> Resolve(DotnetObjectId objectId, InvocationExpressionSyntax method, Dictionary<string, JObject> memberAccessValues, ExpressionSyntaxReplacer findVarNMethodCall, CancellationToken token)
+        public async Task<JObject> Resolve(DotnetObjectId objectId, string methodName, InvocationExpressionSyntax method, Dictionary<string, JObject> memberAccessValues, CancellationToken token)
         {
-            var methodName = "";
             bool isExtensionMethod = false;
             try
             {
