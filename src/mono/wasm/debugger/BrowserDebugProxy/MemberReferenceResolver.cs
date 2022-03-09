@@ -93,7 +93,7 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                 if (typeId != -1)
                 {
-                    JObject memberObject = await FindStaticMemberInType(part, typeId);
+                    JObject memberObject = await FindStaticMemberInType(classNameToFind, part, typeId);
                     if (memberObject != null)
                     {
                         string remaining = null;
@@ -125,7 +125,7 @@ namespace Microsoft.WebAssembly.Diagnostics
 
             return (null, null);
 
-            async Task<JObject> FindStaticMemberInType(string name, int typeId)
+            async Task<JObject> FindStaticMemberInType(string classNameToFind, string name, int typeId)
             {
                 var fields = await context.SdbAgent.GetTypeFields(typeId, token);
                 foreach (var field in fields)
@@ -138,9 +138,11 @@ namespace Microsoft.WebAssembly.Diagnostics
                     {
                         isInitialized = await context.SdbAgent.TypeInitialize(typeId, token);
                     }
-                    var valueRet = await context.SdbAgent.GetFieldValue(typeId, field.Id, token);
-
-                    return await GetValueFromObject(valueRet, token);
+                    var staticFieldValue = await context.SdbAgent.GetFieldValue(typeId, field.Id, name, token);
+                    var valueRet = await GetValueFromObject(staticFieldValue, token);
+                    // we need the full name here
+                    valueRet["className"] = classNameToFind;
+                    return valueRet;
                 }
 
                 var methodId = await context.SdbAgent.GetPropertyMethodIdByName(typeId, name, token);

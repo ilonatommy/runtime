@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.WebAssembly.Diagnostics;
 using Newtonsoft.Json.Linq;
 
 namespace BrowserDebugProxy
@@ -202,7 +203,6 @@ namespace BrowserDebugProxy
             JToken value = variable["value"];
             string type = variable["type"].Value<string>();
             string subType = variable["subtype"]?.Value<string>();
-            string objectId = variable["objectId"]?.Value<string>();
             switch (type)
             {
                 case "string":
@@ -229,14 +229,30 @@ namespace BrowserDebugProxy
                     typeRet = "bool";
                     break;
                 case "object":
-                    valueRet = "Newtonsoft.Json.Linq.JObject.FromObject(new {"
-                        + $"type = \"{type}\""
-                        + $", description = \"{variable["description"].Value<string>()}\""
-                        + $", className = \"{variable["className"].Value<string>()}\""
-                        + (subType != null ? $", subtype = \"{subType}\"" : "")
-                        + (objectId != null ? $", objectId = \"{objectId}\"" : "")
-                        + "})";
-                    typeRet = "object";
+                    DotnetObjectId.TryParse(variable["objectId"], out DotnetObjectId objectId);
+                    switch (objectId?.Scheme)
+                    {
+                        case "valuetype":
+                            {
+                                typeRet = variable["className"].Value<string>();
+                                var valueWithouCast = value[0]["value"]["value"].Value<double>();
+                                valueRet = $"({typeRet}) {valueWithouCast}";
+                                break;
+                            }
+                        case "object":
+                        default:
+                            {
+                                valueRet = "Newtonsoft.Json.Linq.JObject.FromObject(new {"
+                                    + $"type = \"{type}\""
+                                    + $", description = \"{variable["description"].Value<string>()}\""
+                                    + $", className = \"{variable["className"].Value<string>()}\""
+                                    + (subType != null ? $", subtype = \"{subType}\"" : "")
+                                    + (objectId != null ? $", objectId = \"{objectId}\"" : "")
+                                    + "})";
+                                typeRet = "object";
+                                break;
+                            }
+                    }
                     break;
                 case "void":
                     valueRet = "Newtonsoft.Json.Linq.JObject.FromObject(new {"
@@ -266,7 +282,7 @@ namespace BrowserDebugProxy
                     identifiers.Add(primitive);
                 }
             }
-            methodCall.Remove(method); // is it necessary?!
+            methodCall.Remove(method);
         }
     }
 }

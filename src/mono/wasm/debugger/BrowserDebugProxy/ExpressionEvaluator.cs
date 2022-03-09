@@ -81,7 +81,6 @@ namespace Microsoft.WebAssembly.Diagnostics
 
         private static async Task<IList<JObject>> ResolveElementAccess(IEnumerable<ElementAccessExpressionSyntax> elementAccesses, Dictionary<string, JObject> memberAccessValues, MemberReferenceResolver resolver, CancellationToken token)
         {
-            Console.WriteLine("AAAAA");
             var values = new List<JObject>();
             JObject index = null;
             foreach (ElementAccessExpressionSyntax elementAccess in elementAccesses.Reverse())
@@ -106,8 +105,8 @@ namespace Microsoft.WebAssembly.Diagnostics
             SyntaxNode expressionTree = syntaxTree.GetCompilationUnitRoot(token);
             if (expressionTree == null)
                 throw new Exception($"BUG: Unable to evaluate {expression}, could not get expression from the syntax tree");
-            ExpressionSyntaxReplacer findVarNMethodCall = new ExpressionSyntaxReplacer();
-            findVarNMethodCall.VisitInternal(expressionTree);
+            ExpressionSyntaxReplacer replacer = new ExpressionSyntaxReplacer();
+            replacer.VisitInternal(expressionTree);
             // this fails with `"a)"`
             // because the code becomes: return (a));
             // and the returned expression from GetExpressionFromSyntaxTree is `a`!
@@ -121,40 +120,40 @@ namespace Microsoft.WebAssembly.Diagnostics
                 return value;
             }
 
-            IList<JObject> memberAccessValues = await ResolveMemberAccessExpressions(findVarNMethodCall.memberAccesses, resolver, token);
+            IList<JObject> memberAccessValues = await ResolveMemberAccessExpressions(replacer.memberAccesses, resolver, token);
 
-            IList<JObject> identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
+            IList<JObject> identifierValues = await ResolveIdentifiers(replacer.identifiers, resolver, token);
 
-            syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, null, null);
+            syntaxTree = replacer.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, null, null);
 
             // eg. "this.dateTime", "  dateTime.TimeOfDay"
-            if (expressionTree.Kind() == SyntaxKind.SimpleMemberAccessExpression && findVarNMethodCall.memberAccesses.Count == 1)
+            if (expressionTree.Kind() == SyntaxKind.SimpleMemberAccessExpression && replacer.memberAccesses.Count == 1)
             {
                 return memberAccessValues[0];
             }
 
-            if (findVarNMethodCall.hasMethodCalls)
+            if (replacer.hasMethodCalls)
             {
                 expressionTree = syntaxTree.GetCompilationUnitRoot(token);
 
-                findVarNMethodCall.VisitInternal(expressionTree);
+                replacer.VisitInternal(expressionTree);
 
-                IList<JObject> methodValues = await ResolveMethodCalls(findVarNMethodCall, resolver, token);
-                memberAccessValues = await ResolveMemberAccessExpressions(findVarNMethodCall.memberAccesses, resolver, token);
-                identifierValues = await ResolveIdentifiers(findVarNMethodCall.identifiers, resolver, token);
-                syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, methodValues, null);
+                IList<JObject> methodValues = await ResolveMethodCalls(replacer, resolver, token);
+                memberAccessValues = await ResolveMemberAccessExpressions(replacer.memberAccesses, resolver, token);
+                identifierValues = await ResolveIdentifiers(replacer.identifiers, resolver, token);
+                syntaxTree = replacer.ReplaceVars(syntaxTree, memberAccessValues, identifierValues, methodValues, null);
             }
 
             // eg. "elements[0]"
-            if (findVarNMethodCall.hasElementAccesses)
+            if (replacer.hasElementAccesses)
             {
                 expressionTree = syntaxTree.GetCompilationUnitRoot(token);
 
-                findVarNMethodCall.VisitInternal(expressionTree);
+                replacer.VisitInternal(expressionTree);
 
-                IList<JObject> elementAccessValues = await ResolveElementAccess(findVarNMethodCall.elementAccess, findVarNMethodCall.memberAccessValues, resolver, token);
+                IList<JObject> elementAccessValues = await ResolveElementAccess(replacer.elementAccess, replacer.memberAccessValues, resolver, token);
 
-                syntaxTree = findVarNMethodCall.ReplaceVars(syntaxTree, null, null, null, elementAccessValues);
+                syntaxTree = replacer.ReplaceVars(syntaxTree, null, null, null, elementAccessValues);
             }
 
             expressionTree = syntaxTree.GetCompilationUnitRoot(token);
@@ -164,7 +163,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             try
             {
                 var newScript = script.ContinueWith(
-                    string.Join("\n", findVarNMethodCall.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
+                    string.Join("\n", replacer.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
                 var state = await newScript.RunAsync(cancellationToken: token);
                 return JObject.FromObject(ConvertCSharpToJSType(state.ReturnValue, state.ReturnValue?.GetType()));
             }
@@ -198,6 +197,15 @@ namespace Microsoft.WebAssembly.Diagnostics
                 return new { type = "number", value = v, description = Convert.ToDouble(v).ToString(CultureInfo.InvariantCulture) };
             if (v is JObject)
                 return v;
+            if (v is Array arr)
+            {
+                var jarr = new JArray();
+                foreach (var val in arr)
+                {
+                    jarr.Add(JObject.FromObject(ConvertCSharpToJSType(val, val.GetType())));
+                }
+                return new { type = "object", subtype = "array", value = jarr, description = v.ToString(), className = type.ToString() };
+            }
             if (v is bool)
                 return new { type = "boolean", value = v, description = v.ToString().ToLower(), className = type.ToString() };
             return new { type = "object", value = v, description = v.ToString(), className = type.ToString() };

@@ -1225,7 +1225,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             return !retDebuggerCmdReader.HasError ? true : false;
         }
 
-        public async Task<JObject> GetFieldValue(int typeId, int fieldId, CancellationToken token)
+        public async Task<JObject> GetFieldValue(int typeId, int fieldId, string fieldName, CancellationToken token)
         {
             using var commandParamsWriter = new MonoBinaryWriter();
             commandParamsWriter.Write(typeId);
@@ -1233,7 +1233,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             commandParamsWriter.Write(fieldId);
 
             using var retDebuggerCmdReader = await SendDebuggerAgentCommand(CmdType.GetValues, commandParamsWriter, token);
-            return await CreateJObjectForVariableValue(retDebuggerCmdReader, "", false, -1, false, token);
+            return await CreateJObjectForVariableValue(retDebuggerCmdReader, fieldName, false, -1, false, token);
         }
 
         public async Task<int> TypeIsInitialized(int typeId, CancellationToken token)
@@ -1295,7 +1295,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 int fieldTypeId = retDebuggerCmdReader.ReadInt32(); //typeId
                 int attrs = retDebuggerCmdReader.ReadInt32(); //attrs
                 int isSpecialStatic = retDebuggerCmdReader.ReadInt32(); //is_special_static
-                if (((attrs & (int)MethodAttributes.Public) != 0))
+                if (((attrs & (int)FieldAttributes.Public) != 0))
                     isNotPrivate = true;
                 if (isSpecialStatic == 1)
                     continue;
@@ -1330,7 +1330,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 //.Replace("System.Decimal", "decimal")
                 .ToString();
 
-        internal async Task<MonoBinaryReader> GetCAttrsFromType(int objectId, int typeId, string attrName, CancellationToken token)
+        internal async Task<MonoBinaryReader> GetCAttrsFromType(int typeId, string attrName, CancellationToken token)
         {
             using var commandParamsWriter = new MonoBinaryWriter();
             commandParamsWriter.Write(typeId);
@@ -1382,7 +1382,7 @@ namespace Microsoft.WebAssembly.Diagnostics
         {
             string expr = "";
             try {
-                var getCAttrsRetReader = await GetCAttrsFromType(objectId, typeId, "System.Diagnostics.DebuggerDisplayAttribute", token);
+                var getCAttrsRetReader = await GetCAttrsFromType(typeId, "System.Diagnostics.DebuggerDisplayAttribute", token);
                 if (getCAttrsRetReader == null)
                     return null;
 
@@ -1892,7 +1892,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             else if (isBoxed && numFields == 1) {
                 return fieldValueType;
             }
-            return CreateJObject<string>(null, "object", description, false, className, $"dotnet:valuetype:{valueTypeId}", null, null, true, true, isEnum == 1);
+            return CreateJObject(valueTypes[valueTypeId].valueTypeJson, "object", description, false, className, $"dotnet:valuetype:{valueTypeId}", null, null, true, true, isEnum == 1);
         }
 
         public async Task<JObject> CreateJObjectForNull(MonoBinaryReader retDebuggerCmdReader, CancellationToken token)
@@ -2191,7 +2191,11 @@ namespace Microsoft.WebAssembly.Diagnostics
 
         public async Task<JArray> GetValueTypeValues(int valueTypeId, bool accessorPropertiesOnly, CancellationToken token)
         {
-            if (valueTypes[valueTypeId].valueTypeJsonProps == null)
+            if (!valueTypes.TryGetValue(valueTypeId, out ValueTypeClass value))
+            {
+                throw new Exception($"Unable to get ValueType values of id: {valueTypeId}. Invalid Id.");
+            }
+            if (value.valueTypeJsonProps == null)
             {
                 valueTypes[valueTypeId].valueTypeJsonProps = await GetPropertiesValuesOfValueType(valueTypeId, token);
             }
@@ -2313,7 +2317,7 @@ namespace Microsoft.WebAssembly.Diagnostics
         public async Task<JArray> GetValuesFromDebuggerProxyAttribute(int objectId, int typeId, CancellationToken token)
         {
             try {
-                var getCAttrsRetReader = await GetCAttrsFromType(objectId, typeId, "System.Diagnostics.DebuggerTypeProxyAttribute", token);
+                var getCAttrsRetReader = await GetCAttrsFromType(typeId, "System.Diagnostics.DebuggerTypeProxyAttribute", token);
                 var methodId = -1;
                 if (getCAttrsRetReader == null)
                     return null;
