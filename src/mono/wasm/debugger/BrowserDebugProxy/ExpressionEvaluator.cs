@@ -165,7 +165,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 var newScript = script.ContinueWith(
                     string.Join("\n", replacer.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
                 var state = await newScript.RunAsync(cancellationToken: token);
-                return JObject.FromObject(ConvertCSharpToJSType(state.ReturnValue, state.ReturnValue?.GetType()));
+                return JObject.FromObject(ConvertCSharpToJSType(resolver, state.ReturnValue, state.ReturnValue?.GetType()));
             }
             catch (CompilationErrorException cee)
             {
@@ -185,7 +185,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             typeof(float), typeof(double)
         };
 
-        private static object ConvertCSharpToJSType(object v, Type type)
+        private static object ConvertCSharpToJSType(MemberReferenceResolver resolver, object v, Type type)
         {
             if (v == null)
                 return new { type = "object", subtype = "null", className = type?.ToString(), description = type?.ToString() };
@@ -199,12 +199,21 @@ namespace Microsoft.WebAssembly.Diagnostics
                 return v;
             if (v is Array arr)
             {
-                var jarr = new JArray();
-                foreach (var val in arr)
-                {
-                    jarr.Add(JObject.FromObject(ConvertCSharpToJSType(val, val.GetType())));
-                }
-                return new { type = "object", subtype = "array", value = jarr, description = v.ToString(), className = type.ToString() };
+                return resolver.CacheEvaluationResult(
+                    JObject.FromObject(
+                        new
+                        {
+                            type = "object",
+                            subtype = "array",
+                            value = new JArray(arr.Cast<object>().Select((val, idx) => JObject.FromObject(
+                                new
+                                {
+                                    value = ConvertCSharpToJSType(resolver, val, val.GetType()),
+                                    name = $"{idx}"
+                                }))),
+                            description = v.ToString(),
+                            className = type.ToString()
+                        }));
             }
             if (v is bool)
                 return new { type = "boolean", value = v, description = v.ToString().ToLower(), className = type.ToString() };

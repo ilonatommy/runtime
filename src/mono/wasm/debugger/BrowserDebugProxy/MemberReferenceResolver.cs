@@ -14,6 +14,7 @@ namespace Microsoft.WebAssembly.Diagnostics
 {
     internal class MemberReferenceResolver
     {
+        private static int evaluationResultObjectId;
         private SessionId sessionId;
         private int scopeId;
         private MonoProxy proxy;
@@ -44,6 +45,46 @@ namespace Microsoft.WebAssembly.Diagnostics
             scopeCache = new PerScopeCache(objectValues);
             localsFetched = true;
             linqTypeId = -1;
+        }
+
+        public JObject CacheEvaluationResult(JObject value)
+        {
+            if (IsDuplicated(value, out JObject duplicate))
+                return value;
+
+            var evalResultId = Interlocked.Increment(ref evaluationResultObjectId);
+            string id = $"dotnet:evaluationResult:{evalResultId}";
+            if (!value.TryAdd("objectId", id))
+            {
+                logger.LogWarning($"EvaluationResult cache request passed with ID: {value["objectId"].Value<string>()}. Overwritting it with a automatically assigned ID: {id}.");
+                value["objectId"] = id;
+            }
+            scopeCache.EvaluationResults.Add(id, value);
+            return value;
+
+            bool IsDuplicated(JObject er, out JObject duplicate)
+            {
+                var type = er["type"].Value<string>();
+                var subtype = er["subtype"].Value<string>();
+                var value = er["value"];
+                var description = er["description"].Value<string>();
+                var className = er["className"].Value<string>();
+                duplicate = scopeCache.EvaluationResults.FirstOrDefault(
+                    pair => pair.Value["type"].Value<string>() == type
+                    && pair.Value["subtype"].Value<string>() == subtype
+                    && pair.Value["description"].Value<string>() == description
+                    && pair.Value["className"].Value<string>() == className
+                    && JToken.DeepEquals(pair.Value["value"], value)).Value;
+                return duplicate != null;
+            }
+        }
+
+        public JObject TryGetEvaluationResult(string id)
+        {
+            JObject val;
+            if (!scopeCache.EvaluationResults.TryGetValue(id, out val))
+                logger.LogError($"EvaluationResult of ID: {id} does not exist in the cache.");
+            return val;
         }
 
         public async Task<JObject> GetValueFromObject(JToken objRet, CancellationToken token)
