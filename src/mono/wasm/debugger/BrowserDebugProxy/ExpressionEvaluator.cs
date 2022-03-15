@@ -24,8 +24,8 @@ namespace Microsoft.WebAssembly.Diagnostics
             ScriptOptions.Default.WithReferences(
             typeof(object).Assembly,
             typeof(Enumerable).Assembly,
-            typeof(JObject).Assembly
-                ));
+            typeof(JObject).Assembly)
+            .WithImports("Newtonsoft.Json.Linq"));
 
         private static async Task<IList<JObject>> ResolveMemberAccessExpressions(IEnumerable<MemberAccessExpressionSyntax> member_accesses,
                                 MemberReferenceResolver resolver, CancellationToken token)
@@ -68,7 +68,12 @@ namespace Microsoft.WebAssembly.Diagnostics
                 // primitives don't have objectId
                 if (!DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId objectId))
                 {
-                    replacer.UpdateForMethodsCalledOnPrimitives(methodCall, rootObject);
+                    replacer.UpdateForMethodsCalledOnPrimitives(methodCall);
+                    continue;
+                }
+                if (objectId.Scheme == "evaluationResult")
+                {
+                    replacer.AddEvaluationResult(methodCall, rootObject); // not for the call with .ToList() but without it
                     continue;
                 }
                 JObject value = await resolver.Resolve(objectId, methodName, methodCall, replacer.memberAccessValues, token);
@@ -105,7 +110,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             SyntaxNode expressionTree = syntaxTree.GetCompilationUnitRoot(token);
             if (expressionTree == null)
                 throw new Exception($"BUG: Unable to evaluate {expression}, could not get expression from the syntax tree");
-            ExpressionSyntaxReplacer replacer = new ExpressionSyntaxReplacer();
+            var replacer = resolver.replacer;
             replacer.VisitInternal(expressionTree);
             // this fails with `"a)"`
             // because the code becomes: return (a));
@@ -163,7 +168,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             try
             {
                 var newScript = script.ContinueWith(
-                    string.Join("\n", replacer.variableDefinitions) + "\nreturn " + syntaxTree.ToString());
+                    string.Join("\n", replacer.variableDefinitions.Values) + "\nreturn " + syntaxTree.ToString());
                 var state = await newScript.RunAsync(cancellationToken: token);
                 return JObject.FromObject(ConvertCSharpToJSType(resolver, state.ReturnValue, state.ReturnValue?.GetType()));
             }

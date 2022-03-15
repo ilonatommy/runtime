@@ -18,6 +18,7 @@ namespace BrowserDebugProxy
         private static Regex regexForReplaceVarName = new Regex(@"[^A-Za-z0-9_]", RegexOptions.Singleline);
         public List<IdentifierNameSyntax> identifiers = new List<IdentifierNameSyntax>();
         public List<InvocationExpressionSyntax> methodCall = new List<InvocationExpressionSyntax>();
+        public Dictionary<ExpressionSyntax, JObject> evaluationResults = new Dictionary<ExpressionSyntax, JObject>();
         public List<MemberAccessExpressionSyntax> memberAccesses = new List<MemberAccessExpressionSyntax>();
         public List<ElementAccessExpressionSyntax> elementAccess = new List<ElementAccessExpressionSyntax>();
         public List<object> argValues = new List<object>();
@@ -25,7 +26,7 @@ namespace BrowserDebugProxy
         private int visitCount;
         public bool hasMethodCalls;
         public bool hasElementAccesses;
-        internal List<string> variableDefinitions = new List<string>();
+        internal Dictionary<string, string> variableDefinitions = new Dictionary<string, string>();
 
         public void VisitInternal(SyntaxNode node)
         {
@@ -80,6 +81,7 @@ namespace BrowserDebugProxy
             var memberAccessToParamName = new Dictionary<string, string>();
             var methodCallToParamName = new Dictionary<string, string>();
             var elementAccessToParamName = new Dictionary<string, string>();
+            var evaluationResultToParamName = new Dictionary<string, string>();
 
             CompilationUnitSyntax root = syntaxTree.GetCompilationUnitRoot();
 
@@ -129,6 +131,22 @@ namespace BrowserDebugProxy
                     elementAccessToParamName[eaStr] = id_name;
                 }
 
+                return SyntaxFactory.IdentifierName(id_name);
+            });
+
+            //Replace results of methods evaluated on primitives
+            root = root.ReplaceNodes(evaluationResults.Keys, (er, _) =>
+            {
+                string erStr = er.ToString();
+                if (!elementAccessToParamName.TryGetValue(erStr, out string id_name))
+                {
+                    // Generate a random suffix
+                    string suffix = Guid.NewGuid().ToString().Substring(0, 5);
+                    string prefix = regexForReplaceVarName.Replace(erStr, "_");
+                    id_name = $"{prefix}_{suffix}";
+                    elementAccessToParamName[erStr] = id_name;
+                }
+                AddLocalVariableWithValue(id_name, evaluationResults[er]);
                 return SyntaxFactory.IdentifierName(id_name);
             });
 
@@ -189,10 +207,9 @@ namespace BrowserDebugProxy
 
             void AddLocalVariableWithValue(string idName, JObject value)
             {
-                if (localsSet.Contains(idName))
+                if (variableDefinitions.TryGetValue(idName, out _))
                     return;
-                localsSet.Add(idName);
-                variableDefinitions.Add(ConvertJSToCSharpLocalVariableAssignment(idName, value));
+                variableDefinitions.Add(idName, ConvertJSToCSharpLocalVariableAssignment(idName, value));
             }
         }
 
@@ -239,16 +256,29 @@ namespace BrowserDebugProxy
                                 valueRet = $"({typeRet}) {valueWithouCast}";
                                 break;
                             }
+                        case "evaluationResult":
+                            {
+                                typeRet = variable["className"].Value<string>();
+                                if (subType == "array")
+                                {
+                                    valueRet = "Newtonsoft.Json.Linq.JArray.FromObject(new {"
+                                        + $"type = \"{type}\""
+                                        + $", description = \"{variable["description"].Value<string>()}\""
+                                        + $", className = \"{variable["className"].Value<string>()}\""
+                                        + (subType != null ? $", subtype = \"{subType}\"" : "")
+                                        + (objectId != null ? $", objectId = \"{objectId}\"" : "")
+                                        + $"}}).ToObject<{typeRet}>()";
+                                }
+                                else
+                                {
+                                    valueRet = GetJObject(objectId);
+                                }
+                                break;
+                            }
                         case "object":
                         default:
                             {
-                                valueRet = "Newtonsoft.Json.Linq.JObject.FromObject(new {"
-                                    + $"type = \"{type}\""
-                                    + $", description = \"{variable["description"].Value<string>()}\""
-                                    + $", className = \"{variable["className"].Value<string>()}\""
-                                    + (subType != null ? $", subtype = \"{subType}\"" : "")
-                                    + (objectId != null ? $", objectId = \"{objectId}\"" : "")
-                                    + "})";
+                                valueRet = GetJObject(objectId);
                                 typeRet = "object";
                                 break;
                             }
@@ -267,9 +297,21 @@ namespace BrowserDebugProxy
                     throw new Exception($"Evaluate of this datatype {type} not implemented yet");//, "Unsupported");
             }
             return $"{typeRet} {idName} = {valueRet};";
+
+            object GetJObject(DotnetObjectId objectId)
+            {
+                return
+                    "Newtonsoft.Json.Linq.JObject.FromObject(new {"
+                    + $"type = \"{type}\""
+                    + $", description = \"{variable["description"].Value<string>()}\""
+                    + $", className = \"{variable["className"].Value<string>()}\""
+                    + (subType != null ? $", subtype = \"{subType}\"" : "")
+                    + (objectId != null ? $", objectId = \"{objectId}\"" : "")
+                    + "})";
+            }
         }
 
-        public void UpdateForMethodsCalledOnPrimitives(InvocationExpressionSyntax method, JObject rootObject)
+        public void UpdateForMethodsCalledOnPrimitives(InvocationExpressionSyntax method) //REFACTOR THESE IFs
         {
             if (method.Expression is MemberAccessExpressionSyntax mses)
             {
@@ -283,6 +325,12 @@ namespace BrowserDebugProxy
                 }
             }
             methodCall.Remove(method);
+        }
+
+        public void AddEvaluationResult(InvocationExpressionSyntax method, JObject rootObject)
+        {
+            if (method.Expression is MemberAccessExpressionSyntax mses)
+                evaluationResults.Add(mses.Expression, rootObject);
         }
     }
 }

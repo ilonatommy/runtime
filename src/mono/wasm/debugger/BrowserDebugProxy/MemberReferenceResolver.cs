@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using BrowserDebugProxy;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -23,6 +24,7 @@ namespace Microsoft.WebAssembly.Diagnostics
         private ILogger logger;
         private bool localsFetched;
         private int linqTypeId;
+        public ExpressionSyntaxReplacer replacer = new ExpressionSyntaxReplacer();
 
         public MemberReferenceResolver(MonoProxy proxy, ExecutionContext ctx, SessionId sessionId, int scopeId, ILogger logger)
         {
@@ -416,7 +418,16 @@ namespace Microsoft.WebAssembly.Diagnostics
                 var expr = method.Expression;
                 if (expr is MemberAccessExpressionSyntax maes)
                 {
-                    rootObject = await Resolve(maes.Expression.ToString(), token);
+                    var maes_expr = maes.Expression.ToString();
+                    if (maes_expr.Contains('('))
+                    {
+                        replacer.methodCall.Remove(method);
+                        rootObject = await ExpressionEvaluator.CompileAndRunTheExpression(maes_expr, this, token);
+                    }
+                    else
+                    {
+                        rootObject = await Resolve(maes_expr, token);
+                    }
                     methodName = maes.Name.ToString();
                 }
                 else if (expr is IdentifierNameSyntax && scopeCache.ObjectFields.TryGetValue("this", out JObject valueRet))
