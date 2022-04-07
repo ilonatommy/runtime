@@ -24,6 +24,9 @@ namespace DebuggerTests
                 {"_dateTime",                       (TDateTime(new DateTime(2020, 7, 6, 5, 4, 3)), true)},
                 {"_DTProp",                         (TGetter("_DTProp"), true)},
 
+                // internal
+                {"b",                               (TBool(true), true)},
+
                 // own public
                 {"a",                               (TNumber(4), true)},
                 {"DateTime",                        (TGetter("DateTime"), true)},
@@ -126,6 +129,9 @@ namespace DebuggerTests
                 {"_stringField",            (TString("CloneableStruct#_stringField"), true)},
                 {"_dateTime",               (TDateTime(new DateTime(2020, 7, 6, 5, 4, 3 + 3)), true)},
                 {"_DTProp",                 (TGetter("_DTProp"), true)},
+
+                // internal
+                {"b",                               (TBool(true), true)},
 
                 // own public
                 {"a",                       (TNumber(4), true)},
@@ -401,5 +407,63 @@ namespace DebuggerTests
             }
         }
 
+        public static TheoryData<Dictionary<string, JObject>, Dictionary<string, JObject>, Dictionary<string, JObject>, string> ClassGetPropertiesByAccessibility()
+        {
+            var data = new TheoryData<Dictionary<string, JObject>, Dictionary<string, JObject>, Dictionary<string, JObject>, string>();
+            // object DerivedClass:
+            var public_props = new Dictionary<string, JObject>()
+            {
+                //  own
+                {"a",                               TNumber(4)},
+                {"DateTime",                        TGetter("DateTime")},
+                {"AutoStringProperty",              TString("DerivedClass#AutoStringProperty")},
+                {"FirstName",                       TGetter("FirstName")},
+                {"DateTimeForOverride",             TGetter("DateTimeForOverride")},
+
+                {"StringPropertyForOverrideWithAutoProperty",   TString("DerivedClass#StringPropertyForOverrideWithAutoProperty")},
+                {"Base_AutoStringPropertyForOverrideWithField", TString("DerivedClass#Base_AutoStringPropertyForOverrideWithField")},
+                {"Base_GetterForOverrideWithField",             TString("DerivedClass#Base_GetterForOverrideWithField")},
+                {"BaseBase_MemberForOverride",                  TString("DerivedClass#BaseBase_MemberForOverride")},
+
+                // inherited public
+                {"Base_AutoStringProperty",         TString("base#Base_AutoStringProperty")},
+                {"LastName",                        TGetter("LastName")}
+            };
+
+            var internal_protected_props = new Dictionary<string, JObject>(){
+                // internal
+                {"b",                               TBool(true)},
+                // inherited protected
+                {"base_num",                        TNumber(5)}
+            };
+
+            var private_props = new Dictionary<string, JObject>(){
+                {"_DTProp",                         TGetter("_DTProp")},
+                {"_base_dateTime",                  TGetter("_base_dateTime")},
+                {"_stringField",                    TString("DerivedClass#_stringField")},
+                {"_dateTime",                       TDateTime(new DateTime(2020, 7, 6, 5, 4, 3))},
+                {"_base_name",                      TString("private_name")}
+            };
+            data.Add(public_props, internal_protected_props, private_props, "DerivedClass");
+            return data;
+        }
+
+        [Theory]
+        [MemberData(nameof(ClassGetPropertiesByAccessibility))]
+        public async Task PropertiesSortedByAccessibility(
+            Dictionary<string, JObject> expectedPublic, Dictionary<string, JObject> expectedProtInter, Dictionary<string, JObject> expectedPriv, string entryMethod) =>  
+            await CheckInspectLocalsAtBreakpointSite(
+            $"DebuggerTests.GetPropertiesTests.{entryMethod}", "InstanceMethod", 1, "InstanceMethod",
+            $"window.setTimeout(function() {{ invoke_static_method ('[debugger-test] DebuggerTests.GetPropertiesTests.{entryMethod}:run'); }})",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+                var (obj, _) = await EvaluateOnCallFrame(id, "this");
+                var (pub, internalAndProtected, priv) = await GetPropertiesSortedByAccessibility(obj["objectId"]?.Value<string>());
+
+                await CheckProps(pub, expectedPublic, "public");
+                await CheckProps(internalAndProtected, expectedProtInter, "internalAndProtected");
+                await CheckProps(priv, expectedPriv, "private");
+           });
     }
 }

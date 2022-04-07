@@ -922,7 +922,7 @@ namespace DebuggerTests
             return locals;
         }
 
-        internal async Task<(JToken, JToken, JToken)> GetPropertiesSortedByProtectionLevels(string id, JToken fn_args = null, bool? own_properties = null, bool? accessors_only = null, bool expect_ok = true)
+        internal async Task<(JToken, JToken, JToken)> GetPropertiesSortedByAccessibility(string id, JToken fn_args = null, bool? own_properties = null, bool? accessors_only = null, bool expect_ok = true)
         {
             if (UseCallFunctionOnBeforeGetProperties && !id.StartsWith("dotnet:scope:"))
             {
