@@ -60,32 +60,23 @@ namespace BrowserDebugProxy
             var typePropertiesBrowsableInfo = typeInfo?.Info?.DebuggerBrowsableProperties;
 
             IReadOnlyList<FieldTypeClass> fieldTypes = await sdbAgent.GetTypeFields(typeId, token);
-            // statics should not be in valueType fields: CallFunctionOnTests.PropertyGettersTest
+
+            JArray fields = new();
+            IEnumerable<FieldTypeClass> staticFields = fieldTypes
+                .Where(f => f.Attributes.HasFlag(FieldAttributes.Static));
+            foreach (var field in staticFields)
+            {
+                var fieldValue = await sdbAgent.GetFieldValue(typeId, field.Id, token); // for enum: infinite loop
+                fields.Add(GetFieldWithMetadata(field, fieldValue, isStatic: true));
+            }
+
             IEnumerable<FieldTypeClass> writableFields = fieldTypes
                 .Where(f => !f.Attributes.HasFlag(FieldAttributes.Literal)
                     && !f.Attributes.HasFlag(FieldAttributes.Static));
-
-            JArray fields = new();
             foreach (var field in writableFields)
             {
                 var fieldValue = await sdbAgent.CreateJObjectForVariableValue(cmdReader, field.Name, token, true, field.TypeId, false);
-
-                fieldValue["__section"] = field.Attributes switch
-                {
-                    FieldAttributes.Private => "private",
-                    FieldAttributes.Public => "result",
-                    _ => "internal"
-                };
-
-                if (field.IsBackingField)
-                    fieldValue["__isBackingField"] = true;
-                else
-                {
-                    typeFieldsBrowsableInfo.TryGetValue(field.Name, out DebuggerBrowsableState? state);
-                    fieldValue["__state"] = state?.ToString();
-                }
-
-                fields.Add(fieldValue);
+                fields.Add(GetFieldWithMetadata(field, fieldValue, isStatic: false));
             }
 
             long endPos = cmdReader.BaseStream.Position;
@@ -95,6 +86,35 @@ namespace BrowserDebugProxy
             cmdReader.BaseStream.Position = endPos;
 
             return new ValueTypeClass(valueTypeBuffer, className, fields, typeId, isEnum);
+
+            JObject GetFieldWithMetadata(FieldTypeClass field, JObject fieldValue, bool isStatic)
+            {
+                if (isStatic)
+                    fieldValue["name"] = field.Name;
+
+                fieldValue["__section"] = isStatic
+                    ? field.Attributes switch
+                    {
+                        FieldAttributes.Private | FieldAttributes.Static => "private",
+                        FieldAttributes.Public | FieldAttributes.Static => "result",
+                        _ => "internal"
+                    }
+                    : field.Attributes switch
+                    {
+                        FieldAttributes.Private => "private",
+                        FieldAttributes.Public => "result",
+                        _ => "internal"
+                    };
+
+                if (field.IsBackingField)
+                {
+                    fieldValue["__isBackingField"] = true;
+                    return fieldValue;
+                }
+                typeFieldsBrowsableInfo.TryGetValue(field.Name, out DebuggerBrowsableState? state);
+                fieldValue["__state"] = state?.ToString();
+                return fieldValue;
+            }
         }
 
         public async Task<JObject> ToJObject(MonoSDBHelper sdbAgent, bool forDebuggerDisplayAttribute, CancellationToken token)
