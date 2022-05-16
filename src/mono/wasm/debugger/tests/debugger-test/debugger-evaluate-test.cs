@@ -817,176 +817,6 @@ namespace DebuggerTests
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleClass sampleClassNever = new();
         }
-
-        public struct TestEvaluatePropertiesNever
-        {
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public List<int> listNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public int[] arrayNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public string textNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public bool[] nullNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public SampleEnum valueTypeEnumNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public SampleStructure sampleStructNever { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
-            public SampleClass sampleClassNever { get; set; }
-
-            public TestEvaluatePropertiesNever()
-            {
-                listNever = new List<int>() { 1, 2 };
-                arrayNever = new int[] { 11, 22 };
-                textNever = "textNever";
-                nullNever = null;
-                valueTypeEnumNever = new();
-                sampleStructNever = new();
-                sampleClassNever = new();
-            }
-        }
-
-        public struct TestEvaluateFieldsCollapsed
-        {
-            public TestEvaluateFieldsCollapsed() {}
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public List<int> listCollapsed = new List<int>() { 1, 2 };
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public int[] arrayCollapsed = new int[] { 11, 22 };
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public string textCollapsed = "textCollapsed";
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public bool[] nullCollapsed = null;
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleEnum valueTypeEnumCollapsed = new();
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleStructure sampleStructCollapsed = new();
-            
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleClass sampleClassCollapsed = new();
-        }
-
-        public struct TestEvaluatePropertiesCollapsed
-        {
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public List<int> listCollapsed { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public int[] arrayCollapsed { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public string textCollapsed { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public bool[] nullCollapsed { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleEnum valueTypeEnumCollapsed { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleStructure sampleStructCollapsed { get; set; }
-            
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
-            public SampleClass sampleClassCollapsed { get; set; }
-
-            public TestEvaluatePropertiesCollapsed()
-            {
-                listCollapsed = new List<int>() { 1, 2 };
-                arrayCollapsed = new int[] { 11, 22 };
-                textCollapsed = "textCollapsed";
-                nullCollapsed = null;
-                valueTypeEnumCollapsed = new();
-                sampleStructCollapsed = new();
-                sampleClassCollapsed = new();
-            }
-        }
-
-        public struct TestEvaluateFieldsRootHidden
-        {
-            public TestEvaluateFieldsRootHidden() {}
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public List<int> listRootHidden = new List<int>() { 1, 2 };
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public int[] arrayRootHidden = new int[] { 11, 22 };
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public string textRootHidden = "textRootHidden";
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public bool[] nullRootHidden = null;
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleEnum valueTypeEnumRootHidden = new();
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleStructure sampleStructRootHidden = new();
-            
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleClass sampleClassRootHidden = new();
-        }
-
-        public struct TestEvaluatePropertiesRootHidden
-        {
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public List<int> listRootHidden { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public int[] arrayRootHidden { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public string textRootHidden { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public bool[] nullRootHidden { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleEnum valueTypeEnumRootHidden { get; set; }
-
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleStructure sampleStructRootHidden { get; set; }
-            
-            [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
-            public SampleClass sampleClassRootHidden { get; set; }
-
-            public TestEvaluatePropertiesRootHidden()
-            {
-                listRootHidden = new List<int>() { 1, 2 };
-                arrayRootHidden = new int[] { 11, 22 };
-                textRootHidden = "textRootHidden";
-                nullRootHidden = null;
-                valueTypeEnumRootHidden = new();
-                sampleStructRootHidden = new();
-                sampleClassRootHidden = new();
-            }
-        }
-
-        public static void Evaluate()
-        {
-            var testFieldsNone = new TestEvaluateFieldsNone();
-            var testFieldsNever = new TestEvaluateFieldsNever();
-            var testFieldsCollapsed = new TestEvaluateFieldsCollapsed();
-            var testFieldsRootHidden = new TestEvaluateFieldsRootHidden();
-
-            var testPropertiesNone = new TestEvaluatePropertiesNone();
-            var testPropertiesNever = new TestEvaluatePropertiesNever();
-            var testPropertiesCollapsed = new TestEvaluatePropertiesCollapsed();
-            var testPropertiesRootHidden = new TestEvaluatePropertiesRootHidden();
-        }
     }
 
     public static class EvaluateBrowsableStaticClass
@@ -1577,7 +1407,7 @@ namespace DebuggerTests
             public string GetString(string param = "1.23") => param;
             public string GetUnicodeString(string param = "żółć") => param;
 
-#nullable enable
+            #nullable enable
             public bool? GetBoolNullable(bool? param = true) => param;
             public char? GetCharNullable(char? param = 'T') => param;
             public byte? GetByteNullable(byte? param = 1) => param;
@@ -1591,7 +1421,7 @@ namespace DebuggerTests
             public float? GetSingleNullable(float? param = 1.23f) => param;
             public double? GetDoubleNullable(double? param = 1.23) => param;
             public string? GetStringNullable(string? param = "1.23") => param;
-#nullable disable
+            #nullable disable
 
             public bool GetNull(object param = null) => param == null ? true : false;
             public int GetDefaultAndRequiredParam(int requiredParam, int optionalParam = 3) => requiredParam + optionalParam;
@@ -1601,6 +1431,36 @@ namespace DebuggerTests
         public static void Evaluate()
         {
             var test = new TestClass();
+        }
+    }
+    
+    public static class PrimitiveTypeMethods
+    {
+        public class TestClass
+        {
+            public int propInt = 12;
+            public uint propUint = 12;
+            public long propLong = 12;
+            public ulong propUlong = 12;
+            public float propFloat = 1.2345678f;
+            public double propDouble = 1.2345678910111213;
+            public bool propBool = true;
+            public char propChar = 'X';
+            public string propString = "s_t_r";
+        }
+
+        public static void Evaluate()
+        {
+            var test = new TestClass();
+            int localInt = 2;
+            uint localUint = 2;
+            long localLong = 2;
+            ulong localUlong = 2;
+            float localFloat = 0.2345678f;
+            double localDouble = 0.2345678910111213;
+            bool localBool = false;
+            char localChar = 'Y';
+            string localString = "S*T*R";
         }
     }
 }
@@ -1641,4 +1501,3 @@ public static class NoNamespaceClass
         }
     }
 }
-

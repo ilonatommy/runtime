@@ -73,6 +73,7 @@ namespace BrowserDebugProxy
             IEnumerable<FieldTypeClass> writableFields = fieldTypes
                 .Where(f => !f.Attributes.HasFlag(FieldAttributes.Literal)
                     && !f.Attributes.HasFlag(FieldAttributes.Static));
+
             foreach (var field in writableFields)
             {
                 var fieldValue = await sdbAgent.CreateJObjectForVariableValue(cmdReader, field.Name, token, true, field.TypeId, false);
@@ -100,19 +101,19 @@ namespace BrowserDebugProxy
                         _ => "internal"
                     }
                     : field.Attributes switch
-                    {
-                        FieldAttributes.Private => "private",
-                        FieldAttributes.Public => "result",
-                        _ => "internal"
-                    };
+                {
+                    FieldAttributes.Private => "private",
+                    FieldAttributes.Public => "result",
+                    _ => "internal"
+                };
 
                 if (field.IsBackingField)
                 {
                     fieldValue["__isBackingField"] = true;
                     return fieldValue;
                 }
-                typeFieldsBrowsableInfo.TryGetValue(field.Name, out DebuggerBrowsableState? state);
-                fieldValue["__state"] = state?.ToString();
+                    typeFieldsBrowsableInfo.TryGetValue(field.Name, out DebuggerBrowsableState? state);
+                    fieldValue["__state"] = state?.ToString();
                 return fieldValue;
             }
         }
@@ -134,9 +135,15 @@ namespace BrowserDebugProxy
                 if (displayString != null)
                     description = displayString;
             }
-
-            var obj = MonoSDBHelper.CreateJObject<string>(null, "object", description, false, className, Id.ToString(), null, null, true, true, IsEnum);
-            return obj;
+            return MonoSDBHelper.CreateJObject(
+                IsEnum ? fields[0]["value"] : null,
+                "object",
+                description,
+                false,
+                className,
+                Id.ToString(),
+                null, null, true, true,
+                IsEnum);
         }
 
         public async Task<JArray> GetProxy(MonoSDBHelper sdbHelper, CancellationToken token)
