@@ -135,15 +135,14 @@ namespace BrowserDebugProxy
                 if (displayString != null)
                     description = displayString;
             }
-            return MonoSDBHelper.CreateJObject(
+            return JObjectValueCreator.Create(
                 IsEnum ? fields[0]["value"] : null,
                 "object",
                 description,
-                false,
                 className,
                 Id.ToString(),
-                null, null, true, true,
-                IsEnum);
+                isValueType: true,
+                isEnum: IsEnum);
         }
 
         public async Task<JArray> GetProxy(MonoSDBHelper sdbHelper, CancellationToken token)

@@ -427,8 +427,9 @@ namespace Microsoft.WebAssembly.Diagnostics
                 List<int> typeIds;
                 if (objectId.IsValueType)
                 {
-                    if (!context.SdbAgent.valueTypes.TryGetValue(objectId.Value, out ValueTypeClass valueType))
+                    if (!context.SdbAgent.ValueCreator.TryGetValueTypeById(objectId.Value, out ValueTypeClass valueType))
                         throw new Exception($"Could not find valuetype {objectId}");
+
                     typeIds = new List<int>(1) { valueType.TypeId };
                 }
                 else
