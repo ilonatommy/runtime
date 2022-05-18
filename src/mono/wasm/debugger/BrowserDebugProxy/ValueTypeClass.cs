@@ -53,6 +53,7 @@ namespace BrowserDebugProxy
                                                 int typeId,
                                                 int numValues,
                                                 bool isEnum,
+                                                bool includeStatic,
                                                 CancellationToken token)
         {
             var typeInfo = await sdbAgent.GetTypeInfo(typeId, token);
@@ -62,12 +63,16 @@ namespace BrowserDebugProxy
             IReadOnlyList<FieldTypeClass> fieldTypes = await sdbAgent.GetTypeFields(typeId, token);
 
             JArray fields = new();
-            IEnumerable<FieldTypeClass> staticFields = fieldTypes
-                .Where(f => f.Attributes.HasFlag(FieldAttributes.Static));
-            foreach (var field in staticFields)
+            if (includeStatic)
             {
-                var fieldValue = await sdbAgent.GetFieldValue(typeId, field.Id, token); // for enum: infinite loop
-                fields.Add(GetFieldWithMetadata(field, fieldValue, isStatic: true));
+                IEnumerable<FieldTypeClass> staticFields = fieldTypes
+                .Where(f => f.Attributes.HasFlag(FieldAttributes.Static));
+                foreach (var field in staticFields)
+                {
+                    // includeStatic=false prevents infinit loop when reading static enums
+                    var fieldValue = await sdbAgent.GetFieldValue(typeId, field.Id, token, includeStatic: false);
+                    fields.Add(GetFieldWithMetadata(field, fieldValue, isStatic: true));
+                }
             }
 
             IEnumerable<FieldTypeClass> writableFields = fieldTypes
@@ -76,7 +81,7 @@ namespace BrowserDebugProxy
 
             foreach (var field in writableFields)
             {
-                var fieldValue = await sdbAgent.CreateJObjectForVariableValue(cmdReader, field.Name, token, true, field.TypeId, false);
+                var fieldValue = await sdbAgent.ValueCreator.ReadAsVariableValue(cmdReader, field.Name, token, true, field.TypeId, false);
                 fields.Add(GetFieldWithMetadata(field, fieldValue, isStatic: false));
             }
 

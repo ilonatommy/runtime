@@ -1233,7 +1233,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             return !retDebuggerCmdReader.HasError ? true : false;
         }
 
-        public async Task<JObject> GetFieldValue(int typeId, int fieldId, CancellationToken token)
+        public async Task<JObject> GetFieldValue(int typeId, int fieldId, CancellationToken token, bool includeStatic = false)
         {
             using var commandParamsWriter = new MonoBinaryWriter();
             commandParamsWriter.Write(typeId);
@@ -1241,7 +1241,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             commandParamsWriter.Write(fieldId);
 
             using var retDebuggerCmdReader = await SendDebuggerAgentCommand(CmdType.GetValues, commandParamsWriter, token);
-            return await ValueCreator.ReadAsVariableValue(retDebuggerCmdReader, "", token);
+            return await ValueCreator.ReadAsVariableValue(retDebuggerCmdReader, "", token, includeStatic: includeStatic);
         }
 
         public async Task<int> TypeIsInitialized(int typeId, CancellationToken token)
@@ -1762,7 +1762,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                 using var retDebuggerCmdReader = await SendDebuggerAgentCommand(CmdFrame.GetThis, commandParamsWriter, token);
                 retDebuggerCmdReader.ReadByte(); //ignore type
                 var objectId = retDebuggerCmdReader.ReadInt32();
-                GetMembersResult asyncProxyMembers = await MemberObjectsExplorer.GetObjectMemberValues(this, objectId, GetObjectCommandOptions.WithProperties, token);
+                GetMembersResult asyncProxyMembers = await MemberObjectsExplorer.GetObjectMemberValues(this, objectId, GetObjectCommandOptions.WithProperties, token, includeStatic: true);
                 var asyncLocals = await GetHoistedLocalVariables(objectId, asyncProxyMembers.Flatten(), token);
                 return asyncLocals;
             }
@@ -1773,7 +1773,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             {
                 try
                 {
-                    var var_json = await ValueCreator.ReadAsVariableValue(localsDebuggerCmdReader, var.Name, token);
+                    var var_json = await ValueCreator.ReadAsVariableValue(localsDebuggerCmdReader, var.Name, token, includeStatic: true);
                     locals.Add(var_json);
                 }
                 catch (Exception ex)
