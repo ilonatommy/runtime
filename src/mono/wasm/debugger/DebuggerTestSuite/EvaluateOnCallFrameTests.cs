@@ -876,6 +876,7 @@ namespace DebuggerTests
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluateFieldsNone", "testFieldsNone", 10)]
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluatePropertiesNone", "testPropertiesNone", 10)]
         [InlineData("EvaluateBrowsableCustomPropertiesClass", "TestEvaluatePropertiesNone", "testPropertiesNone", 5, true)]
+        [InlineData("EvaluateBrowsableCustomPropertiesStruct", "TestEvaluatePropertiesNone", "testPropertiesNone", 5, true)]
         public async Task EvaluateBrowsableNone(
             string outerClassName, string className, string localVarName, int breakLine, bool isCustomGetter = false) => await CheckInspectLocalsAtBreakpointSite(
             $"DebuggerTests.{outerClassName}", "Evaluate", breakLine, "Evaluate",
@@ -922,6 +923,7 @@ namespace DebuggerTests
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluateFieldsNever", "testFieldsNever", 10)]
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluatePropertiesNever", "testPropertiesNever", 10)]
         [InlineData("EvaluateBrowsableCustomPropertiesClass", "TestEvaluatePropertiesNever", "testPropertiesNever", 5)]
+        [InlineData("EvaluateBrowsableCustomPropertiesStruct", "TestEvaluatePropertiesNever", "testPropertiesNever", 5)]
         public async Task EvaluateBrowsableNever(string outerClassName, string className, string localVarName, int breakLine) => await CheckInspectLocalsAtBreakpointSite(
             $"DebuggerTests.{outerClassName}", "Evaluate", breakLine, "Evaluate",
             $"window.setTimeout(function() {{ invoke_static_method ('[debugger-test] DebuggerTests.{outerClassName}:Evaluate'); 1 }})",
@@ -947,6 +949,7 @@ namespace DebuggerTests
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluateFieldsCollapsed", "testFieldsCollapsed", 10)]
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluatePropertiesCollapsed", "testPropertiesCollapsed", 10)]
         [InlineData("EvaluateBrowsableCustomPropertiesClass", "TestEvaluatePropertiesCollapsed", "testPropertiesCollapsed", 5, true)]
+        [InlineData("EvaluateBrowsableCustomPropertiesStruct", "TestEvaluatePropertiesCollapsed", "testPropertiesCollapsed", 5, true)]
         public async Task EvaluateBrowsableCollapsed(
             string outerClassName, string className, string localVarName, int breakLine, bool isCustomGetter = false) => await CheckInspectLocalsAtBreakpointSite(
             $"DebuggerTests.{outerClassName}", "Evaluate", breakLine, "Evaluate",
@@ -992,6 +995,7 @@ namespace DebuggerTests
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluateFieldsRootHidden", "testFieldsRootHidden", 10)]
         [InlineData("EvaluateBrowsableStaticStruct", "TestEvaluatePropertiesRootHidden", "testPropertiesRootHidden", 10)]
         [InlineData("EvaluateBrowsableCustomPropertiesClass", "TestEvaluatePropertiesRootHidden", "testPropertiesRootHidden", 5)]
+        [InlineData("EvaluateBrowsableCustomPropertiesStruct", "TestEvaluatePropertiesRootHidden", "testPropertiesRootHidden", 5)]
         public async Task EvaluateBrowsableRootHidden(
             string outerClassName, string className, string localVarName, int breakLine) => await CheckInspectLocalsAtBreakpointSite(
             $"DebuggerTests.{outerClassName}", "Evaluate", breakLine, "Evaluate",
