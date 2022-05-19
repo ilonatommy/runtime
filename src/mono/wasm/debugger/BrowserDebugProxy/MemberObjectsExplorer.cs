@@ -302,7 +302,7 @@ namespace BrowserDebugProxy
             bool isOwn,
             CancellationToken token,
             Dictionary<string, JObject> allMembers,
-            bool includeStatic = false)
+            bool includeStatic)
         {
             using var retDebuggerCmdReader = await sdbHelper.GetTypePropertiesReader(typeId, token);
             if (retDebuggerCmdReader == null)
@@ -505,7 +505,8 @@ namespace BrowserDebugProxy
                     isValueType: false,
                     isOwn,
                     token,
-                    allMembers);
+                    allMembers,
+                    includeStatic);
 
                 // ownProperties
                 // Note: ownProperties should mean that we return members of the klass itself,
