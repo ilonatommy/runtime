@@ -1401,6 +1401,30 @@ namespace DebuggerTests
             string localString = "S*T*R";
         }
     }
+
+    public static class EvaluateNullableProperties
+    {
+        class TestClass
+        {
+            public List<int> MemberListNull = null;
+            public List<int> MemberList = new List<int>() {1, 2};
+            public TestClass Sibling { get; set; }
+        }
+        static void Evaluate()
+        {
+            #nullable enable
+            List<int>? listNull = null;
+            #nullable disable
+            List<int> list = new List<int>() {1};
+            TestClass tc = new TestClass();
+            TestClass tcNull = null;
+            string str = "str#value";
+            string str_null = null;
+            int x = 5;
+            int? x_null = null;
+            int? x_val = x;
+        }
+    }
 }
 
 namespace DebuggerTestsV2
