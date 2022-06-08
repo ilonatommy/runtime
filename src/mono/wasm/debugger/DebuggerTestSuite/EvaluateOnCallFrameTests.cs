@@ -507,13 +507,13 @@ namespace DebuggerTests
 
                var (_, res) = await EvaluateOnCallFrame(id, "this.objToTest.MyMethodWrong()", expect_ok: false );
                Assert.Equal(
-                    $"Method 'MyMethodWrong' not found in type 'DebuggerTests.EvaluateMethodTestsClass.ParmToTest'",
+                    $"Method 'MyMethodWrong' not found in type 'DebuggerTests.EvaluateMethodTestsClass.ParmToTest'", 
                     res.Error["result"]?["description"]?.Value<string>());
 
                (_, res) = await EvaluateOnCallFrame(id, "this.objToTest.MyMethod(1)", expect_ok: false);
-               Assert.Equal(
-                   "Unable to evaluate method 'MyMethod'. Too many arguments passed.",
-                   res.Error["result"]?["description"]?.Value<string>());
+                Assert.Equal(
+                    "Unable to evaluate method 'MyMethod'. Too many arguments passed.", 
+                    res.Error["result"]?["description"]?.Value<string>());
 
                (_, res) = await EvaluateOnCallFrame(id, "this.CallMethodWithParm(\"1\")", expect_ok: false );
                Assert.Contains("Unable to evaluate method 'this.CallMethodWithParm(\"1\")'", res.Error["message"]?.Value<string>());
@@ -523,7 +523,7 @@ namespace DebuggerTests
 
                (_, res) = await EvaluateOnCallFrame(id, "this.ParmToTestObjException.MyMethod()", expect_ok: false );
                Assert.Contains(
-                    "Cannot evaluate '(this.ParmToTestObjException.MyMethod()\n)'",
+                    "Cannot evaluate '(this.ParmToTestObjException.MyMethod()\n)'", 
                     res.Error["result"]?["description"]?.Value<string>());
            });
 
@@ -1293,6 +1293,22 @@ namespace DebuggerTests
                     ("localString", TString($"{pauseMethod}()")),
                     ("this", TObject("DIMClass")),
                     ("this.dimClassMember", TNumber(123)));
+            });
+
+        [Theory]
+        [InlineData("DefaultMethodStatic", "IDefaultInterface", "EvaluateStatic")]
+        [InlineData("DefaultMethodAsyncStatic", "IDefaultInterface", "EvaluateAsyncStatic", true)]
+        public async Task EvaluateLocalsInDefaultInterfaceMethodStatic(string pauseMethod, string methodInterface, string entryMethod, bool isAsync = false) =>
+            await CheckInspectLocalsAtBreakpointSite(
+            methodInterface, pauseMethod, 2, isAsync ? "MoveNext" : pauseMethod,
+            $"window.setTimeout(function() {{ invoke_static_method ('[debugger-test] DefaultInterfaceMethod:{entryMethod}'); }})",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+                await EvaluateOnCallFrameAndCheck(id,
+                    ("localString", TString($"{pauseMethod}()")),
+                    ("IDefaultInterface.defaultInterfaceMember", TString("defaultInterfaceMember")) //without interface name: "defaultInterfaceMember" fails; Issue #70135
+                );
             });
     }
 }
