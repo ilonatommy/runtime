@@ -803,16 +803,40 @@ namespace DebuggerTests
                 var frame = pause_location["callFrames"][0];
 
                 await EvaluateOnCallFrameAndCheck(id_top,
+                    ("StaticField1", TNumber(20)),
                     ("EvaluateStaticClass.StaticField1", TNumber(20)),
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticField1", TNumber(20)),
+                    ("StaticProperty1", TString("StaticProperty2")),
                     ("EvaluateStaticClass.StaticProperty1", TString("StaticProperty2")),
-                    ("EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented")));
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticProperty1", TString("StaticProperty2")),
+                    ("StaticPropertyWithError", TString("System.Exception: not implemented V2")),
+                    ("EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented V2")),
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented V2"))
+                );
 
                 var id_second = pause_location["callFrames"][1]["callFrameId"].Value<string>();
 
                 await EvaluateOnCallFrameAndCheck(id_second,
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticField1", TNumber(20)),
                     ("EvaluateStaticClass.StaticField1", TNumber(10)),
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticProperty1", TString("StaticProperty2")),
                     ("EvaluateStaticClass.StaticProperty1", TString("StaticProperty1")),
-                    ("EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented")));
+                    ("DebuggerTestsV2.EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented V2")),
+                    ("EvaluateStaticClass.StaticPropertyWithError", TString("System.Exception: not implemented"))
+                );
+
+                await CheckEvaluateFail(id_second, "StaticField1", GetNonExistingVarMessage("StaticField1"));
+                await CheckEvaluateFail(id_second, "StaticProperty1", GetNonExistingVarMessage("StaticProperty1"));
+                await CheckEvaluateFail(id_second, "StaticPropertyWithError", GetNonExistingVarMessage("StaticPropertyWithError"));
+
+                string GetNonExistingVarMessage(string name) => $"The name {name} does not exist in the current context";
+
+                async Task CheckEvaluateFail(string id, string expr, string message)
+                {
+                    (_, Result _res) = await EvaluateOnCallFrame(id, expr, expect_ok: false);
+                    Console.WriteLine(_res.Error["result"]?["description"]?.Value<string>());
+                    AssertEqual(message, _res.Error["result"]?["description"]?.Value<string>(), $"Expression '{expr}' - wrong error message");
+                }
             });
 
         [ConditionalFact(nameof(RunningOnChrome))]
