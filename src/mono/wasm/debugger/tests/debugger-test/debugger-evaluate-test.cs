@@ -421,23 +421,33 @@ namespace DebuggerTests
         {
             TestEvaluate f = new TestEvaluate();
             f.run(100, 200, "9000", "test", 45);
-            DebuggerTestsV2.EvaluateStaticClass.Run();
+            DebuggerTestsV2.EvaluateStaticFieldsInStaticClass.Run();
+            DebuggerTests.EvaluateStaticFieldsInStaticClass.Run();
+            DebuggerTests.EvaluateStaticFieldsInStaticClass.RunAsync();
+            DebuggerTests.EvaluateStaticFieldsInInstanceClass.RunStatic();
+            DebuggerTests.EvaluateStaticFieldsInInstanceClass.RunStaticAsync();
+            var instanceWithStaticFields = new EvaluateStaticFieldsInInstanceClass();
+            instanceWithStaticFields.Run();
+            instanceWithStaticFields.RunAsync();
             var a = 0;
         }
-
-        public static void EvaluateAsyncMethods()
-        {
-            var staticClass = new EvaluateNonStaticClassWithStaticFields();
-            staticClass.run();
-        }
-
     }
 
-    public static class EvaluateStaticClass
+    public static class EvaluateStaticFieldsInStaticClass
     {
         public static int StaticField1 = 10;
         public static string StaticProperty1 => "StaticProperty1";
-        public static string StaticPropertyWithError => throw new Exception("not implemented");
+        public static string StaticPropertyWithError => throw new Exception("not implemented 1");
+
+        public static void Run()
+        {
+            bool stop = true;
+        }
+
+        public async static void RunAsync()
+        {
+            await Task.FromResult(0);
+        }
 
         public static class NestedClass1
         {
@@ -453,20 +463,30 @@ namespace DebuggerTests
         }
     }
 
-    public class EvaluateNonStaticClassWithStaticFields
+    public class EvaluateStaticFieldsInInstanceClass
     {
-        public static int StaticField1 = 10;
-        public static string StaticProperty1 => "StaticProperty1";
-        public static string StaticPropertyWithError => throw new Exception("not implemented");
+        public static int StaticField1 = 70;
+        public static string StaticProperty1 => "StaticProperty7";
+        public static string StaticPropertyWithError => throw new Exception("not implemented 7");
 
-        private int HelperMethod()
+        public void Run()
         {
-            return 5;
+            bool stop = true;
         }
 
-        public async void run()
+        public async void RunAsync()
         {
-            var makeAwaitable = await Task.Run(() => HelperMethod());
+            await Task.FromResult(0);
+        }
+
+        public static void RunStatic()
+        {
+            bool stop = true;
+        }
+
+        public static async void RunStaticAsync()
+        {
+            await Task.FromResult(0);
         }
     }
 
@@ -584,7 +604,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleStructure sampleStructNever = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleClass sampleClassNever = new();
         }
@@ -643,7 +663,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleStructure sampleStructCollapsed = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleClass sampleClassCollapsed = new();
         }
@@ -667,7 +687,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleStructure sampleStructCollapsed { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleClass sampleClassCollapsed { get; set; }
 
@@ -702,7 +722,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleStructure sampleStructRootHidden = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleClass sampleClassRootHidden = new();
         }
@@ -726,7 +746,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleStructure sampleStructRootHidden { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleClass sampleClassRootHidden { get; set; }
 
@@ -813,7 +833,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleStructure sampleStructNever = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleClass sampleClassNever = new();
         }
@@ -874,7 +894,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleStructure sampleStructCollapsed = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleClass sampleClassCollapsed = new();
         }
@@ -898,7 +918,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleStructure sampleStructCollapsed { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleClass sampleClassCollapsed { get; set; }
 
@@ -935,7 +955,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleStructure sampleStructRootHidden = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleClass sampleClassRootHidden = new();
         }
@@ -959,7 +979,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleStructure sampleStructRootHidden { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleClass sampleClassRootHidden { get; set; }
 
@@ -1044,7 +1064,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public static SampleStructure sampleStructNever = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public static SampleClass sampleClassNever = new();
         }
@@ -1068,7 +1088,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public static SampleStructure sampleStructNever { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public static SampleClass sampleClassNever { get; set; }
 
@@ -1103,7 +1123,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public static SampleStructure sampleStructCollapsed = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public static SampleClass sampleClassCollapsed = new();
         }
@@ -1127,7 +1147,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public static SampleStructure sampleStructCollapsed { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public static SampleClass sampleClassCollapsed { get; set; }
 
@@ -1162,7 +1182,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public static SampleStructure sampleStructRootHidden = new();
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public static SampleClass sampleClassRootHidden = new();
         }
@@ -1186,7 +1206,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public static SampleStructure sampleStructRootHidden { get; set; }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public static SampleClass sampleClassRootHidden { get; set; }
 
@@ -1248,7 +1268,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleStructure sampleStructNever { get { return new(); } }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Never)]
             public SampleClass sampleClassNever { get { return new(); } }
         }
@@ -1272,7 +1292,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleStructure sampleStructCollapsed { get { return new(); } }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.Collapsed)]
             public SampleClass sampleClassCollapsed { get { return new(); } }
         }
@@ -1296,7 +1316,7 @@ namespace DebuggerTests
 
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleStructure sampleStructRootHidden { get { return new(); } }
-            
+
             [System.Diagnostics.DebuggerBrowsable(System.Diagnostics.DebuggerBrowsableState.RootHidden)]
             public SampleClass sampleClassRootHidden { get { return new(); } }
         }
@@ -1371,7 +1391,7 @@ namespace DebuggerTests
             var test = new TestClass();
         }
     }
-    
+
     public static class PrimitiveTypeMethods
     {
         public class TestClass
@@ -1429,11 +1449,11 @@ namespace DebuggerTests
 
 namespace DebuggerTestsV2
 {
-    public static class EvaluateStaticClass
+    public static class EvaluateStaticFieldsInStaticClass
     {
         public static int StaticField1 = 20;
         public static string StaticProperty1 => "StaticProperty2";
-        public static string StaticPropertyWithError => throw new Exception("not implemented V2");
+        public static string StaticPropertyWithError => throw new Exception("not implemented 2");
 
         public static void Run()
         {
@@ -1442,6 +1462,35 @@ namespace DebuggerTestsV2
     }
 }
 
+public static class NestedWithSameNames
+{
+    public static int StaticField1 = 30;
+    public static string StaticProperty1 => "StaticProperty3";
+    public static string StaticPropertyWithError => throw new Exception("not implemented V3");
+
+    public static class B
+    {
+        public static class NestedWithSameNames
+        {
+            public static class B
+            {
+                public static int StaticField1 = 40;
+                public static string StaticProperty1 => "StaticProperty4";
+                public static string StaticPropertyWithError => throw new Exception("not implemented V4");
+
+                public static void Run()
+                {
+                    var a = 0;
+                }
+            }
+        }
+    }
+
+    public static void Evaluate()
+    {
+        B.NestedWithSameNames.B.Run();
+    }
+}
 
 public static class NoNamespaceClass
 {
