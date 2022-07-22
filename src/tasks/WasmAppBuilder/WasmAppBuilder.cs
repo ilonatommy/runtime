@@ -39,7 +39,7 @@ public class WasmAppBuilder : Task
 
     // full list of ICU data files we produce can be found here:
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
-    public string? IcuDataFileName { get; set; }
+    public string? IcuDictionary { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
@@ -128,6 +128,9 @@ public class WasmAppBuilder : Task
         public IcuData(string name) : base(name, "icu") {}
         [JsonPropertyName("load_remote")]
         public bool LoadRemote { get; set; }
+
+        [JsonPropertyName("data_type")]
+        public string? DataType { get; set; }
     }
 
     public override bool Execute ()
@@ -145,10 +148,16 @@ public class WasmAppBuilder : Task
 
     private bool ExecuteInternal ()
     {
-        if (!File.Exists(MainJS))
-            throw new LogAsErrorException($"File MainJS='{MainJS}' doesn't exist.");
-        if (!InvariantGlobalization && string.IsNullOrEmpty(IcuDataFileName))
-            throw new LogAsErrorException("IcuDataFileName property shouldn't be empty if InvariantGlobalization=false");
+        if (!File.Exists(MainJS)) {
+            Log.LogError($"File MainJS='{MainJS}' doesn't exist.");
+            return false;
+        }
+
+        // if (!InvariantGlobalization && string.IsNullOrEmpty(IcuDictionary))
+        // {
+        //     Log.LogError("IcuDictionary property shouldn't be empty if InvariantGlobalization=false");
+        //     return false;
+        // }
 
         if (Assemblies.Length == 0)
         {
@@ -292,9 +301,6 @@ public class WasmAppBuilder : Task
                 config.Assets.Add(asset);
             }
         }
-
-        if (!InvariantGlobalization)
-            config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 });
 
         config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/"});
 

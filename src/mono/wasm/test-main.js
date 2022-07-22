@@ -275,6 +275,17 @@ function applyArguments() {
     }
 }
 
+async function loadScript (url)
+{
+	if (is_browser) {
+		var script = document.createElement ("script");
+		script.src = url;
+		document.head.appendChild (script);
+	} else {
+		globalThis.load (url);
+	}
+}
+
 async function loadDotnet(file) {
     const cjsExport = new Promise((resolve) => {
         globalThis.__onDotnetRuntimeLoaded = (createDotnetRuntime) => {
@@ -319,6 +330,7 @@ try {
     console.error(e);
 }
 
+let icuPromise = loadScript("./icu_dictionary.js"); //ToDo: convert to a promise and add to Promise.all waiting
 let loadDotnetPromise = loadDotnet('./dotnet.js');
 let argsPromise;
 
@@ -387,6 +399,15 @@ Promise.all([argsPromise, loadDotnetPromise]).then(async ([_, createDotnetRuntim
                     config.debug_level = -1;
 
                 config.wait_for_debugger = -1;
+            }
+
+            config.icu_dictionary = dictionary;
+            if (config.enable_sharding) {
+                if (config.default_culture != null) {
+                    config.application_culture = config.default_culture;
+                } else {
+                    config.application_culture = Intl.DateTimeFormat().resolvedOptions().locale;
+                }
             }
 
             if (is_node) {

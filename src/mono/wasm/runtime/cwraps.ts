@@ -103,7 +103,7 @@ export interface t_Cwraps {
     mono_wasm_parse_runtime_options(length: number, argv: VoidPtr): void;
     mono_background_exec(): void;
     mono_set_timeout_exec(): void;
-    mono_wasm_load_icu_data(offset: VoidPtr): number;
+    mono_wasm_load_icu_data(offset: VoidPtr, type: number): number;
     mono_wasm_get_icudt_name(name: string): string;
     mono_wasm_add_assembly(name: string, data: VoidPtr, size: number): number;
     mono_wasm_add_satellite_assembly(name: string, culture: string, data: VoidPtr, size: number): void;

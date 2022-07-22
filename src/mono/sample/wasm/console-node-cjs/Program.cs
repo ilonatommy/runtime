@@ -3,12 +3,15 @@
 
 using System;
 using System.Threading.Tasks;
+using System.Globalization;
 
 public class Test
 {
     public static async Task<int> Main(string[] args)
     {
         await Task.Delay(1);
+        CultureInfo cr = CultureInfo.GetCultureInfo("zh");
+        Console.WriteLine(cr.CompareInfo);
         Console.WriteLine("Hello World!");
         return 42;
     }

@@ -3,15 +3,15 @@
 
 import cwraps from "./cwraps";
 import { Module } from "./imports";
-import { GlobalizationMode } from "./types";
+import { GlobalizationMode, IcuDictionary } from "./types";
 import { VoidPtr } from "./types/emscripten";
 
 let num_icu_assets_loaded_successfully = 0;
 
 // @offset must be the address of an ICU data archive in the native heap.
 // returns true on success.
-export function mono_wasm_load_icu_data(offset: VoidPtr): boolean {
-    const ok = (cwraps.mono_wasm_load_icu_data(offset)) === 1;
+export function mono_wasm_load_icu_data(offset: VoidPtr, type: number): boolean {
+    const ok = (cwraps.mono_wasm_load_icu_data(offset, type)) === 1;
     if (ok)
         num_icu_assets_loaded_successfully++;
     return ok;
@@ -57,5 +57,62 @@ export function mono_wasm_globalization_init(globalization_mode: GlobalizationMo
 
     // Set globalization mode to PredefinedCulturesOnly
     cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", "1");
+}
+
+export function _get_shard_name(shards: string[], culture: string): string {
+    // Get shard name that culture belongs to
+    const parent_culture = culture.includes("-") ? culture.split("-")[0] : culture;
+    for (const name in shards) {
+        if (parent_culture.match(shards[name]))
+            return name;
+    }
+    return "";
+}
+
+export function _get_list_of_icu_files(
+    dictionary: IcuDictionary,
+    culture: string,
+    feature_shards=true,
+    features = "") : any  {
+    let icu_files = [];
+    if (dictionary === undefined)
+        return null;
+    if (culture === undefined || culture.length < 2 ) {
+        icu_files = [dictionary.packs.full];
+    } else {
+        const shard_name = _get_shard_name(dictionary.shards, culture);
+        const packs = dictionary.packs;
+        const files = packs[shard_name];
+        if (!feature_shards) {
+            icu_files = files.full;
+        } else {
+            // Get base files first
+            for (const feature in packs[files.extends]) {
+                icu_files.push(...packs[files.extends][feature]);
+            }
+            // Adding shard specific core files such as collation and locales
+            icu_files.push(...files["core"]);
+
+            //	Add any additional features
+            if (features != "") {
+                features.split(",").forEach(feat => {
+                    icu_files.push(...files[feat]);
+                });
+            }
+        }
+    }
+    const icu_assets: any = [];
+    icu_files.forEach((file: any) => {
+        const type = "common";
+        // if (file.includes("locales"))
+        // 	type = "app";
+        icu_assets.push({
+            "behavior": "icu",
+            "name": file,
+            "load_remote": false,
+            "data_type": type
+        });
+    });
+    return icu_assets;
 }
 

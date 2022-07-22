@@ -7,7 +7,7 @@ import { ENVIRONMENT_IS_ESM, ENVIRONMENT_IS_NODE, ENVIRONMENT_IS_PTHREAD, ENVIRO
 import cwraps from "./cwraps";
 import { mono_wasm_raise_debug_event, mono_wasm_runtime_ready } from "./debug";
 import GuardedPromise from "./guarded-promise";
-import { mono_wasm_globalization_init, mono_wasm_load_icu_data } from "./icu";
+import { mono_wasm_globalization_init, mono_wasm_load_icu_data, _get_list_of_icu_files } from "./icu";
 import { toBase64StringImpl } from "./base64";
 import { mono_wasm_init_aot_profiler, mono_wasm_init_coverage_profiler } from "./profiler";
 import { mono_wasm_load_bytes_into_heap } from "./buffers";
@@ -285,7 +285,7 @@ function _handle_fetched_asset(asset: AssetEntry, url?: string) {
         }
     }
     else if (asset.behavior === "icu") {
-        if (!mono_wasm_load_icu_data(offset!))
+        if (!mono_wasm_load_icu_data(offset!, +(asset.data_type == "common")))
             Module.printErr(`MONO_WASM: Error loading ICU asset ${asset.name}`);
     }
     else if (asset.behavior === "resource") {
@@ -482,6 +482,7 @@ export async function mono_load_runtime_and_bcl_args(config: MonoConfig | MonoCo
 }
 
 async function mono_download_assets(config: MonoConfig | MonoConfigError | undefined): Promise<void> {
+    console.log("[ILONA] mono_download_assets");
     if (!config || config.isError) {
         return;
     }
@@ -490,7 +491,10 @@ async function mono_download_assets(config: MonoConfig | MonoConfigError | undef
         if (config.enable_debugging)
             config.debug_level = config.enable_debugging;
 
-
+        const args: any = config;
+        const icu_files = _get_list_of_icu_files(args.icu_dictionary, args.application_culture);
+        if (icu_files != null)
+            args.assets = args.assets.concat(icu_files);
         config.diagnostic_tracing = config.diagnostic_tracing || false;
         ctx = {
             tracing: config.diagnostic_tracing,

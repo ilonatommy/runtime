@@ -196,6 +196,8 @@
                       Overwrite="true" />
   </Target>
 
+  <Import Project="$(IcuLibDir)ICU.DataFiles.props" Condition="'$(InvariantGlobalization)' != 'true'" />
+
   <!-- This is a documented target that is invoked by developers in their innerloop work. -->
   <Target Name="BuildWasmRuntimes"
           AfterTargets="Build"
@@ -206,6 +208,7 @@
                                   $(ICULibDir)/libicui18n.a;
                                   $(ICULibDir)/libicudata.a" />
       <ICULibFiles Include="$(ICULibDir)/*.dat" />
+      <ICUDictionary Include="$(ICULibDir)/icu_dictionary.js" />
     </ItemGroup>
     <PropertyGroup>
       <PInvokeTableFile>$(ArtifactsObjDir)wasm/pinvoke-table.h</PInvokeTableFile>

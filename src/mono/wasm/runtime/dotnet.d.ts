@@ -146,6 +146,8 @@ declare type MonoConfig = {
     assets: AllAssetEntryTypes[];
     debug_level?: number;
     enable_debugging?: number;
+    application_culture?: string;
+    icu_dictionary: IcuDictionary;
     globalization_mode: GlobalizationMode;
     diagnostic_tracing?: boolean;
     remote_sources?: string[];
@@ -158,6 +160,12 @@ declare type MonoConfig = {
     ignore_pdb_load_errors?: boolean;
     wait_for_debugger?: number;
 };
+declare type IcuDictionary = {
+    packs: {
+        [key: string]: any;
+    };
+    shards: string[];
+};
 declare type MonoConfigError = {
     isError: true;
     message: string;
@@ -165,6 +173,7 @@ declare type MonoConfigError = {
 };
 declare type AllAssetEntryTypes = AssetEntry | AssemblyEntry | SatelliteAssemblyEntry | VfsEntry | IcuData;
 declare type AssetEntry = {
+    data_type: string;
     name: string;
     behavior: AssetBehaviours;
     virtual_path?: string;
@@ -300,7 +309,7 @@ declare function mono_wasm_load_data_archive(data: Uint8Array, prefix: string): 
  */
 declare function mono_wasm_load_config(configFilePath: string): Promise<void>;
 
-declare function mono_wasm_load_icu_data(offset: VoidPtr): boolean;
+declare function mono_wasm_load_icu_data(offset: VoidPtr, type: number): boolean;
 
 /**
  * @deprecated Not GC or thread safe
