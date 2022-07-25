@@ -906,7 +906,8 @@
                       Include="$(_IcuLibdir)\libicuuc.a;
                                $(_IcuLibdir)\libicui18n.a;
                                $(_IcuLibdir)\libicudata.a;
-                               $(_IcuLibdir)\*.dat" />
+                               $(_IcuLibdir)\*.dat;
+                               $(_IcuLibdir)\icu_dictionary.js" />
     </ItemGroup>
 
     <Copy Condition="'$(_MonoIncludeIcuFiles)' == 'true'"

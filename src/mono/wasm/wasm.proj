@@ -281,7 +281,8 @@
           SkipUnchangedFiles="true" />
 
     <Copy SourceFiles="@(ICULibFiles);
-                       @(ICULibNativeFiles);"
+                       @(ICULibNativeFiles);
+                       @(ICUDictionary);"
           DestinationFolder="$(NativeBinDir)"
           SkipUnchangedFiles="true" />
 
