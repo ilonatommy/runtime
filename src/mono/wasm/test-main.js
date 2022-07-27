@@ -275,16 +275,10 @@ function applyArguments() {
     }
 }
 
-async function loadScript (url)
-{
-	if (is_browser) {
-		var script = document.createElement ("script");
-		script.src = url;
-		document.head.appendChild (script);
-	} else {
-		globalThis.load (url);
-	}
-}
+// async function loadScript(file) {
+//     console.log("[ILONA] loadScript: " + file);
+//     return await import(file);
+// }
 
 async function loadDotnet(file) {
     const cjsExport = new Promise((resolve) => {
@@ -330,7 +324,58 @@ try {
     console.error(e);
 }
 
-let icuPromise = loadScript("./icu_dictionary.js"); //ToDo: convert to a promise and add to Promise.all waiting
+// let dictionary = undefined; // if it's left then V8 does not like it that dictionary is declared twice
+async function loadScript (file)
+{
+	if (is_browser) { //Chrome is timing out
+        console.log("[ILONA] loadScript is_browser");
+        return loadDotnet(file);
+	} else if (is_node) { // for NodeJS FAILS, no culture like this found
+        console.log("[ILONA] loadScript NodeJS");
+        const { dict  } = await import(file);
+        // dictionary = dict;
+        return;
+    } else { // for V8 OK
+        console.log("[ILONA] loadScript V8");
+        load (file);
+    }
+}
+
+//     } else if (is_browser) { // vanila JS in browser
+//         loadScript = function (file) {
+//             var loaded = new Promise((resolve, reject) => {
+//                 globalThis.__onDotnetRuntimeLoaded = (createDotnetRuntime) => {
+//                     // this is callback we have in CJS version of the runtime
+//                     resolve(createDotnetRuntime);
+//                 };
+//                 import(file).then(({ default: createDotnetRuntime }) => {
+//                     // this would work with ES6 default export
+//                     if (createDotnetRuntime) {
+//                         resolve(createDotnetRuntime);
+//                     }
+//                 }, reject);
+//             });
+//             return loaded;
+//         }
+//     }
+
+// document.getJSON("/icu_dictionary.json", function(json) {
+//     console.log("[ILONA] loaded json:");
+//     console.log(json);
+//     var obj = JSON.parse(json);
+//     console.log(obj.ilona);
+// });
+
+// globalThis.fetch('./icu_dictionary.json')
+//   .then(response => response.json())
+//   .then(json => {
+//     console.log("[ILONA] loaded json:");
+//     console.log(json);
+//     var obj = JSON.parse(json);
+//     console.log(obj.ilona);
+//     });
+
+let icuDictionaryPromise = loadScript("./icu_dictionary.js");
 let loadDotnetPromise = loadDotnet('./dotnet.js');
 let argsPromise;
 
@@ -375,7 +420,8 @@ if (is_browser) {
     }
 }
 
-Promise.all([argsPromise, loadDotnetPromise]).then(async ([_, createDotnetRuntime]) => {
+Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async ([_, createDotnetRuntime]) => {
+    console.log("[ILONA] THEN");
     applyArguments();
 
     return createDotnetRuntime(({ MONO, INTERNAL, BINDING, IMPORTS, EXPORTS, Module }) => ({
@@ -401,7 +447,7 @@ Promise.all([argsPromise, loadDotnetPromise]).then(async ([_, createDotnetRuntim
                 config.wait_for_debugger = -1;
             }
 
-            config.icu_dictionary = dictionary;
+            config.icu_dictionary = dictionary; //dictionary is not defined
             if (config.enable_sharding) {
                 if (config.default_culture != null) {
                     config.application_culture = config.default_culture;

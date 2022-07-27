@@ -112,7 +112,7 @@ namespace Wasm.Build.Tests
                         new object?[] { new BuildArgs("placeholder", "Debug", aot, "placeholder", string.Empty) }.AsEnumerable(),
     #endif
                         // list of each member data - for Release+@aot
-                        new object?[] { new BuildArgs("placeholder", "Release", aot, "placeholder", string.Empty) }.AsEnumerable()
+                        // new object?[] { new BuildArgs("placeholder", "Release", aot, "placeholder", string.Empty) }.AsEnumerable()
                     }.AsEnumerable();
             }
             else
@@ -175,7 +175,8 @@ namespace Wasm.Build.Tests
                                 extraXHarnessMonoArgs: extraXHarnessMonoArgs,
                                 useWasmConsoleOutput: useWasmConsoleOutput
                                 );
-
+            Console.WriteLine($"[ILONA] output={output}");
+            Console.WriteLine($"[ILONA] _projectDir={_projectDir}");
             if (buildArgs.AOT)
             {
                 Assert.Contains("AOT: image 'System.Private.CoreLib' found.", output);
@@ -200,6 +201,7 @@ namespace Wasm.Build.Tests
         {
             _testOutput.WriteLine($"============== {testCommand} =============");
             Directory.CreateDirectory(testLogPath);
+            Console.WriteLine($"[ILONA] testLogPath={testLogPath}");
 
             StringBuilder args = new();
             args.Append(s_xharnessRunnerCommand);
