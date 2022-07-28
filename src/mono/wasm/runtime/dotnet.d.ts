@@ -152,7 +152,7 @@ declare type MonoConfig = {
      */
     debug_level?: number;
     enable_debugging?: number;
-    application_culture?: string;
+    application_culture: string;
     icu_dictionary: IcuDictionary;
     globalization_mode?: GlobalizationMode;
     diagnostic_tracing?: boolean;
@@ -185,7 +185,7 @@ interface ResourceRequest {
     hash?: string;
 }
 interface AssetEntry extends ResourceRequest {
-    data_type: string;
+    data_type?: string;
     virtual_path?: string;
     culture?: string;
     load_remote?: boolean;

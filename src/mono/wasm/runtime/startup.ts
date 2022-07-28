@@ -780,6 +780,10 @@ async function mono_download_assets(): Promise<void> {
     console.log("[ILONA] mono_download_assets");
     if (runtimeHelpers.diagnostic_tracing) console.debug("MONO_WASM: mono_download_assets");
     try {
+        const args: any = config;
+        const icu_files = _get_list_of_icu_files(config.icu_dictionary, config.application_culture);
+        if (icu_files != null)
+            config.assets = args.assets.concat(icu_files);
         const asset_promises: Promise<void>[] = [];
 
         // start fetching and instantiating all assets in parallel
