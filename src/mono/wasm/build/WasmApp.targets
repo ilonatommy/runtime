@@ -324,7 +324,6 @@
     <WasmAppBuilder
       AppDir="$(WasmAppDir)"
       MainJS="$(WasmMainJSPath)"
-      WasmEnableES6="$(WasmEnableES6)"
       MainHTMLPath="$(WasmMainHTMLPath)"
       Assemblies="@(_WasmAssembliesInternal)"
       MainAssemblyName="$(WasmMainAssemblyFileName)"

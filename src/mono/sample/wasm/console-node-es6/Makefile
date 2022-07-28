@@ -15,8 +15,8 @@ ifneq ($(SHARD),)
 override MSBUILD_ARGS+=/p:EnableSharding=true /p:ICUDefaultCulture=$(CULTURE)
 endif
 
-PROJECT_NAME=Wasm.Console.Node.ES6.Sample.csproj
-CONSOLE_DLL=Wasm.Console.Node.ES6.Sample.dll
+PROJECT_NAME=Wasm.Console.Node.Sample.csproj
+CONSOLE_DLL=Wasm.Console.Node.Sample.dll
 MAIN_JS=main.mjs
 
 run: run-console-node

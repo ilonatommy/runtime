@@ -166,6 +166,7 @@ function initRunArgs() {
     runArgs.enableGC = runArgs.enableGC === undefined ? true : runArgs.enableGC;
     runArgs.diagnosticTracing = runArgs.diagnosticTracing === undefined ? false : runArgs.diagnosticTracing;
     runArgs.debugging = runArgs.debugging === undefined ? false : runArgs.debugging;
+    runArgs.configSrc = runArgs.configSrc === undefined ? './mono-config.json' : runArgs.configSrc;
     // default'ing to true for tests, unless debugging
     runArgs.forwardConsole = runArgs.forwardConsole === undefined ? !runArgs.debugging : runArgs.forwardConsole;
 }
@@ -217,6 +218,9 @@ function processQueryArguments(incomingArguments) {
             } else {
                 console.warn("--fetch-random-delay only works on browser")
             }
+        } else if (currentArg.startsWith("--config-src=")) {
+            const arg = currentArg.substring("--config-src=".length);
+            runArgs.configSrc = arg;
         } else {
             break;
         }
@@ -281,21 +285,8 @@ function applyArguments() {
 // }
 
 async function loadDotnet(file) {
-    const cjsExport = new Promise((resolve) => {
-        globalThis.__onDotnetRuntimeLoaded = (createDotnetRuntime) => {
-            delete globalThis.__onDotnetRuntimeLoaded;
-            resolve(createDotnetRuntime);
-        };
-    });
-
     const { default: createDotnetRuntime } = await import(file);
-    if (createDotnetRuntime) {
-        // this runs when loaded module was ES6
-        delete globalThis.__onDotnetRuntimeLoaded;
-        return createDotnetRuntime;
-    }
-
-    return await cjsExport;
+    return createDotnetRuntime;
 }
 
 // this can't be function because of `arguments` scope
@@ -406,20 +397,6 @@ if (typeof globalThis.crypto === 'undefined') {
     }
 }
 
-let toAbsoluteUrl = function (path, prefix) {
-    if (prefix.startsWith("/")) {
-        return path;
-    }
-    return prefix + path;
-}
-if (is_browser) {
-    const anchorTagForAbsoluteUrlConversions = document.createElement('a');
-    toAbsoluteUrl = function toAbsoluteUrl(path, prefix) {
-        anchorTagForAbsoluteUrlConversions.href = prefix + path;
-        return anchorTagForAbsoluteUrlConversions.href;
-    }
-}
-
 Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async ([_, createDotnetRuntime]) => {
     console.log("[ILONA] THEN");
     applyArguments();
@@ -427,8 +404,7 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
     return createDotnetRuntime(({ MONO, INTERNAL, BINDING, IMPORTS, EXPORTS, Module }) => ({
         disableDotnet6Compatibility: true,
         config: null,
-        configSrc: "./mono-config.json",
-        locateFile: toAbsoluteUrl,
+        configSrc: runArgs.configSrc || "./mono-config.json",
         onConfigLoaded: (config) => {
             if (!Module.config) {
                 const err = new Error("Could not find ./mono-config.json. Cancelling run");

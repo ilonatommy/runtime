@@ -50,14 +50,14 @@ declare interface EmscriptenModule {
     stackRestore(stack: VoidPtr): void;
     stackAlloc(size: number): VoidPtr;
     ready: Promise<unknown>;
+    instantiateWasm?: (imports: WebAssembly.Imports, successCallback: (instance: WebAssembly.Instance, module: WebAssembly.Module) => void) => any;
     preInit?: (() => any)[];
     preRun?: (() => any)[];
+    onRuntimeInitialized?: () => any;
     postRun?: (() => any)[];
     onAbort?: {
         (error: any): void;
     };
-    onRuntimeInitialized?: () => any;
-    instantiateWasm: (imports: any, successCallback: Function) => any;
 }
 declare type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array;
 
@@ -141,14 +141,20 @@ interface MonoObjectRef extends ManagedPointer {
     __brandMonoObjectRef: "MonoObjectRef";
 }
 declare type MonoConfig = {
-    isError: false;
-    assembly_root: string;
-    assets: AllAssetEntryTypes[];
+    isError?: false;
+    assembly_root?: string;
+    assets?: AssetEntry[];
+    /**
+     * Either this or enable_debugging needs to be set
+     * debug_level > 0 enables debugging and sets the debug log level to debug_level
+     * debug_level == 0 disables debugging and enables interpreter optimizations
+     * debug_level < 0 enabled debugging and disables debug logging.
+     */
     debug_level?: number;
     enable_debugging?: number;
     application_culture?: string;
     icu_dictionary: IcuDictionary;
-    globalization_mode: GlobalizationMode;
+    globalization_mode?: GlobalizationMode;
     diagnostic_tracing?: boolean;
     remote_sources?: string[];
     environment_variables?: {
@@ -157,6 +163,7 @@ declare type MonoConfig = {
     runtime_options?: string[];
     aot_profiler_options?: AOTProfilerOptions;
     coverage_profiler_options?: CoverageProfilerOptions;
+    diagnostic_options?: DiagnosticOptions;
     ignore_pdb_load_errors?: boolean;
     wait_for_debugger?: number;
 };
@@ -171,44 +178,25 @@ declare type MonoConfigError = {
     message: string;
     error: any;
 };
-declare type AllAssetEntryTypes = AssetEntry | AssemblyEntry | SatelliteAssemblyEntry | VfsEntry | IcuData;
-declare type AssetEntry = {
-    data_type: string;
+interface ResourceRequest {
     name: string;
     behavior: AssetBehaviours;
+    resolvedUrl?: string;
+    hash?: string;
+}
+interface AssetEntry extends ResourceRequest {
+    data_type: string;
     virtual_path?: string;
     culture?: string;
     load_remote?: boolean;
     is_optional?: boolean;
     buffer?: ArrayBuffer;
-};
-interface AssemblyEntry extends AssetEntry {
-    name: "assembly";
+    pending?: LoadingResource;
 }
-interface SatelliteAssemblyEntry extends AssetEntry {
-    name: "resource";
-    culture: string;
-}
-interface VfsEntry extends AssetEntry {
-    name: "vfs";
-    virtual_path: string;
-}
-interface IcuData extends AssetEntry {
-    name: "icu";
-    load_remote: boolean;
-}
-declare const enum AssetBehaviours {
-    Resource = "resource",
-    Assembly = "assembly",
-    Heap = "heap",
-    ICU = "icu",
-    VFS = "vfs"
-}
-declare const enum GlobalizationMode {
-    ICU = "icu",
-    INVARIANT = "invariant",
-    AUTO = "auto"
-}
+declare type AssetBehaviours = "resource" | "assembly" | "pdb" | "heap" | "icu" | "vfs" | "dotnetwasm";
+declare type GlobalizationMode = "icu" | // load ICU globalization data from any runtime assets with behavior "icu".
+"invariant" | //  operate in invariant globalization mode.
+"auto";
 declare type AOTProfilerOptions = {
     write_at?: string;
     send_to?: string;
@@ -217,18 +205,27 @@ declare type CoverageProfilerOptions = {
     write_at?: string;
     send_to?: string;
 };
+declare type DiagnosticOptions = {
+    sessions?: EventPipeSessionOptions[];
+    server?: DiagnosticServerOptions;
+};
 interface EventPipeSessionOptions {
     collectRundownEvents?: boolean;
     providers: string;
 }
+declare type DiagnosticServerOptions = {
+    connect_url: string;
+    suspend: string | boolean;
+};
 declare type DotnetModuleConfig = {
     disableDotnet6Compatibility?: boolean;
-    config?: MonoConfig | MonoConfigError;
+    config?: MonoConfig;
     configSrc?: string;
-    onConfigLoaded?: (config: MonoConfig) => Promise<void>;
-    onDotnetReady?: () => void;
+    onConfigLoaded?: (config: MonoConfig) => void | Promise<void>;
+    onDotnetReady?: () => void | Promise<void>;
     imports?: DotnetModuleConfigImports;
     exports?: string[];
+    downloadResource?: (request: ResourceRequest) => LoadingResource;
 } & Partial<EmscriptenModule>;
 declare type DotnetModuleConfigImports = {
     require?: (name: string) => any;
@@ -251,14 +248,13 @@ declare type DotnetModuleConfigImports = {
     };
     url?: any;
 };
-
-declare type EventPipeSessionID = bigint;
-interface EventPipeSession {
-    get sessionID(): EventPipeSessionID;
-    start(): void;
-    stop(): void;
-    getTraceBlob(): Blob;
+interface LoadingResource {
+    name: string;
+    url: string;
+    response: Promise<Response>;
 }
+declare type EventPipeSessionID = bigint;
+
 declare const eventLevel: {
     readonly LogAlways: 0;
     readonly Critical: 1;
@@ -289,16 +285,25 @@ declare class SessionOptionsBuilder {
     addSampleProfilerProvider(overrideOptions?: UnnamedProviderConfiguration): SessionOptionsBuilder;
     build(): EventPipeSessionOptions;
 }
+
+interface EventPipeSession {
+    get sessionID(): EventPipeSessionID;
+    start(): void;
+    stop(): void;
+    getTraceBlob(): Blob;
+}
+
 interface Diagnostics {
     EventLevel: EventLevel;
     SessionOptionsBuilder: typeof SessionOptionsBuilder;
     createEventPipeSession(options?: EventPipeSessionOptions): EventPipeSession | null;
+    getStartupSessions(): (EventPipeSession | null)[];
 }
 
 declare function mono_wasm_runtime_ready(): void;
 
 declare function mono_wasm_setenv(name: string, value: string): void;
-declare function mono_load_runtime_and_bcl_args(config: MonoConfig | MonoConfigError | undefined): Promise<void>;
+declare function mono_wasm_load_runtime(unused?: string, debug_level?: number): void;
 declare function mono_wasm_load_data_archive(data: Uint8Array, prefix: string): boolean;
 /**
  * Loads the mono config file (typically called mono-config.json) asynchroniously
@@ -308,6 +313,10 @@ declare function mono_wasm_load_data_archive(data: Uint8Array, prefix: string): 
  * @throws Will throw an error if the config file loading fails
  */
 declare function mono_wasm_load_config(configFilePath: string): Promise<void>;
+/**
+* @deprecated
+*/
+declare function mono_load_runtime_and_bcl_args(cfg?: MonoConfig | MonoConfigError | undefined): Promise<void>;
 
 declare function mono_wasm_load_icu_data(offset: VoidPtr, type: number): boolean;
 
@@ -444,7 +453,7 @@ declare const MONO: {
     mono_run_main_and_exit: typeof mono_run_main_and_exit;
     mono_wasm_get_assembly_exports: typeof mono_wasm_get_assembly_exports;
     mono_wasm_add_assembly: (name: string, data: VoidPtr, size: number) => number;
-    mono_wasm_load_runtime: (unused: string, debug_level: number) => void;
+    mono_wasm_load_runtime: typeof mono_wasm_load_runtime;
     config: MonoConfig | MonoConfigError;
     loaded_files: string[];
     setB32: typeof setB32;
@@ -572,4 +581,4 @@ declare class ArraySegment implements IMemoryView, IDisposable {
     get byteLength(): number;
 }
 
-export { ArraySegment, BINDINGType, CreateDotnetRuntimeType, DotnetModuleConfig, DotnetPublicAPI, EmscriptenModule, IMemoryView, MONOType, ManagedError, ManagedObject, MemoryViewType, MonoArray, MonoObject, MonoString, Span, VoidPtr, createDotnetRuntime as default };
+export { ArraySegment, AssetBehaviours, AssetEntry, BINDINGType, CreateDotnetRuntimeType, DotnetModuleConfig, DotnetPublicAPI, EmscriptenModule, IMemoryView, LoadingResource, MONOType, ManagedError, ManagedObject, MemoryViewType, MonoArray, MonoConfig, MonoObject, MonoString, ResourceRequest, Span, VoidPtr, createDotnetRuntime as default };
