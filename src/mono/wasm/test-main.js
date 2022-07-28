@@ -19,6 +19,66 @@
 const is_browser = typeof window != "undefined";
 const is_node = !is_browser && typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string';
 
+const dictionary = {
+    "packs": {
+      "base": {
+        "core": [
+          "icudt_base.dat",
+          "icudt_normalization.dat"
+        ],
+        "currency": [
+          "icudt_currency.dat"
+        ]
+      },
+      "efigs": {
+        "extends": "base",
+        "full": [
+          "icudt_efigs_full.dat"
+        ],
+        "core": [
+          "icudt_efigs_locales.dat",
+          "icudt_efigs_coll.dat"
+        ],
+        "zones": [
+          "icudt_efigs_zones.dat"
+        ]
+      },
+      "cjk": {
+        "extends": "base",
+        "full": [
+          "icudt_cjk_full.dat"
+        ],
+        "core": [
+          "icudt_cjk_locales.dat",
+          "icudt_cjk_coll.dat"
+        ],
+        "zones": [
+          "icudt_cjk_zones.dat"
+        ]
+      },
+      "no_cjk": {
+        "extends": "base",
+        "full": [
+          "icudt_no_cjk_full.dat"
+        ],
+        "core": [
+          "icudt_no_cjk_locales.dat",
+          "icudt_no_cjk_coll.dat"
+        ],
+        "zones": [
+          "icudt_no_cjk_zones.dat"
+        ]
+      },
+      "full": "icudt_full_full.dat"
+    },
+    "shards": {
+      "efigs": "(?:en|fr|it|de|es)",
+      "cjk": "(?:en|zh|ja|ko)",
+      "no_cjk": "^(?!.*(zh|ja|ko))",
+      "full": "full"
+    }
+  }
+
 if (is_node && process.versions.node.split(".")[0] < 14) {
     throw new Error(`NodeJS at '${process.execPath}' has too low version '${process.versions.node}'`);
 }
@@ -279,11 +339,6 @@ function applyArguments() {
     }
 }
 
-// async function loadScript(file) {
-//     console.log("[ILONA] loadScript: " + file);
-//     return await import(file);
-// }
-
 async function loadDotnet(file) {
     const { default: createDotnetRuntime } = await import(file);
     return createDotnetRuntime;
@@ -315,58 +370,7 @@ try {
     console.error(e);
 }
 
-// let dictionary = undefined; // if it's left then V8 does not like it that dictionary is declared twice
-async function loadScript (file)
-{
-	if (is_browser) { //Chrome is timing out
-        console.log("[ILONA] loadScript is_browser");
-        return loadDotnet(file);
-	} else if (is_node) { // for NodeJS FAILS, no culture like this found
-        console.log("[ILONA] loadScript NodeJS");
-        const { dict  } = await import(file);
-        // dictionary = dict;
-        return;
-    } else { // for V8 OK
-        console.log("[ILONA] loadScript V8");
-        load (file);
-    }
-}
-
-//     } else if (is_browser) { // vanila JS in browser
-//         loadScript = function (file) {
-//             var loaded = new Promise((resolve, reject) => {
-//                 globalThis.__onDotnetRuntimeLoaded = (createDotnetRuntime) => {
-//                     // this is callback we have in CJS version of the runtime
-//                     resolve(createDotnetRuntime);
-//                 };
-//                 import(file).then(({ default: createDotnetRuntime }) => {
-//                     // this would work with ES6 default export
-//                     if (createDotnetRuntime) {
-//                         resolve(createDotnetRuntime);
-//                     }
-//                 }, reject);
-//             });
-//             return loaded;
-//         }
-//     }
-
-// document.getJSON("/icu_dictionary.json", function(json) {
-//     console.log("[ILONA] loaded json:");
-//     console.log(json);
-//     var obj = JSON.parse(json);
-//     console.log(obj.ilona);
-// });
-
-// globalThis.fetch('./icu_dictionary.json')
-//   .then(response => response.json())
-//   .then(json => {
-//     console.log("[ILONA] loaded json:");
-//     console.log(json);
-//     var obj = JSON.parse(json);
-//     console.log(obj.ilona);
-//     });
-
-let icuDictionaryPromise = loadScript("./icu_dictionary.js");
+// let icuDictionaryPromise = loadScript("./icu_dictionary.js");
 let loadDotnetPromise = loadDotnet('./dotnet.js');
 let argsPromise;
 
@@ -406,6 +410,7 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
         config: null,
         configSrc: runArgs.configSrc || "./mono-config.json",
         onConfigLoaded: (config) => {
+            console.log("[ILONA] onConfigLoaded");
             if (!Module.config) {
                 const err = new Error("Could not find ./mono-config.json. Cancelling run");
                 set_exit_code(1);
@@ -464,13 +469,17 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
 
             // Must be after loading npm modules.
             config.environment_variables["IsWebSocketSupported"] = ("WebSocket" in globalThis).toString().toLowerCase();
+            console.log("[ILONA] onConfigLoaded FINISH");
         },
         preRun: () => {
+            console.log("[ILONA] preRun");
             if (!runArgs.enableGC) {
                 INTERNAL.mono_wasm_enable_on_demand_gc(0);
             }
+            console.log("[ILONA] preRun FINISH");
         },
         onDotnetReady: () => {
+            console.log("[ILONA] onDotnetReady");
             let wds = Module.FS.stat(runArgs.workingDirectory);
             if (wds === undefined || !Module.FS.isDir(wds.mode)) {
                 set_exit_code(1, `Could not find working directory ${runArgs.workingDirectory}`);
@@ -480,12 +489,15 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
             Module.FS.chdir(runArgs.workingDirectory);
 
             App.init({ MONO, INTERNAL, BINDING, IMPORTS, EXPORTS, Module, runArgs });
+            console.log("[ILONA] onDotnetReady FINISH");
         },
         onAbort: (error) => {
+            console.log("[ILONA] onAbort");
             set_exit_code(1, stringify_as_error_with_stack(new Error()));
         },
     }));
 }).catch(function (err) {
+    console.log("[ILONA] err" + err);
     set_exit_code(1, "failed to load the dotnet.js file.\n" + stringify_as_error_with_stack(err));
 });
 
