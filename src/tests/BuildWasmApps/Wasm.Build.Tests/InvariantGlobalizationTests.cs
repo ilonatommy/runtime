@@ -20,33 +20,34 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> InvariantGlobalizationTestData(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { null },
-                    new object?[] { false },
-                    new object?[] { true })
+                    // new object?[] { null },
+                    // new object?[] { false },
+                    new object?[] { true }
+                )
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
-
+        // [ILONA] ToDo: all tests fail for InvariantGlobalization: true, otherwise pass
         // TODO: check that icu bits have been linked out
         [Theory]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        public void AOT_InvariantGlobalization(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
-            => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id);
+        // [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.V8 })] // IG: T, H: ALL
+        // [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })] // IG: T, H: ALL
+        // public void AOT_InvariantGlobalization(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
+        //     => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id);
 
-        [Theory]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })]
+        // [Theory]
+        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.V8 })] // IG: T, H: ALL
+        // [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })] // IG: T, H: ALL
         public void Invariant_WithSharding(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
             => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id,
                                             extraProperties: "<EnableSharding>true</EnableSharding>");
 
-        // TODO: What else should we use to verify a relinked build?
-        [Theory]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        public void RelinkingWithoutAOT(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
-            => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id,
-                                            extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
-                                            dotnetWasmFromRuntimePack: false);
+        // // TODO: What else should we use to verify a relinked build?
+        // [Theory]
+        // [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })] // IG: T, H: ALL
+        // public void RelinkingWithoutAOT(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
+        //     => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id,
+        //                                     extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
+        //                                     dotnetWasmFromRuntimePack: false);
 
         private void TestInvariantGlobalization(BuildArgs buildArgs, bool? invariantGlobalization,
                                                         RunHost host, string id, string extraProperties="", bool? dotnetWasmFromRuntimePack=null)
@@ -57,6 +58,7 @@ namespace Wasm.Build.Tests
 
             buildArgs = buildArgs with { ProjectName = projectName };
             buildArgs = ExpandBuildArgs(buildArgs, extraProperties);
+            System.Console.WriteLine($"[ILONA] Build Args: {buildArgs}");
 
             if (dotnetWasmFromRuntimePack == null)
                 dotnetWasmFromRuntimePack = !(buildArgs.AOT || buildArgs.Config == "Release");

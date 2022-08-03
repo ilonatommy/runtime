@@ -19,66 +19,6 @@
 const is_browser = typeof window != "undefined";
 const is_node = !is_browser && typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string';
 
-const dictionary = {
-    "packs": {
-      "base": {
-        "core": [
-          "icudt_base.dat",
-          "icudt_normalization.dat"
-        ],
-        "currency": [
-          "icudt_currency.dat"
-        ]
-      },
-      "efigs": {
-        "extends": "base",
-        "full": [
-          "icudt_efigs_full.dat"
-        ],
-        "core": [
-          "icudt_efigs_locales.dat",
-          "icudt_efigs_coll.dat"
-        ],
-        "zones": [
-          "icudt_efigs_zones.dat"
-        ]
-      },
-      "cjk": {
-        "extends": "base",
-        "full": [
-          "icudt_cjk_full.dat"
-        ],
-        "core": [
-          "icudt_cjk_locales.dat",
-          "icudt_cjk_coll.dat"
-        ],
-        "zones": [
-          "icudt_cjk_zones.dat"
-        ]
-      },
-      "no_cjk": {
-        "extends": "base",
-        "full": [
-          "icudt_no_cjk_full.dat"
-        ],
-        "core": [
-          "icudt_no_cjk_locales.dat",
-          "icudt_no_cjk_coll.dat"
-        ],
-        "zones": [
-          "icudt_no_cjk_zones.dat"
-        ]
-      },
-      "full": "icudt_full_full.dat"
-    },
-    "shards": {
-      "efigs": "(?:en|fr|it|de|es)",
-      "cjk": "(?:en|zh|ja|ko)",
-      "no_cjk": "^(?!.*(zh|ja|ko))",
-      "full": "full"
-    }
-  }
-
 if (is_node && process.versions.node.split(".")[0] < 14) {
     throw new Error(`NodeJS at '${process.execPath}' has too low version '${process.versions.node}'`);
 }
@@ -401,7 +341,7 @@ if (typeof globalThis.crypto === 'undefined') {
     }
 }
 
-Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async ([_, createDotnetRuntime]) => {
+Promise.all([argsPromise, loadDotnetPromise]).then(async ([_, createDotnetRuntime]) => {
     console.log("[ILONA] THEN");
     applyArguments();
 
@@ -410,6 +350,7 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
         config: null,
         configSrc: runArgs.configSrc || "./mono-config.json",
         onConfigLoaded: (config) => {
+            // what is this config variable?
             console.log("[ILONA] onConfigLoaded");
             if (!Module.config) {
                 const err = new Error("Could not find ./mono-config.json. Cancelling run");
@@ -427,16 +368,7 @@ Promise.all([argsPromise, loadDotnetPromise, icuDictionaryPromise]).then(async (
 
                 config.wait_for_debugger = -1;
             }
-
-            config.icu_dictionary = dictionary; //dictionary is not defined
-            if (config.enable_sharding) {
-                if (config.default_culture != null) {
-                    config.application_culture = config.default_culture;
-                } else {
-                    config.application_culture = Intl.DateTimeFormat().resolvedOptions().locale;
-                }
-            }
-
+            // moved setting application)culture and icu_directory from here
             if (is_node) {
                 // we may have dependencies on NPM packages, depending on the test case
                 // some of them polyfill for browser built-in stuff

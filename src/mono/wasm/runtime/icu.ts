@@ -61,7 +61,7 @@ export function mono_wasm_globalization_init(): void {
     cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", "1");
 }
 
-export function _get_shard_name(shards: string[], culture: string): string {
+export function _get_shard_name(shards: {[key: string]: any}, culture: string): string {
     // Get shard name that culture belongs to
     const parent_culture = culture.includes("-") ? culture.split("-")[0] : culture;
     for (const name in shards) {
@@ -76,12 +76,16 @@ export function _get_list_of_icu_files(
     culture: string,
     feature_shards=true,
     features = "") : any  {
+    console.log("[ILONA] _get_list_of_icu_files 1");
     let icu_files = [];
     if (dictionary === undefined)
         return null;
+    console.log("[ILONA] _get_list_of_icu_files 2");
     if (culture === undefined || culture.length < 2 ) {
+        console.log("[ILONA] _get_list_of_icu_files 3");
         icu_files = [dictionary.packs.full];
     } else {
+        console.log("[ILONA] _get_list_of_icu_files 4");
         const shard_name = _get_shard_name(dictionary.shards, culture);
         const packs = dictionary.packs;
         const files = packs[shard_name];

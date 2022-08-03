@@ -2,7 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 import MonoWasmThreads from "consts:monoWasmThreads";
-import { mono_assert, CharPtrNull, DotnetModule, MonoConfig, wasm_type_symbol, MonoObject, MonoConfigError, LoadingResource, AssetEntry, ResourceRequest } from "./types";
+import { mono_assert, CharPtrNull, DotnetModule, MonoConfig, wasm_type_symbol, MonoObject, MonoConfigError, LoadingResource, AssetEntry, ResourceRequest, IcuDictionary } from "./types";
 import { ENVIRONMENT_IS_NODE, ENVIRONMENT_IS_PTHREAD, ENVIRONMENT_IS_SHELL, INTERNAL, Module, MONO, runtimeHelpers } from "./imports";
 import cwraps from "./cwraps";
 import { mono_wasm_raise_debug_event, mono_wasm_runtime_ready } from "./debug";
@@ -44,7 +44,65 @@ const afterPreRun = createPromiseController();
 const beforeOnRuntimeInitialized = createPromiseController();
 const afterOnRuntimeInitialized = createPromiseController();
 const afterPostRun = createPromiseController();
-
+const dictionary : IcuDictionary = {
+    "packs": {
+        "base": {
+            "core": [
+                "icudt_base.dat",
+                "icudt_normalization.dat"
+            ],
+            "currency": [
+                "icudt_currency.dat"
+            ]
+        },
+        "efigs": {
+            "extends": "base",
+            "full": [
+                "icudt_efigs_full.dat"
+            ],
+            "core": [
+                "icudt_efigs_locales.dat",
+                "icudt_efigs_coll.dat"
+            ],
+            "zones": [
+                "icudt_efigs_zones.dat"
+            ]
+        },
+        "cjk": {
+            "extends": "base",
+            "full": [
+                "icudt_cjk_full.dat"
+            ],
+            "core": [
+                "icudt_cjk_locales.dat",
+                "icudt_cjk_coll.dat"
+            ],
+            "zones": [
+                "icudt_cjk_zones.dat"
+            ]
+        },
+        "no_cjk": {
+            "extends": "base",
+            "full": [
+                "icudt_no_cjk_full.dat"
+            ],
+            "core": [
+                "icudt_no_cjk_locales.dat",
+                "icudt_no_cjk_coll.dat"
+            ],
+            "zones": [
+                "icudt_no_cjk_zones.dat"
+            ]
+        },
+        "full": "icudt_full_full.dat"
+    },
+    "shards": {
+        "efigs": "(?:en|fr|it|de|es)",
+        "cjk": "(?:en|zh|ja|ko)",
+        "no_cjk": "^(?!.*(zh|ja|ko))",
+        "full": "full"
+    }
+};
 // we are making emscripten startup async friendly
 // emscripten is executing the events without awaiting it and so we need to block progress via PromiseControllers above
 export function configure_emscripten_startup(module: DotnetModule, exportedAPI: DotnetPublicAPI): void {
@@ -777,17 +835,14 @@ async function start_asset_download(asset: AssetEntry): Promise<AssetEntry | und
 }
 
 async function mono_download_assets(): Promise<void> {
-    console.log("[ILONA] mono_download_assets");
+    Module.print("[ILONA] mono_download_assets 1");
     if (runtimeHelpers.diagnostic_tracing) console.debug("MONO_WASM: mono_download_assets");
     try {
-        const args: any = config;
-        const icu_files = _get_list_of_icu_files(config.icu_dictionary, config.application_culture);
-        if (icu_files != null)
-            config.assets = args.assets.concat(icu_files);
         const asset_promises: Promise<void>[] = [];
 
         // start fetching and instantiating all assets in parallel
         for (const asset of config.assets || []) {
+            Module.print("[ILONA] mono_download_assets: behavior=" + asset.behavior + " culture=" + asset.culture + " load_remote=" + asset.load_remote + " is_optional=" + asset.is_optional);
             if (asset.behavior != "dotnetwasm") {
                 const downloadedAsset = await start_asset_download(asset);
                 if (downloadedAsset) {
@@ -812,6 +867,7 @@ async function mono_download_assets(): Promise<void> {
         // spreading in time
         // rather than to block all downloads after onRuntimeInitialized or block onRuntimeInitialized after all downloads are done. That would create allocation burst.
     } catch (err: any) {
+        Module.print("[ILONA] mono_download_assets ERR6");
         Module.printErr("MONO_WASM: Error in mono_download_assets: " + err);
         throw err;
     }
@@ -891,7 +947,23 @@ export async function mono_wasm_load_config(configFilePath: string): Promise<voi
         // merge
         configData.assets = [...(config.assets || []), ...(configData.assets || [])];
         config = runtimeHelpers.config = Module.config = Object.assign(Module.config as any, configData);
-
+        config.icu_dictionary = dictionary; //dictionary is not defined
+        if (config.enable_sharding) { // undefined, how to load it?
+            Module.print("config.default_culture: " + config.default_culture);
+            if (config.default_culture != null) {
+                config.application_culture = config.default_culture;
+            } else {
+                config.application_culture = Intl.DateTimeFormat().resolvedOptions().locale;
+            }
+        }
+        Module.print("config.application_culture: " + config.application_culture);
+        const args: any = config;
+        const icu_files = _get_list_of_icu_files(config.icu_dictionary, config.application_culture);
+        Module.print("icu_files.cnt: " + icu_files.length);
+        Module.print("config.assets.cnt: " + config?.assets?.length);
+        if (icu_files != null) // is this concat working?
+            config.assets = args.assets.concat(icu_files); //ToDo: change this concat to a better one like above
+        Module.print("config.assets.cnt: " + config?.assets?.length);
         // normalize
         config.environment_variables = config.environment_variables || {};
         config.assets = config.assets || [];

@@ -153,6 +153,8 @@ declare type MonoConfig = {
     debug_level?: number;
     enable_debugging?: number;
     application_culture: string;
+    enable_sharding: boolean;
+    default_culture: string;
     icu_dictionary: IcuDictionary;
     globalization_mode?: GlobalizationMode;
     diagnostic_tracing?: boolean;
@@ -171,7 +173,9 @@ declare type IcuDictionary = {
     packs: {
         [key: string]: any;
     };
-    shards: string[];
+    shards: {
+        [key: string]: any;
+    };
 };
 declare type MonoConfigError = {
     isError: true;
