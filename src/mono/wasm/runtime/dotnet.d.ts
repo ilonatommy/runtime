@@ -361,7 +361,7 @@ interface Diagnostics {
     getStartupSessions(): (EventPipeSession | null)[];
 }
 
-declare function mono_wasm_load_icu_data(offset: VoidPtr): boolean;
+declare function mono_wasm_load_icu_data(offset: VoidPtr, type: number): boolean;
 
 declare function mono_wasm_get_assembly_exports(assembly: string): Promise<any>;
 
