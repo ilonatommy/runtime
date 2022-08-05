@@ -203,11 +203,11 @@
           DependsOnTargets="GenerateEmccPropsAndRspFiles;GenerateManagedToNative;BundleTimeZones;InstallNpmPackages;BuildWithRollup">
 
     <ItemGroup>
-      <ICULibNativeFiles Include="$(ICULibDir)/libicuuc.a;
+      <IcuLibNativeFiles Include="$(ICULibDir)/libicuuc.a;
                                   $(ICULibDir)/libicui18n.a;
                                   $(ICULibDir)/libicudata.a" />
-      <ICULibFiles Include="$(ICULibDir)/*.dat" />
-      <ICUDictionary Include="$(ICULibDir)/icu_dictionary.js" />
+      <IcuLibFiles Include="$(ICULibDir)/*.dat" />
+      <IcuLibDictionary Include="$(ICULibDir)/icu_dictionary.js" />
     </ItemGroup>
     <PropertyGroup>
       <PInvokeTableFile>$(ArtifactsObjDir)wasm/pinvoke-table.h</PInvokeTableFile>
@@ -272,8 +272,9 @@
           DestinationFolder="$(NativeBinDir)include\wasm"
           SkipUnchangedFiles="true" />
 
-    <Copy SourceFiles="@(ICULibFiles);
-                       @(ICULibNativeFiles);"
+    <Copy SourceFiles="@(IcuLibFiles);
+                       @(IcuLibDictionary);
+                       @(IcuLibNativeFiles);"
           DestinationFolder="$(NativeBinDir)"
           SkipUnchangedFiles="true" />
 
@@ -281,7 +282,6 @@
     <Exec Command="$(CMakeBuildRuntimeCmd)"  WorkingDirectory="$(NativeBinDir)" />
 
     <ItemGroup>
-      <IcuDataFiles Include="$(NativeBinDir)*.dat" />
       <WasmSrcFiles Include="$(NativeBinDir)src\*.c;
                              $(NativeBinDir)src\*.js;
                              $(_EmccDefaultsRspPath);
@@ -311,7 +311,7 @@
           DestinationFolder="$(MicrosoftNetCoreAppRuntimePackNativeDir)"
           SkipUnchangedFiles="true" />
 
-    <Copy SourceFiles="@(IcuDataFiles);@(ICULibNativeFiles);@(ICUDictionary)"
+    <Copy SourceFiles="@(IcuLibFiles);@(IcuLibNativeFiles);@(IcuLibDictionary)"
           DestinationFolder="$(MicrosoftNetCoreAppRuntimePackNativeDir)"
           SkipUnchangedFiles="true" />
 
