@@ -282,11 +282,9 @@
 
   <Target Name="_GetWasmGenerateAppBundleDependencies">
     <PropertyGroup>
-      <!-- <WasmIcuDataFiles Condition="'$(InvariantGlobalization)' != 'true'">$(MicrosoftNetCoreAppRuntimePackRidNativeDir)*.dat</WasmIcuDataFiles>
-      <WasmIcuDataDictionary Condition="'$(InvariantGlobalization)' != 'true'">$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js</WasmIcuDataDictionary> -->
-      
-      <!-- <ICULibDir Condition="'$(MonoWasmThreads)' != 'true'">$([MSBuild]::NormalizeDirectory('$(PkgMicrosoft_NETCore_Runtime_ICU_Transport)', 'runtimes', 'browser-wasm', 'native', 'lib'))</ICULibDir>
-      <ICULibDir Condition="'$(MonoWasmThreads)' == 'true'">$([MSBuild]::NormalizeDirectory('$(PkgMicrosoft_NETCore_Runtime_ICU_Transport)', 'runtimes', 'browser-wasm-threads', 'native', 'lib'))</ICULibDir> -->
+      <WasmIcuDataFiles Condition="'$(InvariantGlobalization)' == 'true'">*full.dat</WasmIcuDataFiles>
+      <WasmIcuDataFiles Condition="'$(InvariantGlobalization)' != 'true'">^((?!full).)*.dat$</WasmIcuDataFiles>
+
       <_HasDotnetWasm Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.wasm'">true</_HasDotnetWasm>
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
       <_HasDotnetJsCryptoWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet-crypto-worker.js'">true</_HasDotnetJsCryptoWorker>
@@ -304,14 +302,9 @@
                        Condition="'$(WasmEmitSymbolMap)' == 'true' and
                                   '$(_HasDotnetJsSymbols)' != 'true' and
                                   Exists('$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.js.symbols')" />
-      <!-- <ICUDictionary Include="$(ICULibDir)/icu_dictionary.js" /> -->
-
-      <!-- <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js" Condition="'$(InvariantGlobalization)' != 'true'" /> -->
-      <!-- <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js" Condition="'$(InvariantGlobalization)' != 'true'" /> -->
-
-      <!-- <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFiles)" Condition="'$(InvariantGlobalization)' != 'true'" />
-      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataDictionary)" Condition="'$(InvariantGlobalization)' != 'true'" /> -->
-      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)*.dat" Condition="'$(InvariantGlobalization)' != 'true'" />
+      
+      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFiles)"/>
+      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js"/>
       <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.timezones.blat" />
 
       <WasmFilesToIncludeInFileSystem Include="@(WasmNativeAsset)" Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'" />
@@ -321,10 +314,6 @@
       <WasmExtraConfig Include="enableSharding" Value="true" Condition="'$(EnableSharding)' == 'true'" />
       <WasmExtraConfig Include="defaultCulture" Value="&quot;$(ICUDefaultCulture)&quot;" Condition="'$(EnableSharding)' == 'true'" />
     </ItemGroup>
-
-        <!-- <Copy SourceFiles="@(ICUDictionary)"
-          DestinationFolder="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)"
-          SkipUnchangedFiles="true" /> -->
   </Target>
 
   <Target Name="_WasmGenerateAppBundle"
