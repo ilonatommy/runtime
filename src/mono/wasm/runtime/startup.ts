@@ -820,7 +820,6 @@ async function mono_download_assets(): Promise<void> {
         const download_promises: Promise<AssetEntry | undefined>[] = [];
         // start fetching and instantiating all assets in parallel
         for (const asset of config.assets || []) {
-            Module.print("[ILONA] mono_download_assets: behavior=" + asset.behavior + " culture=" + asset.culture);
             if (asset.behavior != "dotnetwasm") {
                 download_promises.push(start_asset_download(asset));
             }
@@ -832,13 +831,20 @@ async function mono_download_assets(): Promise<void> {
             const downloadedAsset = await downloadPromise;
             if (downloadedAsset) {
                 asset_promises.push((async () => {
+                    Module.print("[ILONA] assetName: " + downloadedAsset?.name);
                     const url = downloadedAsset.pending!.url;
+                    Module.print("[ILONA] url: " + url);
                     const response = await downloadedAsset.pending!.response;
+                    Module.print("[ILONA] response: " + response + " status: " + response.status + " " + response.statusText);
                     downloadedAsset.pending = undefined; //GC
+                    Module.print("[ILONA] GC done");
                     const buffer = await response.arrayBuffer();
+                    Module.print("[ILONA] buffer: " + buffer.byteLength);
                     await beforeOnRuntimeInitialized.promise;
+                    Module.print("[ILONA] beforeOnRuntimeInitialized.promise done");
                     // this is after onRuntimeInitialized
                     _instantiate_asset(downloadedAsset, url, new Uint8Array(buffer));
+                    Module.print("[ILONA] _instantiate_asset done");
                 })());
             }
         }
@@ -932,9 +938,10 @@ export async function mono_wasm_load_config(configFilePath: string): Promise<voi
         configData.assets = [...(config.assets || []), ...(configData.assets || [])];
         config = runtimeHelpers.config = Module.config = Object.assign(Module.config as any, configData);
         config.icuDictionary = dictionary; //dictionary is not defined
-        if (config.enableSharding) { // undefined, how to load it?
+        Module.print("config.enableSharding: " + config.enableSharding);
+        if (config.enableSharding) {
             Module.print("config.default_culture: " + config.defaultCulture);
-            if (config.defaultCulture != null) {
+            if (config.defaultCulture) {
                 config.applicationCulture = config.defaultCulture;
             } else {
                 config.applicationCulture = Intl.DateTimeFormat().resolvedOptions().locale;
