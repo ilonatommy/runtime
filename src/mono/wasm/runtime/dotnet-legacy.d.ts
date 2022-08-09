@@ -149,7 +149,7 @@ declare type MONOType = {
     /**
      * @deprecated Please use config.assets instead
      */
-    mono_wasm_load_icu_data: (offset: VoidPtr) => boolean;
+    mono_wasm_load_icu_data: (offset: VoidPtr, type: number) => boolean;
     /**
      * @deprecated Please use config.assets instead
      */

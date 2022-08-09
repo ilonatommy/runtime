@@ -246,6 +246,27 @@
     <PlatformManifestFileEntry Include="libicudata.a" IsNative="true" />
     <PlatformManifestFileEntry Include="libicui18n.a" IsNative="true" />
     <PlatformManifestFileEntry Include="libicuuc.a" IsNative="true" />
+    <!-- sharding files -->
+    <PlatformManifestFileEntry Include="icu_dictionary.js" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_base.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_normalization.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_currency.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_efigs_locales.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_cjk_locales.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_no_cjk_locales.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_full_locales.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_efigs_zones.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_cjk_zones.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_no_cjk_zones.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_full_zones.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_efigs_coll.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_cjk_coll.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_no_cjk_coll.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_full_coll.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_efigs_full.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_cjk_full.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_no_cjk_full.dat" IsNative="true" />
+		<PlatformManifestFileEntry Include="icudt_full_full.dat" IsNative="true" />
   </ItemGroup>
 
  <ItemGroup>
