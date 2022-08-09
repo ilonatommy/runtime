@@ -50,9 +50,9 @@ static void U_CALLCONV icu_trace_data(const void* context, int32_t fnNumber, int
 
 static int32_t load_icu_data(const void* pData, int32_t type);
 
-EMSCRIPTEN_KEEPALIVE const char* mono_wasm_get_icudt_name(const char* culture);
+EMSCRIPTEN_KEEPALIVE const char** mono_wasm_get_icudt_name(const char* culture);
 
-EMSCRIPTEN_KEEPALIVE const char* mono_wasm_get_icudt_name(const char* culture)
+EMSCRIPTEN_KEEPALIVE const char** mono_wasm_get_icudt_name(const char* culture)
 {
     return GlobalizationNative_GetICUDTName(culture);
 }
@@ -194,33 +194,60 @@ GlobalizationNative_LoadICUData(const char* path)
     return GlobalizationNative_LoadICU();
 }
 
-const char* GlobalizationNative_GetICUDTName(const char* culture)
+const char** GlobalizationNative_GetICUDTName(const char* culture)
 {
+    printf("[ILONA GlobalizationNative_GetICUDTName] culture=%s\n", culture);
     // Based on https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
 
     // Use full one if culture is null or empty
-    if (!culture || strlen(culture) < 2)
-        return "icudt.dat";
-
-    // CJK: starts with "ja", "ko" or "zh"
-    if (!strncasecmp("ja", culture, 2) ||
-        !strncasecmp("ko", culture, 2) ||
-        !strncasecmp("zh", culture, 2))
-        return "icudt_CJK.dat"; // contains "en" as well.
-
-    // EFIGS
-    const char* efigsCultures[15] = {
-        "en-US", "fr-FR", "es-ES", "it-IT", "de-DE",
-        "en_US", "fr_FR", "es_ES", "it_IT", "de_DE",
-        "en",    "fr",    "es",    "it",    "de"
+    if (!culture || strlen(culture) < 2){
+        const char* resourceNames[5] = {
+            "icudt_base.dat",
+            "icudt_locales.dat",
+            "icudt_currency.dat",
+            "icudt_normalization.dat",
+            "icudt_coll.dat",
+        };
+        return resourceNames;
     };
 
-    for (int i = 0; i < 15; i++)
-        if (!strcasecmp(culture, efigsCultures[i]))
-            return "icudt_EFIGS.dat";
-
+    if (!strncasecmp("ja", culture, 2) ||
+        !strncasecmp("ko", culture, 2) ||
+        !strncasecmp("zh", culture, 2)){
+        // contains "en" as well.
+        const char* resourceNames[5] = {
+            "icudt_base.dat",
+            "icudt_efigs_locales.dat",
+            "icudt_currency.dat",
+            "icudt_normalization.dat",
+            "icudt_efigs_coll.dat",
+        };
+        return resourceNames;
+    };
+    if (!strncasecmp("en", culture, 2) ||
+        !strncasecmp("fr", culture, 2) ||
+        !strncasecmp("es", culture, 2) ||
+        !strncasecmp("it", culture, 2) ||
+        !strncasecmp("de", culture, 2)){
+        // contains "en" as well.
+        const char* resourceNames[5] = {
+            "icudt_base.dat",
+            "icudt_cjk_locales.dat",
+            "icudt_currency.dat",
+            "icudt_normalization.dat",
+            "icudt_cjk_coll.dat",
+        };
+        return resourceNames;
+    };
     // full except CJK cultures
-    return "icudt_no_CJK.dat";
+    const char* resourceNames[5] = {
+        "icudt_base.dat",
+        "icudt_no_cjk_locales.dat",
+        "icudt_currency.dat",
+        "icudt_normalization.dat",
+        "icudt_no_cjk_coll.dat",
+    };
+    return resourceNames;
 }
 
 int32_t GlobalizationNative_LoadICU(void)

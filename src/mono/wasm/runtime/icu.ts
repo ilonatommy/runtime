@@ -21,7 +21,7 @@ export function mono_wasm_load_icu_data(offset: VoidPtr, type: number): boolean 
 //   "ja" -> "icudt_CJK.dat"
 //   "en_US" (or "en-US" or just "en") -> "icudt_EFIGS.dat"
 // etc, see "mono_wasm_get_icudt_name" implementation in pal_icushim_static.c
-export function mono_wasm_get_icudt_name(culture: string): string {
+export function mono_wasm_get_icudt_name(culture: string): string[] {
     return cwraps.mono_wasm_get_icudt_name(culture);
 }
 
