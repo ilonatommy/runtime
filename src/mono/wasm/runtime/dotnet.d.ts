@@ -135,7 +135,7 @@ interface LoadingResource {
     response: Promise<Response>;
 }
 
-interface APIType {
+declare type APIType = {
     runMain: (mainAssemblyName: string, args: string[]) => Promise<number>;
     runMainAndExit: (mainAssemblyName: string, args: string[]) => Promise<void>;
     setEnvironmentVariable: (name: string, value: string) => void;
@@ -166,7 +166,7 @@ interface APIType {
     getHeapI64Big: (offset: NativePointer) => bigint;
     getHeapF32: (offset: NativePointer) => number;
     getHeapF64: (offset: NativePointer) => number;
-}
+};
 declare type DotnetPublicAPI = {
     /**
      * @deprecated Please use API object instead. See also MONOType in dotnet-legacy.d.ts
@@ -182,8 +182,8 @@ declare type DotnetPublicAPI = {
     runtimeBuildInfo: {
         productVersion: string;
         buildConfiguration: string;
-    } & APIType;
-};
+    };
+} & APIType;
 
 interface IDisposable {
     dispose(): void;
