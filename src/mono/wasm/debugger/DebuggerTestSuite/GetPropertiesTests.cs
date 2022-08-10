@@ -27,123 +27,163 @@ namespace DebuggerTests
             var type_name = "DerivedClass2";
             var all_props = new Dictionary<string, (JObject, bool)>()
             {
+                // // own:
+                // // public:
+                // {"BaseBase_PropertyForHidingWithField",             (TNumber(210), true)},
+                // {"Base_PropertyForOverridingWithProperty",          (TGetter("Base_PropertyForOverridingWithProperty", TDateTime(new DateTime(2020, 7, 6, 5, 4, 3))), true)},
+                // {"BaseBase_PropertyForVHO",                         (TGetter("BaseBase_PropertyForVHO", TString("Derived#BaseBase_PropertyForVHO")), true)},
+                // {"BaseBase_PropertyForVOH",                         (TGetter("BaseBase_PropertyForVOH", TString("Derived#BaseBase_PropertyForVOH")), true)},
+                // // {"BaseBase_PropertyForVOO",                         (TGetter("BaseBase_PropertyForVOO", TString("Derived#BaseBase_PropertyForVOO")), true)}, //FixMe: Issue #69788
+
+                // // protected / internal:
+                // {"BaseBase_AutoPropertyForHidingWithProperty",      (TGetter("BaseBase_AutoPropertyForHidingWithProperty", TString("Derived#BaseBase_AutoPropertyForHidingWithProperty")), true)},
+                // {"Base_PropertyForOverridingWithAutoProperty",      (TDateTime(new DateTime(2022, 7, 6, 5, 4, 3)), true)},
+                // {"Base_AutoPropertyForOverridingWithAutoProperty",  (TDateTime(new DateTime(2023, 7, 6, 5, 4, 3)), true)},
+                // {"Base_AutoPropertyForOverridingWithProperty",      (TGetter("Base_AutoPropertyForOverridingWithProperty", TDateTime(new DateTime(2021, 7, 6, 5, 4, 3))), true)},
+
+                // // private:
+                // {"BaseBase_FieldForHidingWithAutoProperty",         (TString("Derived#BaseBase_FieldForHidingWithAutoProperty"), true)},
+
+                // // inherited from Base:
+                // // public:
+                // {"BaseBase_AutoPropertyForHidingWithField",                 (TNumber(115), false)},
+                // {"BaseBase_PropertyForHidingWithProperty",                  (TGetter("BaseBase_PropertyForHidingWithProperty", TString("Base#BaseBase_PropertyForHidingWithProperty")), false)},
+                // {"BaseBase_FieldForHidingWithAutoProperty (BaseClass2)",    (TString("Base#BaseBase_FieldForHidingWithAutoProperty"), false)},
+                // {"Base_VirtualPropertyNotOverriddenOrHidden",               (TGetter("Base_VirtualPropertyNotOverriddenOrHidden", TDateTime(new DateTime(2124, 5, 7, 1, 9, 2))), false)},
+                // {"FirstName",                                               (TGetter("FirstName", TString("BaseClass#FirstName")), false)},
+                // {"LastName",                                                (TGetter("LastName", TString("BaseClass#LastName")), false)},
+                // {"BaseBase_PropertyForVOH (BaseClass2)",                    (TGetter("BaseBase_PropertyForVOH (BaseClass2)", TString("Base#BaseBase_PropertyForVOH")), false)},
+
+                // // protected / internal:
+                // {"BaseBase_PropertyForHidingWithField (BaseClass2)",        (TNumber(110), false)},
+                // {"BaseBase_FieldForHidingWithProperty",                     (TGetter("BaseBase_FieldForHidingWithProperty", TString("Base#BaseBase_FieldForHidingWithProperty")), false)},
+                // {"BaseBase_AutoPropertyForHidingWithAutoProperty",          (TString("Base#BaseBase_AutoPropertyForHidingWithAutoProperty"), false)},
+
+                // // private:
+                // {"BaseBase_FieldForHidingWithField",                         (TNumber(105), false)},
+                // {"BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)",  (TGetter("BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)", TString("Base#BaseBase_AutoPropertyForHidingWithProperty")), false)},
+                // {"BaseBase_PropertyForHidingWithAutoProperty",               (TString("Base#BaseBase_PropertyForHidingWithAutoProperty"), false)},
+
+                // // inherited from BaseBase:
+                // // public:
+                // {"BaseBase_FieldForHidingWithField (BaseBaseClass2)",                (TNumber(5), false)},
+                // {"BaseBase_PropertyForHidingWithField (BaseBaseClass2)",             (TGetter("BaseBase_PropertyForHidingWithField (BaseBaseClass2)", TNumber(10)), false)},
+                // {"BaseBase_AutoPropertyForHidingWithField (BaseBaseClass2)",         (TNumber(15), false)},
+                // {"BaseBase_FieldForHidingWithProperty (BaseBaseClass2)",             (TString("BaseBase#BaseBase_FieldForHidingWithProperty"), false)},
+                // {"BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)",          (TGetter("BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithProperty")), false)},
+                // {"BaseBase_AutoPropertyForHidingWithProperty (BaseBaseClass2)",      (TString("BaseBase#BaseBase_AutoPropertyForHidingWithProperty"), false)},
+                // {"BaseBase_FieldForHidingWithAutoProperty (BaseBaseClass2)",         (TString("BaseBase#BaseBase_FieldForHidingWithAutoProperty"), false)},
+                // {"BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)",      (TGetter("BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithAutoProperty")), false)},
+                // {"BaseBase_AutoPropertyForHidingWithAutoProperty (BaseBaseClass2)",  (TString("BaseBase#BaseBase_AutoPropertyForHidingWithAutoProperty"), false)},
+                // // {"BaseBase_PropertyForVHO (BaseBaseClass2)",                         (TGetter("BaseBase_PropertyForVHO (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForVHO")), false)}, // FixMe: Issue #69788
+
+                // ------------------static members--------------------------
+
                 // own:
                 // public:
-                {"BaseBase_PropertyForHidingWithField",             (TNumber(210), true)},
-                {"Base_PropertyForOverridingWithProperty",          (TGetter("Base_PropertyForOverridingWithProperty", TDateTime(new DateTime(2020, 7, 6, 5, 4, 3))), true)},
-                {"BaseBase_PropertyForVHO",                         (TGetter("BaseBase_PropertyForVHO", TString("Derived#BaseBase_PropertyForVHO")), true)},
-                {"BaseBase_PropertyForVOH",                         (TGetter("BaseBase_PropertyForVOH", TString("Derived#BaseBase_PropertyForVOH")), true)},
-                // {"BaseBase_PropertyForVOO",                         (TGetter("BaseBase_PropertyForVOO", TString("Derived#BaseBase_PropertyForVOO")), true)}, //FixMe: Issue #69788
+                {"S_BaseBase_PropertyForHidingWithField",             (TNumber(210), true)},
 
                 // protected / internal:
-                {"BaseBase_AutoPropertyForHidingWithProperty",      (TGetter("BaseBase_AutoPropertyForHidingWithProperty", TString("Derived#BaseBase_AutoPropertyForHidingWithProperty")), true)},
-                {"Base_PropertyForOverridingWithAutoProperty",      (TDateTime(new DateTime(2022, 7, 6, 5, 4, 3)), true)},
-                {"Base_AutoPropertyForOverridingWithAutoProperty",  (TDateTime(new DateTime(2023, 7, 6, 5, 4, 3)), true)},
-                {"Base_AutoPropertyForOverridingWithProperty",      (TGetter("Base_AutoPropertyForOverridingWithProperty", TDateTime(new DateTime(2021, 7, 6, 5, 4, 3))), true)},
+                {"S_BaseBase_AutoPropertyForHidingWithProperty",      (TGetter("S_BaseBase_AutoPropertyForHidingWithProperty", TString("Derived#BaseBase_AutoPropertyForHidingWithProperty")), true)},
 
                 // private:
-                {"BaseBase_FieldForHidingWithAutoProperty",         (TString("Derived#BaseBase_FieldForHidingWithAutoProperty"), true)},
+                {"S_BaseBase_FieldForHidingWithAutoProperty",         (TString("Derived#BaseBase_FieldForHidingWithAutoProperty"), true)},
 
                 // inherited from Base:
                 // public:
-                {"BaseBase_AutoPropertyForHidingWithField",                 (TNumber(115), false)},
-                {"BaseBase_PropertyForHidingWithProperty",                  (TGetter("BaseBase_PropertyForHidingWithProperty", TString("Base#BaseBase_PropertyForHidingWithProperty")), false)},
-                {"BaseBase_FieldForHidingWithAutoProperty (BaseClass2)",    (TString("Base#BaseBase_FieldForHidingWithAutoProperty"), false)},
-                {"Base_VirtualPropertyNotOverriddenOrHidden",               (TGetter("Base_VirtualPropertyNotOverriddenOrHidden", TDateTime(new DateTime(2124, 5, 7, 1, 9, 2))), false)},
-                {"FirstName",                                               (TGetter("FirstName", TString("BaseClass#FirstName")), false)},
-                {"LastName",                                                (TGetter("LastName", TString("BaseClass#LastName")), false)},
-                {"BaseBase_PropertyForVOH (BaseClass2)",                    (TGetter("BaseBase_PropertyForVOH (BaseClass2)", TString("Base#BaseBase_PropertyForVOH")), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithField",                 (TNumber(115), false)},
+                {"S_BaseBase_PropertyForHidingWithProperty",                  (TGetter("S_BaseBase_PropertyForHidingWithProperty", TString("Base#BaseBase_PropertyForHidingWithProperty")), false)},
+                {"S_BaseBase_FieldForHidingWithAutoProperty (BaseClass2)",    (TString("Base#BaseBase_FieldForHidingWithAutoProperty"), false)},
 
                 // protected / internal:
-                {"BaseBase_PropertyForHidingWithField (BaseClass2)",        (TNumber(110), false)},
-                {"BaseBase_FieldForHidingWithProperty",                     (TGetter("BaseBase_FieldForHidingWithProperty", TString("Base#BaseBase_FieldForHidingWithProperty")), false)},
-                {"BaseBase_AutoPropertyForHidingWithAutoProperty",          (TString("Base#BaseBase_AutoPropertyForHidingWithAutoProperty"), false)},
+                {"S_BaseBase_PropertyForHidingWithField (BaseClass2)",        (TNumber(110), false)},
+                {"S_BaseBase_FieldForHidingWithProperty",                     (TGetter("S_BaseBase_FieldForHidingWithProperty", TString("Base#BaseBase_FieldForHidingWithProperty")), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithAutoProperty",          (TObject("String", is_null: true), false)},
 
                 // private:
-                {"BaseBase_FieldForHidingWithField",                         (TNumber(105), false)},
-                {"BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)",  (TGetter("BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)", TString("Base#BaseBase_AutoPropertyForHidingWithProperty")), false)},
-                {"BaseBase_PropertyForHidingWithAutoProperty",               (TString("Base#BaseBase_PropertyForHidingWithAutoProperty"), false)},
+                {"S_BaseBase_FieldForHidingWithField",                         (TNumber(105), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)",  (TGetter("S_BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)", TString("Base#BaseBase_AutoPropertyForHidingWithProperty")), false)},
+                {"S_BaseBase_PropertyForHidingWithAutoProperty",               (TObject("String", is_null: true), false)},
 
                 // inherited from BaseBase:
                 // public:
-                {"BaseBase_FieldForHidingWithField (BaseBaseClass2)",                (TNumber(5), false)},
-                {"BaseBase_PropertyForHidingWithField (BaseBaseClass2)",             (TGetter("BaseBase_PropertyForHidingWithField (BaseBaseClass2)", TNumber(10)), false)},
-                {"BaseBase_AutoPropertyForHidingWithField (BaseBaseClass2)",         (TNumber(15), false)},
-                {"BaseBase_FieldForHidingWithProperty (BaseBaseClass2)",             (TString("BaseBase#BaseBase_FieldForHidingWithProperty"), false)},
-                {"BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)",          (TGetter("BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithProperty")), false)},
-                {"BaseBase_AutoPropertyForHidingWithProperty (BaseBaseClass2)",      (TString("BaseBase#BaseBase_AutoPropertyForHidingWithProperty"), false)},
-                {"BaseBase_FieldForHidingWithAutoProperty (BaseBaseClass2)",         (TString("BaseBase#BaseBase_FieldForHidingWithAutoProperty"), false)},
-                {"BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)",      (TGetter("BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithAutoProperty")), false)},
-                {"BaseBase_AutoPropertyForHidingWithAutoProperty (BaseBaseClass2)",  (TString("BaseBase#BaseBase_AutoPropertyForHidingWithAutoProperty"), false)},
-                // {"BaseBase_PropertyForVHO (BaseBaseClass2)",                         (TGetter("BaseBase_PropertyForVHO (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForVHO")), false)}, // FixMe: Issue #69788
+                {"S_BaseBase_FieldForHidingWithField (BaseBaseClass2)",                (TNumber(5), false)},
+                {"S_BaseBase_PropertyForHidingWithField (BaseBaseClass2)",             (TGetter("S_BaseBase_PropertyForHidingWithField (BaseBaseClass2)", TNumber(10)), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithField (BaseBaseClass2)",         (TNumber(15), false)},
+                {"S_BaseBase_FieldForHidingWithProperty (BaseBaseClass2)",             (TString("BaseBase#BaseBase_FieldForHidingWithProperty"), false)},
+                {"S_BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)",          (TGetter("S_BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithProperty")), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithProperty (BaseBaseClass2)",      (TObject("String", is_null: true), false)},
+                {"S_BaseBase_FieldForHidingWithAutoProperty (BaseBaseClass2)",         (TString("BaseBase#BaseBase_FieldForHidingWithAutoProperty"), false)},
+                {"S_BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)",      (TGetter("S_BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)", TString("BaseBase#BaseBase_PropertyForHidingWithAutoProperty")), false)},
+                {"S_BaseBase_AutoPropertyForHidingWithAutoProperty (BaseBaseClass2)",  (TObject("String", is_null: true), false)},
             };
 
             // default, all properties
             // n, n
             data.Add(type_name, null, null, all_props.Keys.ToArray(), all_props, is_async);
             // f, f
-            data.Add(type_name, false, false, all_props.Keys.ToArray(), all_props, is_async);
-            // f, n
-            data.Add(type_name, false, null, all_props.Keys.ToArray(), all_props, is_async);
-            // n, f
-            data.Add(type_name, null, false, all_props.Keys.ToArray(), all_props, is_async);
+            // data.Add(type_name, false, false, all_props.Keys.ToArray(), all_props, is_async);
+            // // f, n
+            // data.Add(type_name, false, null, all_props.Keys.ToArray(), all_props, is_async);
+            // // n, f
+            // data.Add(type_name, null, false, all_props.Keys.ToArray(), all_props, is_async);
 
-            // all own
-            // t, f
-            // t, n
-            foreach (bool? accessors in new bool?[] { false, null })
-            {
-                // Breaking from JS behavior, we return *all* members irrespective of `ownMembers`
-                data.Add(type_name, true, accessors, all_props.Keys.ToArray(), all_props, is_async);
-            }
+            // // all own
+            // // t, f
+            // // t, n
+            // foreach (bool? accessors in new bool?[] { false, null })
+            // {
+            //     // Breaking from JS behavior, we return *all* members irrespective of `ownMembers`
+            //     data.Add(type_name, true, accessors, all_props.Keys.ToArray(), all_props, is_async);
+            // }
 
-            var all_accessors = new[]
-            {
-                "Base_PropertyForOverridingWithProperty",
-                "BaseBase_AutoPropertyForHidingWithProperty",
-                "Base_AutoPropertyForOverridingWithProperty",
-                "BaseBase_PropertyForVHO",
-                "BaseBase_PropertyForVOH",
-                // "BaseBase_PropertyForVOO", // FixMe: Issue #69788
+            // var all_accessors = new[]
+            // {
+            //     "Base_PropertyForOverridingWithProperty",
+            //     "BaseBase_AutoPropertyForHidingWithProperty",
+            //     "Base_AutoPropertyForOverridingWithProperty",
+            //     "BaseBase_PropertyForVHO",
+            //     "BaseBase_PropertyForVOH",
+            //     // "BaseBase_PropertyForVOO", // FixMe: Issue #69788
 
-                "BaseBase_PropertyForHidingWithProperty",
-                "FirstName",
-                "LastName",
-                "BaseBase_FieldForHidingWithProperty",
-                "BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)",
-                "BaseBase_PropertyForVOH (BaseClass2)",
+            //     "BaseBase_PropertyForHidingWithProperty",
+            //     "FirstName",
+            //     "LastName",
+            //     "BaseBase_FieldForHidingWithProperty",
+            //     "BaseBase_AutoPropertyForHidingWithProperty (BaseClass2)",
+            //     "BaseBase_PropertyForVOH (BaseClass2)",
 
-                "BaseBase_PropertyForHidingWithField (BaseBaseClass2)",
-                "BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)",
-                "BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)",
-                "Base_VirtualPropertyNotOverriddenOrHidden",
-                // "BaseBase_PropertyForVHO (BaseBaseClass2)" // FixMe: Issue #69788
-            };
+            //     "BaseBase_PropertyForHidingWithField (BaseBaseClass2)",
+            //     "BaseBase_PropertyForHidingWithProperty (BaseBaseClass2)",
+            //     "BaseBase_PropertyForHidingWithAutoProperty (BaseBaseClass2)",
+            //     "Base_VirtualPropertyNotOverriddenOrHidden",
+            //     // "BaseBase_PropertyForVHO (BaseBaseClass2)" // FixMe: Issue #69788
+            // };
 
-            var only_own_accessors = new[]
-            {
-                "Base_PropertyForOverridingWithProperty",
-                "BaseBase_AutoPropertyForHidingWithProperty",
-                "Base_AutoPropertyForOverridingWithProperty",
-                "BaseBase_PropertyForVHO",
-                "BaseBase_PropertyForVOH",
-                // "BaseBase_PropertyForVOO", // FixMe: Issue #69788
-            };
+            // var only_own_accessors = new[]
+            // {
+            //     "Base_PropertyForOverridingWithProperty",
+            //     "BaseBase_AutoPropertyForHidingWithProperty",
+            //     "Base_AutoPropertyForOverridingWithProperty",
+            //     "BaseBase_PropertyForVHO",
+            //     "BaseBase_PropertyForVOH",
+            //     // "BaseBase_PropertyForVOO", // FixMe: Issue #69788
+            // };
 
-            // all own, only accessors
-            // t, t
+            // // all own, only accessors
+            // // t, t
 
-            // Breaking from JS behavior, we return *all* members irrespective of `ownMembers`
-            // data.Add(type_name, true, true, only_own_accessors, all_props, is_async);
-            data.Add(type_name, true, true, all_accessors, all_props, is_async);
+            // // Breaking from JS behavior, we return *all* members irrespective of `ownMembers`
+            // // data.Add(type_name, true, true, only_own_accessors, all_props, is_async);
+            // data.Add(type_name, true, true, all_accessors, all_props, is_async);
 
-            // all accessors
-            // f, t
-            // n, t
-            foreach (bool? own in new bool?[] { false, null })
-            {
-                data.Add(type_name, own, true, all_accessors, all_props, is_async);
-            }
+            // // all accessors
+            // // f, t
+            // // n, t
+            // foreach (bool? own in new bool?[] { false, null })
+            // {
+            //     data.Add(type_name, own, true, all_accessors, all_props, is_async);
+            // }
 
             return data;
         }
@@ -197,10 +237,10 @@ namespace DebuggerTests
         }
 
         [ConditionalTheory(nameof(RunningOnChrome))]
-        [MemberData(nameof(ClassGetPropertiesTestData), parameters: true)]
+        // [MemberData(nameof(ClassGetPropertiesTestData), parameters: true)]
         [MemberData(nameof(ClassGetPropertiesTestData), parameters: false)]
-        [MemberData(nameof(StructGetPropertiesTestData), parameters: true)]
-        [MemberData(nameof(StructGetPropertiesTestData), parameters: false)]
+        // [MemberData(nameof(StructGetPropertiesTestData), parameters: true)]
+        // [MemberData(nameof(StructGetPropertiesTestData), parameters: false)]
         public async Task InspectTypeInheritedMembers(string type_name, bool? own_properties, bool? accessors_only, string[] expected_names, Dictionary<string, (JObject, bool)> all_props, bool is_async) => await CheckInspectLocalsAtBreakpointSite(
             $"DebuggerTests.GetPropertiesTests.{type_name}",
             $"InstanceMethod{(is_async ? "Async" : "")}", 1, $"DebuggerTests.GetPropertiesTests.{type_name}." + (is_async ? "InstanceMethodAsync" : "InstanceMethod"),
@@ -211,7 +251,7 @@ namespace DebuggerTests
                 var frame_locals = await GetProperties(frame_id);
                 var this_obj = GetAndAssertObjectWithName(frame_locals, "this");
                 var this_props = await GetProperties(this_obj["value"]?["objectId"]?.Value<string>(), own_properties: own_properties, accessors_only: accessors_only);
-
+                Console.WriteLine($"[ILONA] this_props = {this_props}");
                 AssertHasOnlyExpectedProperties(expected_names, this_props.Values<JObject>());
                 await CheckExpectedProperties(expected_names, name => GetAndAssertObjectWithName(this_props, name), all_props);
 
