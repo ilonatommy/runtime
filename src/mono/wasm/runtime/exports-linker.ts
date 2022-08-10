@@ -2,7 +2,7 @@ import MonoWasmThreads from "consts:monoWasmThreads";
 import { dotnet_browser_can_use_subtle_crypto_impl, dotnet_browser_simple_digest_hash, dotnet_browser_sign, dotnet_browser_encrypt_decrypt, dotnet_browser_derive_bits } from "./crypto-worker";
 import { mono_wasm_fire_debugger_agent_message, mono_wasm_debugger_log, mono_wasm_add_dbg_command_received, mono_wasm_set_entrypoint_breakpoint } from "./debug";
 import { mono_wasm_release_cs_owned_object } from "./gc-handles";
-import { mono_wasm_load_icu_data, mono_wasm_get_icudt_name } from "./icu";
+import { mono_wasm_load_icu_data, mono_wasm_get_icudt_name, mono_wasm_set_icu_dir } from "./icu";
 import { mono_wasm_bind_cs_function } from "./invoke-cs";
 import { mono_wasm_bind_js_function, mono_wasm_invoke_bound_function } from "./invoke-js";
 import { mono_wasm_typed_array_from_ref } from "./net6-legacy/buffers";
@@ -73,6 +73,7 @@ export function export_linker(): any {
 
         //  also keep in sync with pal_icushim_static.c
         mono_wasm_load_icu_data,
+        mono_wasm_set_icu_dir,
         mono_wasm_get_icudt_name,
 
         // pal_crypto_webworker.c

@@ -37,13 +37,14 @@ public class WasmAppBuilder : Task
 
     // full list of ICU data files we produce can be found here:
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
-    public string? IcuDataFileName { get; set; }
+    public string[]? IcuDataFileNames { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
     public ITaskItem[]? FilesToIncludeInFileSystem { get; set; }
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
+    public bool EnableSharding { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
 
@@ -162,8 +163,25 @@ public class WasmAppBuilder : Task
     {
         if (!File.Exists(MainJS))
             throw new LogAsErrorException($"File MainJS='{MainJS}' doesn't exist.");
-        if (!InvariantGlobalization && string.IsNullOrEmpty(IcuDataFileName))
-            throw new LogAsErrorException("IcuDataFileName property shouldn't be empty if InvariantGlobalization=false");
+        if (InvariantGlobalization && EnableSharding)
+        {
+            Log.LogMessage("Sharding is not available for InvariantGlobalization=true");
+            EnableSharding = false;
+        }
+
+        if (!InvariantGlobalization)
+        {
+            if (IcuDataFileNames == null || IcuDataFileNames.Length == 0)
+                throw new LogAsErrorException("IcuDataFileNames property shouldn't be empty if InvariantGlobalization=false");
+            if (EnableSharding && IcuDataFileNames.Length < 2)
+            {
+                throw new LogAsErrorException("IcuDataFileNames should have more than one element for EnableSharding=true");
+            }
+            if (!EnableSharding && IcuDataFileNames.Length != 1)
+            {
+                throw new LogAsErrorException("IcuDataFileNames should exactly one element for EnableSharding=false");
+            }
+        }
 
         if (Assemblies.Length == 0)
         {
@@ -308,8 +326,15 @@ public class WasmAppBuilder : Task
             }
         }
 
-        if (!InvariantGlobalization)
-            config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 });
+        if (!InvariantGlobalization && IcuDataFileNames != null)
+        {
+            // ToDo: Add filtering based on build flags and application's culture
+            foreach(var icuDataFile in IcuDataFileNames)
+            {
+                // config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 }); // old approach
+                config.Assets.Add(new VfsEntry (icuDataFile) { VirtualPath = "/usr/share/icu/"});
+            }
+        }
 
         config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/"});
         config.Assets.Add(new WasmEntry ("dotnet.wasm") );

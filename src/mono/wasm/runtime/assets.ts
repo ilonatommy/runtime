@@ -1,5 +1,4 @@
 import cwraps from "./cwraps";
-import { mono_wasm_load_icu_data } from "./icu";
 import { ENVIRONMENT_IS_WEB, Module, runtimeHelpers } from "./imports";
 import { mono_wasm_load_bytes_into_heap } from "./memory";
 import { MONO } from "./net6-legacy/imports";
@@ -303,10 +302,6 @@ function _instantiate_asset(asset: AssetEntry, url: string, bytes: Uint8Array) {
             const index = loaded_files.findIndex(element => element.file == virtualName);
             loaded_files.splice(index, 1);
         }
-    }
-    else if (asset.behavior === "icu") {
-        if (!mono_wasm_load_icu_data(offset!))
-            Module.printErr(`MONO_WASM: Error loading ICU asset ${asset.name}`);
     }
     else if (asset.behavior === "resource") {
         cwraps.mono_wasm_add_satellite_assembly(virtualName, asset.culture!, offset!, bytes.length);

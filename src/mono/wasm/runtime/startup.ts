@@ -8,6 +8,7 @@ import { ENVIRONMENT_IS_NODE, ENVIRONMENT_IS_SHELL, INTERNAL, Module, runtimeHel
 import cwraps, { init_c_exports } from "./cwraps";
 import { mono_wasm_raise_debug_event, mono_wasm_runtime_ready } from "./debug";
 import { mono_wasm_globalization_init } from "./icu";
+import {  mono_wasm_set_icu_dir } from "./icu";
 import { toBase64StringImpl } from "./base64";
 import { mono_wasm_init_aot_profiler, mono_wasm_init_coverage_profiler } from "./profiler";
 import { mono_on_abort, set_exit_code } from "./run";
@@ -196,6 +197,17 @@ async function onRuntimeInitializedAsync(userOnRuntimeInitialized: () => void) {
 async function postRunAsync(userpostRun: (() => void)[]) {
     // wait for previous stage
     await afterOnRuntimeInitialized.promise;
+    try{
+        // where should we set this directory if not here? preRun has an ESM error and afterPreInit is too early
+        const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
+        if (!mono_wasm_set_icu_dir(icuVfsDir)){
+            Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
+        }
+    } catch (err) {
+        _print_error("mono_wasm_set_icu_dir failed", err);
+        abort_startup(err, true);
+        throw err;
+    }
     if (runtimeHelpers.diagnosticTracing) console.debug("MONO_WASM: postRunAsync");
     try {
         // all user Module.postRun callbacks

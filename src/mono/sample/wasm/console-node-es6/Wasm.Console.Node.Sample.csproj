@@ -18,5 +18,9 @@
     <_SampleAssembly>Wasm.Console.Node.Sample.dll</_SampleAssembly>
   </PropertyGroup>
 
+    <PropertyGroup>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
   <Target Name="RunSample" DependsOnTargets="RunSampleWithNode" />
 </Project>

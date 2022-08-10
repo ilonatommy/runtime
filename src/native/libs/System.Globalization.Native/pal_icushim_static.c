@@ -48,7 +48,7 @@ static void U_CALLCONV icu_trace_data(const void* context, int32_t fnNumber, int
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
-static int32_t load_icu_data(const void* pData);
+static int32_t set_icu_dir(const char* path);
 
 EMSCRIPTEN_KEEPALIVE const char* mono_wasm_get_icudt_name(const char* culture);
 
@@ -57,11 +57,11 @@ EMSCRIPTEN_KEEPALIVE const char* mono_wasm_get_icudt_name(const char* culture)
     return GlobalizationNative_GetICUDTName(culture);
 }
 
-EMSCRIPTEN_KEEPALIVE int32_t mono_wasm_load_icu_data(const void* pData);
+EMSCRIPTEN_KEEPALIVE int32_t mono_wasm_set_icu_dir(const char* path);
 
-EMSCRIPTEN_KEEPALIVE int32_t mono_wasm_load_icu_data(const void* pData)
+EMSCRIPTEN_KEEPALIVE int32_t mono_wasm_set_icu_dir(const char* path)
 {
-    return load_icu_data(pData);
+    return set_icu_dir(path);
 }
 
 
@@ -78,28 +78,18 @@ void mono_wasm_link_icu_shim(void)
 
 #endif
 
-static int32_t load_icu_data(const void* pData)
+
+static int32_t set_icu_dir(const char* path)
 {
-
-    UErrorCode status = 0;
-    udata_setCommonData(pData, &status);
-
-    if (U_FAILURE(status))
-    {
-        log_icu_error("udata_setCommonData", status);
-        return 0;
-    }
-    else
-    {
-
+    u_setDataDirectory("/usr/share/icu/"); // /usr/share/i18n/locales ?
+    // do we need this:?
 #if defined(ICU_TRACING)
-        // see https://github.com/unicode-org/icu/blob/master/docs/userguide/icu_data/tracing.md
-        utrace_setFunctions(0, 0, 0, icu_trace_data);
-        utrace_setLevel(UTRACE_VERBOSE);
+    // see https://github.com/unicode-org/icu/blob/master/docs/userguide/icu_data/tracing.md
+    utrace_setFunctions(0, 0, 0, icu_trace_data);
+    utrace_setLevel(UTRACE_VERBOSE);
 #endif
-        isDataSet = 1;
-        return 1;
-    }
+    isDataSet = 1;
+    return 1;
 }
 
 static const char *
@@ -177,7 +167,7 @@ GlobalizationNative_LoadICUData(const char* path)
         return 0;
     }
 
-    if (load_icu_data(icu_data) == 0)
+    if (set_icu_dir(icu_data) == 0)
     {
         log_shim_error("ICU BAD EXIT.");
         return 0;
