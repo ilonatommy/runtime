@@ -251,7 +251,6 @@ function _instantiate_asset(asset: AssetEntry, url: string, bytes: Uint8Array) {
             loaded_files.push({ url: url, file: virtualName });
         // falls through
         case "heap":
-        case "icu":
             offset = mono_wasm_load_bytes_into_heap(bytes);
             loaded_assets[virtualName] = [offset, bytes.length];
             break;

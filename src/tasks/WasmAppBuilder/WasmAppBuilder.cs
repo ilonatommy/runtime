@@ -139,13 +139,6 @@ public class WasmAppBuilder : Task
         public string? VirtualPath { get; set; }
     }
 
-    private sealed class IcuData : AssetEntry
-    {
-        public IcuData(string name) : base(name, "icu") {}
-        [JsonPropertyName("loadRemote")]
-        public bool LoadRemote { get; set; }
-    }
-
     public override bool Execute ()
     {
         try
