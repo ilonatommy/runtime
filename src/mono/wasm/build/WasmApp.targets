@@ -74,6 +74,7 @@
                                     (relative path can be set via %(TargetPath) metadata)
       - @(WasmFilesToIncludeInFileSystem) - Files to include in the vfs
       - @(WasmNativeAsset)        - Native files to be added to `NativeAssets` in the bundle.
+      - @(WasmIcuDataFileNames)        - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
 
       - @(WasmExtraConfig)        - json elements to add to `mono-config.json`
                                     Eg. <WasmExtraConfig Include="enableProfiler" Value="true" />
@@ -290,31 +291,31 @@
       <_HasDotnetJs Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js'">true</_HasDotnetJs>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' != 'true'">
-      <WasmIcuDataFileNames>icudt_full_full.dat</WasmIcuDataFileNames>
-    </PropertyGroup>
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' != 'true'">
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
+    </ItemGroup>
 
-    <PropertyGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true'">
-      <WasmIcuDataFileNames>icu_dictionary.js</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_base.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_normalization.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_currency.dat</WasmIcuDataFileNames>
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true'">
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
 
-      <WasmIcuDataFileNames>icudt_efigs_full.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_efigs_locales.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_efigs_coll.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_efigs_zones.dat</WasmIcuDataFileNames>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
 
-      <WasmIcuDataFileNames>icudt_cjk_full.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_cjk_locales.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_cjk_coll.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_cjk_zones.dat</WasmIcuDataFileNames>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
 
-      <WasmIcuDataFileNames>icudt_no_cjk_full.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_no_cjk_locales.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_no_cjk_coll.dat</WasmIcuDataFileNames>
-      <WasmIcuDataFileNames>icudt_no_cjk_zones.dat</WasmIcuDataFileNames>
-    </PropertyGroup>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+    </ItemGroup>
 
     <ItemGroup>
       <!-- If dotnet.{wasm,js} weren't added already (eg. AOT can add them), then add the default ones -->
@@ -326,8 +327,6 @@
                        Condition="'$(WasmEmitSymbolMap)' == 'true' and
                                   '$(_HasDotnetJsSymbols)' != 'true' and
                                   Exists('$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.js.symbols')" />
-
-      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFileNames)" Condition="'$(InvariantGlobalization)' != 'true'" />
       <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.timezones.blat" />
 
       <WasmFilesToIncludeInFileSystem Include="@(WasmNativeAsset)" Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'" />
@@ -355,7 +354,7 @@
       EnableSharding="$(EnableSharding)"
       SatelliteAssemblies="@(_WasmSatelliteAssemblies)"
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
-      IcuDataFileNames="$(WasmIcuDataFileNames)"
+      IcuDataFileNames="@(WasmIcuDataFileNames)"
       RemoteSources="@(WasmRemoteSources)"
       ExtraFilesToDeploy="@(WasmExtraFilesToDeploy)"
       ExtraConfig="@(WasmExtraConfig)"

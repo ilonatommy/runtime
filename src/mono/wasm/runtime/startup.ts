@@ -149,6 +149,16 @@ async function preRunAsync(userPreRun: (() => void)[]) {
     // wait for previous stages
     await afterInstantiateWasm.promise;
     await afterPreInit.promise;
+    try {
+        const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
+        if (!mono_wasm_set_icu_dir(icuVfsDir)){
+            Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
+        }
+    } catch (err) {
+        _print_error("mono_wasm_set_icu_dir failed", err);
+        abort_startup(err, true);
+        throw err;
+    }
     if (runtimeHelpers.diagnosticTracing) console.debug("MONO_WASM: preRunAsync");
     try {
         // all user Module.preRun callbacks
@@ -197,17 +207,6 @@ async function onRuntimeInitializedAsync(userOnRuntimeInitialized: () => void) {
 async function postRunAsync(userpostRun: (() => void)[]) {
     // wait for previous stage
     await afterOnRuntimeInitialized.promise;
-    try{
-        // where should we set this directory if not here? preRun has an ESM error and afterPreInit is too early
-        const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
-        if (!mono_wasm_set_icu_dir(icuVfsDir)){
-            Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
-        }
-    } catch (err) {
-        _print_error("mono_wasm_set_icu_dir failed", err);
-        abort_startup(err, true);
-        throw err;
-    }
     if (runtimeHelpers.diagnosticTracing) console.debug("MONO_WASM: postRunAsync");
     try {
         // all user Module.postRun callbacks

@@ -37,7 +37,7 @@ public class WasmAppBuilder : Task
 
     // full list of ICU data files we produce can be found here:
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
-    public string[]? IcuDataFileNames { get; set; }
+    public ITaskItem[]? IcuDataFileNames { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
@@ -221,6 +221,22 @@ public class WasmAppBuilder : Task
             if (!FileCopyChecked(item.ItemSpec, dest, "NativeAssets"))
                 return false;
         }
+
+        if (!InvariantGlobalization && IcuDataFileNames != null)
+        {
+            foreach (ITaskItem item in IcuDataFileNames)
+            {
+                string dest = Path.Combine(AppDir!, Path.GetFileName(item.ItemSpec));
+                // We normalize paths from `\` to `/` as MSBuild items could use `\`.
+                dest = dest.Replace('\\', '/');
+
+                if (!FileCopyChecked(item.ItemSpec, dest, "IcuDataFileNames"))
+                    return false;
+                // ToDo: Add filtering based on build flags and application's culture
+                config.Assets.Add(new VfsEntry (dest) { VirtualPath = "/usr/share/icu/"});
+            }
+        }
+
         var mainFileName=Path.GetFileName(MainJS);
         Log.LogMessage(MessageImportance.Low, $"MainJS path: '{MainJS}', fileName : '{mainFileName}', destination: '{Path.Combine(AppDir, mainFileName)}'");
         FileCopyChecked(MainJS!, Path.Combine(AppDir, mainFileName), string.Empty);
@@ -323,16 +339,6 @@ public class WasmAppBuilder : Task
                     VirtualPath = targetPath
                 };
                 config.Assets.Add(asset);
-            }
-        }
-
-        if (!InvariantGlobalization && IcuDataFileNames != null)
-        {
-            // ToDo: Add filtering based on build flags and application's culture
-            foreach(var icuDataFile in IcuDataFileNames)
-            {
-                // config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 }); // old approach
-                config.Assets.Add(new VfsEntry (icuDataFile) { VirtualPath = "/usr/share/icu/"});
             }
         }
 
