@@ -384,7 +384,7 @@ namespace Wasm.Build.Tests
                 if (options.ExpectSuccess)
                 {
                     string bundleDir = Path.Combine(GetBinDir(config: buildArgs.Config, targetFramework: options.TargetFramework ?? DefaultTargetFramework), "AppBundle");
-                    AssertBasicAppBundle(bundleDir, buildArgs.ProjectName, buildArgs.Config, options.MainJS ?? "test-main.js", options.HasV8Script, options.HasIcudt, options.DotnetWasmFromRuntimePack ?? !buildArgs.AOT);
+                    AssertBasicAppBundle(bundleDir, buildArgs.ProjectName, buildArgs.Config, options.MainJS ?? "test-main.js", options.HasV8Script, options.HasInvariantGlobalization, options.HasShardingEnabled, options.DotnetWasmFromRuntimePack ?? !buildArgs.AOT);
                 }
 
                 if (options.UseCache)
@@ -541,7 +541,7 @@ namespace Wasm.Build.Tests
                 throw new XunitException($"Runtime pack path doesn't match.{Environment.NewLine}Expected: {s_buildEnv.RuntimePackDir}{Environment.NewLine}Actual:   {actualPath}");
         }
 
-        protected static void AssertBasicAppBundle(string bundleDir, string projectName, string config, string mainJS, bool hasV8Script, bool hasIcudt=true, bool dotnetWasmFromRuntimePack=true)
+        protected static void AssertBasicAppBundle(string bundleDir, string projectName, string config, string mainJS, bool hasV8Script, bool hasInvariantGlobalization=true, bool hasShardingEnabled=true, bool dotnetWasmFromRuntimePack=true)
         {
             AssertFilesExist(bundleDir, new []
             {
@@ -555,7 +555,7 @@ namespace Wasm.Build.Tests
             });
 
             AssertFilesExist(bundleDir, new[] { "run-v8.sh" }, expectToExist: hasV8Script);
-            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: hasIcudt);
+            AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" }, expectToExist: !hasInvariantGlobalization && !hasShardingEnabled);
 
             string managedDir = Path.Combine(bundleDir, "managed");
             AssertFilesExist(managedDir, new[] { $"{projectName}.dll" });
@@ -935,7 +935,8 @@ namespace Wasm.Build.Tests
     (
         Action? InitProject               = null,
         bool?   DotnetWasmFromRuntimePack = null,
-        bool    HasIcudt                  = true,
+        bool    HasInvariantGlobalization = false,
+        bool    HasShardingEnabled        = false,
         bool    UseCache                  = true,
         bool    ExpectSuccess             = true,
         bool    CreateProject             = true,

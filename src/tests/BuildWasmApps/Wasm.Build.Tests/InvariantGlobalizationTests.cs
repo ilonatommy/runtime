@@ -28,7 +28,7 @@ namespace Wasm.Build.Tests
 
         // TODO: check that icu bits have been linked out
         [Theory]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
+        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.Chrome })]
         [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })]
         public void AOT_InvariantGlobalization(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
             => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id);
@@ -42,7 +42,7 @@ namespace Wasm.Build.Tests
                                             dotnetWasmFromRuntimePack: false);
 
         private void TestInvariantGlobalization(BuildArgs buildArgs, bool? invariantGlobalization,
-                                                        RunHost host, string id, string extraProperties="", bool? dotnetWasmFromRuntimePack=null)
+                                                        RunHost host, string id, string extraProperties = "", bool? dotnetWasmFromRuntimePack = null)
         {
             string projectName = $"invariant_{invariantGlobalization?.ToString() ?? "unset"}";
             if (invariantGlobalization != null)
@@ -78,7 +78,8 @@ namespace Wasm.Build.Tests
                             new BuildProjectOptions(
                                 InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), programText),
                                 DotnetWasmFromRuntimePack: dotnetWasmFromRuntimePack,
-                                HasIcudt: invariantGlobalization == null || invariantGlobalization.Value == false));
+                                HasInvariantGlobalization: invariantGlobalization != null && invariantGlobalization.Value == true,
+                                HasShardingEnabled: false)); // to be changed later
 
             if (invariantGlobalization == true)
             {
