@@ -7,8 +7,7 @@ import { CharPtrNull, DotnetModule, MonoConfig, MonoConfigError } from "./types"
 import { ENVIRONMENT_IS_NODE, ENVIRONMENT_IS_SHELL, INTERNAL, Module, runtimeHelpers } from "./imports";
 import cwraps, { init_c_exports } from "./cwraps";
 import { mono_wasm_raise_debug_event, mono_wasm_runtime_ready } from "./debug";
-import { mono_wasm_globalization_init } from "./icu";
-import {  mono_wasm_set_icu_dir } from "./icu";
+import { mono_wasm_globalization_init, mono_wasm_set_icu_dir } from "./icu";
 import { toBase64StringImpl } from "./base64";
 import { mono_wasm_init_aot_profiler, mono_wasm_init_coverage_profiler } from "./profiler";
 import { mono_on_abort, set_exit_code } from "./run";
@@ -150,17 +149,6 @@ async function preRunAsync(userPreRun: (() => void)[]) {
     await afterInstantiateWasm.promise;
     await afterPreInit.promise;
     try {
-        const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
-        if (!mono_wasm_set_icu_dir(icuVfsDir)){
-            Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
-        }
-    } catch (err) {
-        _print_error("mono_wasm_set_icu_dir failed", err);
-        abort_startup(err, true);
-        throw err;
-    }
-    if (runtimeHelpers.diagnosticTracing) console.debug("MONO_WASM: preRunAsync");
-    try {
         // all user Module.preRun callbacks
         userPreRun.map(fn => fn());
     } catch (err) {
@@ -184,6 +172,16 @@ async function onRuntimeInitializedAsync(userOnRuntimeInitialized: () => void) {
             await wait_for_all_assets();
             // load runtime
             await mono_wasm_before_user_runtime_initialized();
+        }
+        try {
+            Module.print("[ILONA]: mono_wasm_set_icu_dir in postRunAsync");
+            const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
+            if (!mono_wasm_set_icu_dir(icuVfsDir)){
+                Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
+            }
+        } catch (err) {
+            Module.printErr(`MONO_WASM: mono_wasm_set_icu_dir failed: ERROR: ${err}`);
+            throw err;
         }
         // call user code
         try {

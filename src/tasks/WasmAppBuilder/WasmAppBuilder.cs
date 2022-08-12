@@ -219,14 +219,15 @@ public class WasmAppBuilder : Task
         {
             foreach (ITaskItem item in IcuDataFileNames)
             {
-                string dest = Path.Combine(AppDir!, Path.GetFileName(item.ItemSpec));
+                var fileName = Path.GetFileName(item.ItemSpec);
+                string dest = Path.Combine(AppDir!, fileName);
                 // We normalize paths from `\` to `/` as MSBuild items could use `\`.
                 dest = dest.Replace('\\', '/');
 
                 if (!FileCopyChecked(item.ItemSpec, dest, "IcuDataFileNames"))
                     return false;
                 // ToDo: Add filtering based on build flags and application's culture
-                config.Assets.Add(new VfsEntry (dest) { VirtualPath = "/usr/share/icu/"});
+                config.Assets.Add(new VfsEntry (fileName) { VirtualPath = $"/usr/share/icu/{fileName}"});
             }
         }
 
@@ -335,7 +336,7 @@ public class WasmAppBuilder : Task
             }
         }
 
-        config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/"});
+        config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/dotnet.timezones.blat"});
         config.Assets.Add(new WasmEntry ("dotnet.wasm") );
         config.Assets.Add(new CryptoWorkerEntry ("dotnet-crypto-worker.js") );
 
