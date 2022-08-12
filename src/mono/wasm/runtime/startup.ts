@@ -7,7 +7,7 @@ import { CharPtrNull, DotnetModule, MonoConfig, MonoConfigError } from "./types"
 import { ENVIRONMENT_IS_NODE, ENVIRONMENT_IS_SHELL, INTERNAL, Module, runtimeHelpers } from "./imports";
 import cwraps, { init_c_exports } from "./cwraps";
 import { mono_wasm_raise_debug_event, mono_wasm_runtime_ready } from "./debug";
-import { mono_wasm_globalization_init, mono_wasm_set_icu_dir } from "./icu";
+import { mono_wasm_globalization_init } from "./icu";
 import { toBase64StringImpl } from "./base64";
 import { mono_wasm_init_aot_profiler, mono_wasm_init_coverage_profiler } from "./profiler";
 import { mono_on_abort, set_exit_code } from "./run";
