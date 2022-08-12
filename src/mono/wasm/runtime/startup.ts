@@ -173,16 +173,6 @@ async function onRuntimeInitializedAsync(userOnRuntimeInitialized: () => void) {
             // load runtime
             await mono_wasm_before_user_runtime_initialized();
         }
-        try {
-            Module.print("[ILONA]: mono_wasm_set_icu_dir in postRunAsync");
-            const icuVfsDir = "/usr/share/icu/"; // change to icu or i18n folder later
-            if (!mono_wasm_set_icu_dir(icuVfsDir)){
-                Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
-            }
-        } catch (err) {
-            Module.printErr(`MONO_WASM: mono_wasm_set_icu_dir failed: ERROR: ${err}`);
-            throw err;
-        }
         // call user code
         try {
             userOnRuntimeInitialized();

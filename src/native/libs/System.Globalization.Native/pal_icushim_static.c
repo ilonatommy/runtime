@@ -82,7 +82,7 @@ void mono_wasm_link_icu_shim(void)
 
 static int32_t set_icu_dir(const char* path)
 {
-    u_setDataDirectory("/usr/share/icu/"); // /usr/share/i18n/locales ?
+    u_setDataDirectory("/usr/share/icu/");
     UErrorCode status = 0;
     // u_init() is useful as a test for configuration or installation problems.
     // However, successful u_init() does not guarantee that all ICU data is accessible.

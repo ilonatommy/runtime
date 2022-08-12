@@ -63,5 +63,14 @@ export function mono_wasm_globalization_init(): void {
 
     // Set globalization mode to PredefinedCulturesOnly
     cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", "1");
+    try {
+        const icuVfsDir = "/usr/share/icu/";
+        if (!mono_wasm_set_icu_dir(icuVfsDir)){
+            Module.printErr(`MONO_WASM: Error setting ICU dir in VFS as ${icuVfsDir}`);
+        }
+    } catch (err) {
+        Module.printErr(`MONO_WASM: mono_wasm_set_icu_dir failed: ERROR: ${err}`);
+        throw err;
+    }
 }
 
