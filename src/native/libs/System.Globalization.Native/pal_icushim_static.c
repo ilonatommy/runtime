@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include "pal_icushim_internal.h"
 #include "pal_icushim.h"
-#include <unicode/putil.h>
+#include "unicode/putil.h"
+#include "unicode/uclean.h"
 #include <unicode/uversion.h>
 #include <unicode/localpointer.h>
 #include <unicode/utrace.h>
@@ -82,14 +83,26 @@ void mono_wasm_link_icu_shim(void)
 static int32_t set_icu_dir(const char* path)
 {
     u_setDataDirectory("/usr/share/icu/"); // /usr/share/i18n/locales ?
-    // do we need this:?
+    UErrorCode status = 0;
+    // u_init() is useful as a test for configuration or installation problems.
+    // However, successful u_init() does not guarantee that all ICU data is accessible.
+    u_init(&status);
+    if (U_FAILURE(status))
+    {
+        log_icu_error("u_setDataDirectory", status);
+        return 0;
+    }
+     else
+    {
+
 #if defined(ICU_TRACING)
-    // see https://github.com/unicode-org/icu/blob/master/docs/userguide/icu_data/tracing.md
-    utrace_setFunctions(0, 0, 0, icu_trace_data);
-    utrace_setLevel(UTRACE_VERBOSE);
+        // see https://github.com/unicode-org/icu/blob/master/docs/userguide/icu_data/tracing.md
+        utrace_setFunctions(0, 0, 0, icu_trace_data);
+        utrace_setLevel(UTRACE_VERBOSE);
 #endif
-    isDataSet = 1;
-    return 1;
+        isDataSet = 1;
+        return 1;
+    }
 }
 
 static const char *
