@@ -115,6 +115,7 @@ export type AssetBehaviours =
     | "pdb" // load asset as a managed debugging information
     | "heap" // store asset into the native heap
     | "vfs" // load asset into the virtual filesystem (for fopen, File.Open, etc)
+    | "icu" // load ICU asset into the virtual filesystem
     | "dotnetwasm" // the binary of the dotnet runtime
     | "js-module-crypto" // the javascript module for subtle crypto
     | "js-module-threads" // the javascript module for threads

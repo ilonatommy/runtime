@@ -3,7 +3,7 @@
 //!
 //! This is generated file, see src/mono/wasm/runtime/rollup.config.js
 
-//! This is not considered public API with backward compatibility guarantees.
+//! This is not considered public API with backward compatibility guarantees. 
 
 declare interface NativePointer {
     __brandNativePointer: "NativePointer";
@@ -96,8 +96,8 @@ interface AssetEntry extends ResourceRequest {
     buffer?: ArrayBuffer;
     pending?: LoadingResource;
 }
-declare type AssetBehaviours = "resource" | "assembly" | "pdb" | "heap" | "vfs" | "dotnetwasm" | "js-module-crypto" | "js-module-threads";
-declare type GlobalizationMode = "icu" | // load ICU globalization data from any runtime assets with behavior "vfs".
+declare type AssetBehaviours = "resource" | "assembly" | "pdb" | "heap" | "vfs" | "icu" | "dotnetwasm" | "js-module-crypto" | "js-module-threads";
+declare type GlobalizationMode = "icu" | // load ICU globalization data from any runtime assets with behavior "icu".
 "invariant" | //  operate in invariant globalization mode.
 "auto";
 declare type AOTProfilerOptions = {

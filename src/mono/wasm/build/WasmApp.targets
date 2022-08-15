@@ -296,7 +296,6 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true'">
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icu_dictionary.js"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
@@ -315,6 +314,22 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == 'false'">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;icu&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'true'" Value="&quot;invariant&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'false' or '$(EnableSharding)' == ''" Value="&quot;false&quot;"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == 'true'">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;invariant&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == ''">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;auto&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
     </ItemGroup>
 
     <ItemGroup>

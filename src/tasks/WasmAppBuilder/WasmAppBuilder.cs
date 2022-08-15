@@ -139,6 +139,13 @@ public class WasmAppBuilder : Task
         public string? VirtualPath { get; set; }
     }
 
+    private sealed class IcuEntry : AssetEntry
+    {
+        public IcuEntry(string name) : base(name, "icu") {}
+        [JsonPropertyName("virtualPath")]
+        public string? VirtualPath { get; set; }
+    }
+
     public override bool Execute ()
     {
         try
@@ -227,7 +234,7 @@ public class WasmAppBuilder : Task
                 if (!FileCopyChecked(item.ItemSpec, dest, "IcuDataFileNames"))
                     return false;
                 // ToDo: Add filtering based on build flags and application's culture
-                config.Assets.Add(new VfsEntry (fileName) { VirtualPath = $"/usr/share/icu/{fileName}"});
+                config.Assets.Add(new IcuEntry (fileName) { VirtualPath = $"/usr/share/icu/{fileName}"});
             }
         }
 

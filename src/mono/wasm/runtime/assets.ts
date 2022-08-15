@@ -38,9 +38,18 @@ export async function mono_download_assets(): Promise<void> {
     runtimeHelpers.maxParallelDownloads = runtimeHelpers.config.maxParallelDownloads || runtimeHelpers.maxParallelDownloads;
     try {
         const download_promises: Promise<AssetEntry | undefined>[] = [];
+
+        // const config = runtimeHelpers.config;
+        const browser_culture_code = Intl.DateTimeFormat().resolvedOptions().locale.slice(0, 2);
+        // const filter_icu = config.enableSharding && config.globalizationMode !== "invariant" && browser_culture_code.length == 2;
+        Module.print(`MONO_WASM: browser_culture_code = ${browser_culture_code}`);
+
         // start fetching and instantiating all assets in parallel
         for (const asset of runtimeHelpers.config.assets!) {
             if (!asset.pending && !skipDownloadsAssetTypes[asset.behavior]) {
+                // if (filter_icu && asset.behavior == "icu"){
+                //     // filter if sharding enabled
+                // }
                 download_promises.push(start_asset_download(asset));
             }
         }
@@ -254,7 +263,7 @@ function _instantiate_asset(asset: AssetEntry, url: string, bytes: Uint8Array) {
             offset = mono_wasm_load_bytes_into_heap(bytes);
             loaded_assets[virtualName] = [offset, bytes.length];
             break;
-
+        case "icu":
         case "vfs": {
             // FIXME
             const lastSlash = virtualName.lastIndexOf("/");
