@@ -31,6 +31,7 @@
       - $(AOTProfilePath)    - profile data file to be used for profile-guided optimization
       - $(InvariantGlobalization)       - Whenever to disable ICU. Defaults to false.
       - $(EnableSharding)       - Whenever to shard ICU into smaller chunks. Defaults to false.
+      - $(ShardByFeatures)      - Only when EnableSharding=true. Shards ICU files into locales/zones/currency etc. Defaults to false.
 
       - $(WasmResolveAssembliesBeforeBuild) - Resolve the assembly dependencies. Defaults to false
       - $(WasmAssemblySearchPaths)          - used for resolving assembly dependencies
@@ -74,7 +75,7 @@
                                     (relative path can be set via %(TargetPath) metadata)
       - @(WasmFilesToIncludeInFileSystem) - Files to include in the vfs
       - @(WasmNativeAsset)        - Native files to be added to `NativeAssets` in the bundle.
-      - @(WasmIcuDataFileNames)        - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
+      - @(WasmIcuDataFileNames)   - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
 
       - @(WasmExtraConfig)        - json elements to add to `mono-config.json`
                                     Eg. <WasmExtraConfig Include="enableProfiler" Value="true" />
@@ -291,45 +292,44 @@
       <_HasDotnetJs Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js'">true</_HasDotnetJs>
     </PropertyGroup>
 
-     <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' != 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true'">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
-    </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true'">
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' != 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' != 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' != 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
 
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
 
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
 
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
+
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == 'false'">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;icu&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'true'" Value="&quot;invariant&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'false' or '$(EnableSharding)' == ''" Value="&quot;false&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'true'" Value="true"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'false' or '$(EnableSharding)' == ''" Value="false"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == 'true'">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;invariant&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="false"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == ''">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;auto&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="false"/>
     </ItemGroup>
 
     <ItemGroup>
