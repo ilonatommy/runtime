@@ -30,6 +30,7 @@
       - $(AOTMode)           - Defaults to `LLVMOnlyInterp`
       - $(AOTProfilePath)    - profile data file to be used for profile-guided optimization
       - $(InvariantGlobalization)       - Whenever to disable ICU. Defaults to false.
+      - $(EnableSharding)       - Whenever to shard ICU into smaller chunks. Defaults to false.
 
       - $(WasmResolveAssembliesBeforeBuild) - Resolve the assembly dependencies. Defaults to false
       - $(WasmAssemblySearchPaths)          - used for resolving assembly dependencies
@@ -73,6 +74,7 @@
                                     (relative path can be set via %(TargetPath) metadata)
       - @(WasmFilesToIncludeInFileSystem) - Files to include in the vfs
       - @(WasmNativeAsset)        - Native files to be added to `NativeAssets` in the bundle.
+      - @(WasmIcuDataFileNames)        - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
 
       - @(WasmExtraConfig)        - json elements to add to `mono-config.json`
                                     Eg. <WasmExtraConfig Include="enableProfiler" Value="true" />
@@ -282,14 +284,53 @@
 
   <Target Name="_GetWasmGenerateAppBundleDependencies">
     <PropertyGroup>
-      <WasmIcuDataFileName Condition="'$(InvariantGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
-
       <_HasDotnetWasm Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.wasm'">true</_HasDotnetWasm>
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
       <_HasDotnetJsCryptoWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet-crypto-worker.js'">true</_HasDotnetJsCryptoWorker>
       <_HasDotnetJsSymbols Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'">true</_HasDotnetJsSymbols>
       <_HasDotnetJs Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js'">true</_HasDotnetJs>
     </PropertyGroup>
+
+     <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' != 'true'">
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true'">
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
+
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
+
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
+
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == 'false'">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;icu&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'true'" Value="&quot;invariant&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'false' or '$(EnableSharding)' == ''" Value="&quot;false&quot;"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == 'true'">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;invariant&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(InvariantGlobalization)' == ''">
+      <WasmExtraConfig Include="globalizationMode" Value="&quot;auto&quot;"/>
+      <WasmExtraConfig Include="enableSharding" Value="&quot;false&quot;"/>
+    </ItemGroup>
 
     <ItemGroup>
       <!-- If dotnet.{wasm,js} weren't added already (eg. AOT can add them), then add the default ones -->
@@ -301,8 +342,6 @@
                        Condition="'$(WasmEmitSymbolMap)' == 'true' and
                                   '$(_HasDotnetJsSymbols)' != 'true' and
                                   Exists('$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.js.symbols')" />
-
-      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFileName)" Condition="'$(InvariantGlobalization)' != 'true'" />
       <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.timezones.blat" />
 
       <WasmFilesToIncludeInFileSystem Include="@(WasmNativeAsset)" Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'" />
@@ -310,7 +349,7 @@
   </Target>
 
   <Target Name="_WasmGenerateAppBundle"
-          Inputs="@(_WasmAssembliesInternal);$(WasmMainJSPath);$(WasmIcuDataFileName);@(WasmNativeAsset)"
+          Inputs="@(_WasmAssembliesInternal);$(WasmMainJSPath);$(WasmIcuDataFileNames);@(WasmNativeAsset)"
           Outputs="$(WasmAppDir)\.stamp"
           Condition="'$(WasmGenerateAppBundle)' == 'true'"
           DependsOnTargets="_WasmGenerateRuntimeConfig;_GetWasmGenerateAppBundleDependencies">
@@ -333,9 +372,10 @@
       RuntimeArgsForHost="@(WasmMonoRuntimeArgs)"
       DefaultHostConfig="$(DefaultWasmHostConfig)"
       InvariantGlobalization="$(InvariantGlobalization)"
+      EnableSharding="$(EnableSharding)"
       SatelliteAssemblies="@(_WasmSatelliteAssemblies)"
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
-      IcuDataFileName="$(WasmIcuDataFileName)"
+      IcuDataFileNames="@(WasmIcuDataFileNames)"
       RemoteSources="@(WasmRemoteSources)"
       ExtraFilesToDeploy="@(WasmExtraFilesToDeploy)"
       ExtraConfig="@(WasmExtraConfig)"
