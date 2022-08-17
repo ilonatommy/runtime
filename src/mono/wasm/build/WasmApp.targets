@@ -373,6 +373,7 @@
       DefaultHostConfig="$(DefaultWasmHostConfig)"
       InvariantGlobalization="$(InvariantGlobalization)"
       EnableSharding="$(EnableSharding)"
+      ShardByFeatures="$(ShardByFeatures)"
       SatelliteAssemblies="@(_WasmSatelliteAssemblies)"
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
       IcuDataFileNames="@(WasmIcuDataFileNames)"

@@ -45,6 +45,7 @@ public class WasmAppBuilder : Task
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
     public bool EnableSharding { get; set; }
+    public bool ShardByFeatures { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
@@ -444,8 +445,7 @@ public class WasmAppBuilder : Task
                 shardCode = "efigs";
                 break;
             }
-        bool shardByFeatures = true;
-        if (!shardByFeatures)
+        if (!ShardByFeatures)
             return files.Where(file => Path.GetFileName(file.ItemSpec) == $"icudt_{shardCode}_full.dat");
         return files.Where(file =>
             Path.GetFileName(file.ItemSpec) == "icudt_base.dat"
