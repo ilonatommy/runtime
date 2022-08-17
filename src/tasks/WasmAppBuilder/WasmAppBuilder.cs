@@ -232,16 +232,9 @@ public class WasmAppBuilder : Task
 
         if (!InvariantGlobalization && IcuDataFileNames != null)
         {
-            var icuFilesFilteredByCulture = FilterIcuFilesByCulture(IcuDataFileNames);
-            foreach (ITaskItem item in icuFilesFilteredByCulture)
+            foreach (ITaskItem item in IcuDataFileNames)
             {
                 var fileName = Path.GetFileName(item.ItemSpec);
-                string dest = Path.Combine(AppDir!, fileName);
-                // We normalize paths from `\` to `/` as MSBuild items could use `\`.
-                dest = dest.Replace('\\', '/');
-
-                if (!FileCopyChecked(item.ItemSpec, dest, "IcuDataFileNames"))
-                    return false;
                 config.Assets.Add(new IcuData (fileName) { LoadRemote = RemoteSources?.Any(remoteItem => remoteItem.ItemSpec == item.ItemSpec) == true });
             }
         }

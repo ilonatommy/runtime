@@ -9,7 +9,7 @@ import { MONO } from "./net6-legacy/imports";
 import { createPromiseController, PromiseAndController } from "./promise-controller";
 import { delay } from "./promise-utils";
 import { abort_startup, beforeOnRuntimeInitialized } from "./startup";
-import { AssetBehaviours, AssetEntry, AssetEntryInternal, LoadingResource, mono_assert, ResourceRequest } from "./types";
+import { AssetBehaviours, AssetEntry, AssetEntryInternal, LoadingResource, MonoConfigInternal, mono_assert, ResourceRequest } from "./types";
 import { InstantiateWasmSuccessCallback, VoidPtr } from "./types/emscripten";
 
 const allAssetsInMemory = createPromiseController<void>();
@@ -64,6 +64,7 @@ export async function mono_download_assets(): Promise<void> {
     if (runtimeHelpers.diagnosticTracing) console.debug("MONO_WASM: mono_download_assets");
     runtimeHelpers.maxParallelDownloads = runtimeHelpers.config.maxParallelDownloads || runtimeHelpers.maxParallelDownloads;
     try {
+        const icu_files_filtered = filter_icu_files_by_culture(runtimeHelpers.config);
         const promises_of_assets_with_buffer: Promise<AssetWithBuffer>[] = [];
         // start fetching and instantiating all assets in parallel
         for (const a of runtimeHelpers.config.assets!) {
@@ -72,6 +73,9 @@ export async function mono_download_assets(): Promise<void> {
                 expected_instantiated_assets_count++;
             }
             if (!skipDownloadsByAssetTypes[asset.behavior]) {
+                if (asset.behavior === "icu" && !icu_files_filtered.includes(asset.name)){
+                    continue;
+                }
                 const headersOnly = skipBufferByAssetTypes[asset.behavior];// `response.arrayBuffer()` can't be called twice. Some usecases are calling it on response in the instantiation.
                 expected_downloaded_assets_count++;
                 if (asset.pendingDownload) {
@@ -145,6 +149,45 @@ export async function mono_download_assets(): Promise<void> {
         Module.printErr("MONO_WASM: Error in mono_download_assets: " + err);
         throw err;
     }
+}
+
+function filter_icu_files_by_culture(config: MonoConfigInternal): string[] {
+    if (config.globalizationMode !== "invariant")
+        return [];
+    if (!config.enableSharding){
+        return ["icudt_full_full.dat"];
+    }
+    // what about checking the culture also with uloc_getDefault()?
+    const browser_culture = Intl.DateTimeFormat().resolvedOptions().locale;
+    if (!browser_culture || browser_culture.length < 2)
+        return ["icudt_full_full.dat"];
+    let shard_code = "no_cjk";
+    const culture_code = browser_culture.substring(0, 2);
+    switch (culture_code) {
+        case "ja":
+        case "ko":
+        case "zh":
+            shard_code = "cjk";
+            break;
+        case "en":
+        case "fr":
+        case "es":
+        case "it":
+        case "de":
+            shard_code = "efigs";
+            break;
+    }
+    if (!config.shardByFeatures){
+        return [`icudt_${shard_code}_full.dat`];
+    }
+    // ToDo: add variable for choosing which features should be loaded
+    return [
+        "icudt_base.dat",
+        "icudt_normalization.dat",
+        "icudt_currency.dat",
+        `icudt_${shard_code}_locales.dat`,
+        `icudt_${shard_code}_coll.dat`,
+        `icudt_${shard_code}_zones.dat`];
 }
 
 // FIXME: Connection reset is probably the only good one for which we should retry

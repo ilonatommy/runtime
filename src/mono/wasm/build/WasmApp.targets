@@ -318,18 +318,20 @@
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == 'false'">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;icu&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'true'" Value="true"/>
-      <WasmExtraConfig Include="enableSharding" Condition="'$(EnableSharding)' == 'false' or '$(EnableSharding)' == ''" Value="false"/>
+      <WasmExtraConfig Include="enableSharding" Value="$(EnableSharding)"/>
+      <WasmExtraConfig Include="shardByFeatures" Value="$(ShardByFeatures)"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == 'true'">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;invariant&quot;"/>
       <WasmExtraConfig Include="enableSharding" Value="false"/>
+      <WasmExtraConfig Include="shardByFeatures" Value="false"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' == ''">
       <WasmExtraConfig Include="globalizationMode" Value="&quot;auto&quot;"/>
-      <WasmExtraConfig Include="enableSharding" Value="false"/>
+      <WasmExtraConfig Include="enableSharding" Value="$(EnableSharding)"/>
+      <WasmExtraConfig Include="shardByFeatures" Value="$(ShardByFeatures)"/>
     </ItemGroup>
 
     <ItemGroup>

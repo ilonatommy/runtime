@@ -93,6 +93,14 @@ export type MonoConfig = {
      */
     globalizationMode?: GlobalizationMode,
     /**
+     * Switches ICU sharding by culture group (efigs/cjk/no_cjk) on and off.
+     */
+    enableSharding?: boolean,
+    /**
+     * Switches ICU sharding by feature (zones/coll/locales) on and off.
+     */
+    shardByFeatures?: boolean,
+    /**
      * debugLevel > 0 enables debugging and sets the debug log level to debugLevel
      * debugLevel == 0 disables debugging and enables interpreter optimizations
      * debugLevel < 0 enabled debugging and disables debug logging.
@@ -165,13 +173,13 @@ export interface AssetEntry extends ResourceRequest {
     /**
      * If true, an attempt will be made to load the asset from each location in MonoConfig.remoteSources.
      */
-    loadRemote?: boolean, // 
+    loadRemote?: boolean, //
     /**
      * If true, the runtime startup would not fail if the asset download was not successful.
      */
     isOptional?: boolean
     /**
-     * If provided, runtime doesn't have to fetch the data. 
+     * If provided, runtime doesn't have to fetch the data.
      * Runtime would set the buffer to null after instantiation to free the memory.
      */
     buffer?: ArrayBuffer
