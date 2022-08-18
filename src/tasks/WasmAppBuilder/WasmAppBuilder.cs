@@ -235,6 +235,14 @@ public class WasmAppBuilder : Task
             foreach (ITaskItem item in IcuDataFileNames)
             {
                 var fileName = Path.GetFileName(item.ItemSpec);
+                // ===== Can we limit copying to AppBundle? ======
+                string dest = Path.Combine(AppDir!, fileName);
+                // We normalize paths from `\` to `/` as MSBuild items could use `\`.
+                dest = dest.Replace('\\', '/');
+
+                if (!FileCopyChecked(item.ItemSpec, dest, "IcuDataFileNames"))
+                    return false;
+                // ===============================================
                 config.Assets.Add(new IcuData (fileName) { LoadRemote = RemoteSources?.Any(remoteItem => remoteItem.ItemSpec == item.ItemSpec) == true });
             }
         }

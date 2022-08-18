@@ -74,10 +74,11 @@ export async function mono_download_assets(): Promise<void> {
             }
             if (!skipDownloadsByAssetTypes[asset.behavior]) {
                 if (asset.behavior === "icu" && !icu_files_filtered.includes(asset.name)){
+                    expected_instantiated_assets_count--;
                     continue;
                 }
                 const headersOnly = skipBufferByAssetTypes[asset.behavior];// `response.arrayBuffer()` can't be called twice. Some usecases are calling it on response in the instantiation.
-                expected_downloaded_assets_count++;
+                expected_downloaded_assets_count++; /// this is not equal actual_downloaded_assets_count, check it
                 if (asset.pendingDownload) {
                     asset.pendingDownloadInternal = asset.pendingDownload;
                     const waitForExternalData: () => Promise<AssetWithBuffer> = async () => {
@@ -152,7 +153,7 @@ export async function mono_download_assets(): Promise<void> {
 }
 
 function filter_icu_files_by_culture(config: MonoConfigInternal): string[] {
-    if (config.globalizationMode !== "invariant")
+    if (config.globalizationMode === "invariant")
         return [];
     if (!config.enableSharding){
         return ["icudt_full_full.dat"];
@@ -177,7 +178,7 @@ function filter_icu_files_by_culture(config: MonoConfigInternal): string[] {
             shard_code = "efigs";
             break;
     }
-    if (!config.shardByFeatures){
+    if (!config.shardByFeatures) {
         return [`icudt_${shard_code}_full.dat`];
     }
     // ToDo: add variable for choosing which features should be loaded
