@@ -420,43 +420,6 @@ public class WasmAppBuilder : Task
         UpdateRuntimeConfigJson();
         return !Log.HasLoggedErrors;
     }
-
-    private IEnumerable<ITaskItem> FilterIcuFilesByCulture(ITaskItem[] files)
-    {
-        if (!EnableSharding)
-            return files;
-        // would be better to ask ICU: uloc_getDefault() in js but how to do it so early?
-        string culture = System.Threading.Thread.CurrentThread.CurrentUICulture.ToString();
-        if (string.IsNullOrEmpty(culture) || culture.Length < 2)
-            return files.Where(file => Path.GetFileName(file.ItemSpec) == $"icudt_full_full.dat");
-
-        string shardCode = "no_cjk";
-        string cultureCode = culture.Substring(0, 2);
-        switch (cultureCode) {
-            case "ja":
-            case "ko":
-            case "zh":
-                shardCode = "cjk";
-                break;
-            case "en":
-            case "fr":
-            case "es":
-            case "it":
-            case "de":
-                shardCode = "efigs";
-                break;
-            }
-        if (!ShardByFeatures)
-            return files.Where(file => Path.GetFileName(file.ItemSpec) == $"icudt_{shardCode}_full.dat");
-        return files.Where(file =>
-            Path.GetFileName(file.ItemSpec) == "icudt_base.dat"
-            || Path.GetFileName(file.ItemSpec) == "icudt_normalization.dat"
-            || Path.GetFileName(file.ItemSpec) == "icudt_currency.dat"
-            || Path.GetFileName(file.ItemSpec) == $"icudt_{shardCode}_locales.dat"
-            || Path.GetFileName(file.ItemSpec) == $"icudt_{shardCode}_coll.dat"
-            || Path.GetFileName(file.ItemSpec) == $"icudt_{shardCode}_zones.dat");
-    }
-
     private void UpdateRuntimeConfigJson()
     {
         string[] matchingAssemblies = Assemblies.Where(asm => Path.GetFileName(asm) == MainAssemblyName).ToArray();
