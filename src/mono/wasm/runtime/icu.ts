@@ -5,15 +5,13 @@ import cwraps from "./cwraps";
 import { Module, runtimeHelpers } from "./imports";
 import { VoidPtr } from "./types/emscripten";
 
-let num_icu_assets_loaded_successfully = 0;
+let icu_assets_loaded_successfully = false;
 
 // @offset must be the address of an ICU data archive in the native heap.
 // returns true on success.
 export function mono_wasm_load_icu_data(offset: VoidPtr): boolean {
-    const ok = (cwraps.mono_wasm_load_icu_data(offset)) === 1;
-    if (ok)
-        num_icu_assets_loaded_successfully++;
-    return ok;
+    icu_assets_loaded_successfully = (cwraps.mono_wasm_load_icu_data(offset)) === 1;
+    return icu_assets_loaded_successfully;
 }
 
 // Get icudt.dat exact filename that matches given culture, examples:
@@ -37,7 +35,7 @@ export function mono_wasm_globalization_init(): void {
         invariantMode = true;
 
     if (!invariantMode) {
-        if (num_icu_assets_loaded_successfully > 0) {
+        if (icu_assets_loaded_successfully) {
             if (runtimeHelpers.diagnosticTracing) {
                 console.debug("MONO_WASM: ICU data archive(s) loaded, disabling invariant mode");
             }
