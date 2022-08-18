@@ -254,7 +254,6 @@
     <PlatformManifestFileEntry Include="libicudata.a" IsNative="true" />
     <PlatformManifestFileEntry Include="libicui18n.a" IsNative="true" />
     <PlatformManifestFileEntry Include="libicuuc.a" IsNative="true" />
-    <PlatformManifestFileEntry Include="icu_dictionary.js" IsNative="true" />
     <PlatformManifestFileEntry Include="icudt_base.dat" IsNative="true" />
     <PlatformManifestFileEntry Include="icudt_normalization.dat" IsNative="true" />
     <PlatformManifestFileEntry Include="icudt_currency.dat" IsNative="true" />
