@@ -37,7 +37,8 @@ public class WasmAppBuilder : Task
 
     // full list of ICU data files we produce can be found here:
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
-    public string? IcuDataFileName { get; set; }
+    public ITaskItem[]? IcuDataFileNames { get; set; }
+    public ITaskItem[]? IcuCulture { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
@@ -166,8 +167,8 @@ public class WasmAppBuilder : Task
     {
         if (!File.Exists(MainJS))
             throw new LogAsErrorException($"File MainJS='{MainJS}' doesn't exist.");
-        if (!InvariantGlobalization && string.IsNullOrEmpty(IcuDataFileName))
-            throw new LogAsErrorException("IcuDataFileName property shouldn't be empty if InvariantGlobalization=false");
+        if (!InvariantGlobalization && (IcuDataFileNames == null || IcuDataFileNames.Length == 0))
+            throw new LogAsErrorException("IcuDataFileNames list shouldn't be empty if InvariantGlobalization=false");
 
         if (Assemblies.Length == 0)
         {
@@ -315,8 +316,36 @@ public class WasmAppBuilder : Task
             }
         }
 
-        if (!InvariantGlobalization)
-            config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 });
+        if (IcuDataFileNames != null)
+        {
+
+            if (IcuDataFileNames.Length == 1)
+            {
+                // loading full ICU data, no sharding:
+                string fullIcuDataPath = IcuDataFileNames[0].ItemSpec;
+                string fileName = Path.GetFileName(fullIcuDataPath);
+                if (!TryCopyIcuFile(fullIcuDataPath, fileName))
+                    return false;
+                config.Assets.Add(new IcuData(fileName) { LoadRemote = RemoteSources?.Length > 0 });
+            }
+            else
+            {
+                // sharding by culture:
+                if (IcuCulture == null || IcuCulture.Length == 0)
+                    throw new LogAsErrorException("WasmIcuCulture list shouldn't be empty if EnableSharding=true");
+                List<string> filteredIcuFiles = FilterIcuFilesByCultures();
+                var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles.Any(name => name == Path.GetFileName(i.ItemSpec)));
+
+                foreach (var item in icuFilesToLoad)
+                {
+                    string fileName = Path.GetFileName(item.ItemSpec);
+                    if (!TryCopyIcuFile(item.ItemSpec, fileName))
+                        return false;
+                    config.Assets.Add(new IcuData(fileName) { LoadRemote = RemoteSources?.Any(remoteItem => remoteItem.ItemSpec == item.ItemSpec) == true });
+                }
+            }
+        }
+
 
         config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/"});
         config.Assets.Add(new WasmEntry ("dotnet.wasm") );
@@ -386,6 +415,69 @@ public class WasmAppBuilder : Task
 
         UpdateRuntimeConfigJson();
         return !Log.HasLoggedErrors;
+    }
+
+    private List<string> FilterIcuFilesByCultures()
+    {
+        if (IcuCulture == null)
+            throw new LogAsErrorException("WasmIcuCulture list shouldn't be null.");
+        if (IcuCulture.Length == 1 && IcuCulture[0].ItemSpec == "en")
+            return new List<string> () { "icudt_efigs_full.dat" };
+
+        bool efigs = false;
+        bool cjk = false;
+        bool noCjk = false;
+        foreach (var culture in IcuCulture)
+        {
+            // all: cjk, efigs and no_cjk have "en" inside.
+            // no_cjk has all cultures but "ko", "ja", "zn"
+            switch (culture.ItemSpec) {
+                case "ko":
+                case "ja":
+                case "zn":
+                {
+                    cjk = true;
+                    break;
+                }
+                case "fr":
+                case "es":
+                case "it":
+                case "de":
+                {
+                    efigs = true;
+                    break;
+                }
+                default:
+                {
+                    if (culture.ItemSpec != "en")
+                        noCjk = true;
+                    break;
+                }
+            }
+        }
+        if (noCjk){
+            if (cjk)
+                return new List<string> () { "icudt_full_full.dat" };
+            if (efigs)
+                return new List<string> () { "icudt_efigs_full.dat" };
+            return new List<string> () { "icudt_no_cjk_full.dat" };
+        }
+        List<string> shardNames = new List<string>();
+        if (cjk)
+            shardNames.Add("icudt_cjk_full.dat");
+        if (efigs)
+            shardNames.Add("icudt_efigs_full.dat");
+        return shardNames;
+    }
+
+    private bool TryCopyIcuFile(string sourcePath, string fileName)
+    {
+        string dest = Path.Combine(AppDir!, fileName);
+        // We normalize paths from `\` to `/` as MSBuild items could use `\`.
+        // dest = dest.Replace('\\', '/');
+        if (!FileCopyChecked(sourcePath, dest, "IcuDataFileNames"))
+            return false;
+        return true;
     }
 
     private void UpdateRuntimeConfigJson()
