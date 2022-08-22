@@ -318,7 +318,6 @@ public class WasmAppBuilder : Task
 
         if (IcuDataFileNames != null)
         {
-
             if (IcuDataFileNames.Length == 1)
             {
                 // loading full ICU data, no sharding:

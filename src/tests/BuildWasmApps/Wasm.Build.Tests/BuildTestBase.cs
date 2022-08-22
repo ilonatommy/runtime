@@ -386,7 +386,7 @@ namespace Wasm.Build.Tests
                 if (options.ExpectSuccess && options.AssertAppBundle)
                 {
                     string bundleDir = Path.Combine(GetBinDir(config: buildArgs.Config, targetFramework: options.TargetFramework ?? DefaultTargetFramework), "AppBundle");
-                    AssertBasicAppBundle(bundleDir, buildArgs.ProjectName, buildArgs.Config, options.MainJS ?? "test-main.js", options.HasV8Script, options.HasIcudt, options.DotnetWasmFromRuntimePack ?? !buildArgs.AOT);
+                    AssertBasicAppBundle(bundleDir, buildArgs.ProjectName, buildArgs.Config, options.MainJS ?? "test-main.js", options.HasV8Script, options.IcuCulture ?? new string [0], options.HasInvariantGlobalization, options.HasIcuSharding, options.DotnetWasmFromRuntimePack ?? !buildArgs.AOT);
                 }
 
                 if (options.UseCache)
@@ -543,7 +543,7 @@ namespace Wasm.Build.Tests
                 throw new XunitException($"Runtime pack path doesn't match.{Environment.NewLine}Expected: {s_buildEnv.RuntimePackDir}{Environment.NewLine}Actual:   {actualPath}");
         }
 
-        protected static void AssertBasicAppBundle(string bundleDir, string projectName, string config, string mainJS, bool hasV8Script, bool hasIcudt=true, bool dotnetWasmFromRuntimePack=true)
+        protected static void AssertBasicAppBundle(string bundleDir, string projectName, string config, string mainJS, bool hasV8Script, string[] icuCultures, bool hasInvariantGlobalization=false, bool hasIcuSharding=false, bool dotnetWasmFromRuntimePack=true)
         {
             AssertFilesExist(bundleDir, new []
             {
@@ -557,7 +557,7 @@ namespace Wasm.Build.Tests
             });
 
             AssertFilesExist(bundleDir, new[] { "run-v8.sh" }, expectToExist: hasV8Script);
-            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: hasIcudt);
+            AssertIcuFiles(bundleDir, icuCultures, hasInvariantGlobalization, hasIcuSharding);
 
             string managedDir = Path.Combine(bundleDir, "managed");
             AssertFilesExist(managedDir, new[] { $"{projectName}.dll" });
@@ -577,6 +577,76 @@ namespace Wasm.Build.Tests
             }
 
             AssertDotNetWasmJs(bundleDir, fromRuntimePack: dotnetWasmFromRuntimePack);
+        }
+
+        private static void AssertIcuFiles(string bundleDir, string[] icuCultures, bool hasInvariantGlobalization, bool hasIcuSharding)
+        {
+            if (hasInvariantGlobalization)
+                return;
+            if (!hasIcuSharding)
+            {
+                AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" });
+                return;
+            }
+            Console.WriteLine($"AssertIcuFiles hasInvariantGlobalization={hasInvariantGlobalization}; hasIcuSharding={hasIcuSharding}; icuCultures.L={icuCultures.Length}");
+            Assert.True(icuCultures.Length != 0, "WasmIcuCulture cannot be empty when EnableSharding=true.");
+            if (icuCultures.Length == 1 && icuCultures[0] == "en")
+            {
+                AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
+                return;
+            }
+            bool efigs = false;
+            bool cjk = false;
+            bool noCjk = false;
+            foreach (var culture in icuCultures)
+            {
+                // all: cjk, efigs and no_cjk have "en" inside.
+                // no_cjk has all cultures but "ko", "ja", "zn"
+                switch (culture)
+                {
+                    case "ko":
+                    case "ja":
+                    case "zn":
+                        {
+                            cjk = true;
+                            break;
+                        }
+                    case "fr":
+                    case "es":
+                    case "it":
+                    case "de":
+                        {
+                            efigs = true;
+                            break;
+                        }
+                    default:
+                        {
+                            if (culture != "en")
+                                noCjk = true;
+                            break;
+                        }
+                }
+            }
+            if (noCjk)
+            {
+                if (cjk)
+                {
+                    AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" });
+                    return;
+                }
+                if (efigs)
+                {
+                    AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
+                    return;
+                }
+                AssertFilesExist(bundleDir, new[] { "icudt_no_cjk_full.dat" });
+                return;
+            }
+            if (cjk)
+                AssertFilesExist(bundleDir, new[] { "icudt_cjk_full.dat" });
+            if (efigs)
+                AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
+            return;
         }
 
         protected static void AssertDotNetWasmJs(string bundleDir, bool fromRuntimePack)
@@ -937,7 +1007,8 @@ namespace Wasm.Build.Tests
     (
         Action? InitProject               = null,
         bool?   DotnetWasmFromRuntimePack = null,
-        bool    HasIcudt                  = true,
+        bool    HasInvariantGlobalization = false,
+        bool    HasIcuSharding            = false,
         bool    UseCache                  = true,
         bool    ExpectSuccess             = true,
         bool    AssertAppBundle           = true,
@@ -949,6 +1020,7 @@ namespace Wasm.Build.Tests
         string? Label                     = null,
         string? TargetFramework           = null,
         string? MainJS                    = null,
+        string[]? IcuCulture              = null,
         IDictionary<string, string>? ExtraBuildEnvironmentVariables = null
     );
 

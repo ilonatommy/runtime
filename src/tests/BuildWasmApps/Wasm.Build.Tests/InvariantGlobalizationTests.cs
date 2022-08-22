@@ -35,7 +35,7 @@ namespace Wasm.Build.Tests
 
         // TODO: What else should we use to verify a relinked build?
         [Theory]
-        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
+        [MemberData(nameof(InvariantGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })]
         public void RelinkingWithoutAOT(BuildArgs buildArgs, bool? invariantGlobalization, RunHost host, string id)
             => TestInvariantGlobalization(buildArgs, invariantGlobalization, host, id,
                                             extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
@@ -78,7 +78,7 @@ namespace Wasm.Build.Tests
                             new BuildProjectOptions(
                                 InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), programText),
                                 DotnetWasmFromRuntimePack: dotnetWasmFromRuntimePack,
-                                HasIcudt: invariantGlobalization == null || invariantGlobalization.Value == false));
+                                HasInvariantGlobalization: invariantGlobalization != null && invariantGlobalization.Value == true));
 
             if (invariantGlobalization == true)
             {
