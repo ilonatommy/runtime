@@ -82,7 +82,6 @@ set(VM_SOURCES_DAC_AND_WKS_COMMON
     genericdict.cpp
     generics.cpp
     hash.cpp
-    hillclimbing.cpp
     ilinstrumentation.cpp
     ilstubcache.cpp
     ilstubresolver.cpp
@@ -116,7 +115,6 @@ set(VM_SOURCES_DAC_AND_WKS_COMMON
     stublink.cpp
     stubmgr.cpp
     syncblk.cpp
-    threadpoolrequest.cpp
     threads.cpp
     threadstatics.cpp
     tieredcompilation.cpp
@@ -130,7 +128,6 @@ set(VM_SOURCES_DAC_AND_WKS_COMMON
     vars.cpp
     versionresilienthashcode.cpp
     virtualcallstub.cpp
-    win32threadpool.cpp
     zapsig.cpp
 )
 
@@ -180,7 +177,6 @@ set(VM_HEADERS_DAC_AND_WKS_COMMON
     gcheaputilities.h
     generics.h
     hash.h
-    hillclimbing.h
     ilinstrumentation.h
     ilstubcache.h
     ilstubresolver.h
@@ -222,7 +218,6 @@ set(VM_HEADERS_DAC_AND_WKS_COMMON
     stubmgr.h
     syncblk.h
     syncblk.inl
-    threadpoolrequest.h
     threads.h
     threads.inl
     threadstatics.h
@@ -239,7 +234,6 @@ set(VM_HEADERS_DAC_AND_WKS_COMMON
     vars.hpp
     versionresilienthashcode.h
     virtualcallstub.h
-    win32threadpool.h
     zapsig.h
 )
 
@@ -347,7 +341,6 @@ set(VM_SOURCES_WKS
     multicorejit.cpp # Condition="'$(FeatureMulticoreJIT)' == 'true'
     multicorejitplayer.cpp # Condition="'$(FeatureMulticoreJIT)' == 'true'
     nativeeventsource.cpp
-    nativeoverlapped.cpp
     nativelibrary.cpp
     nativelibrarynative.cpp
     objectlist.cpp
@@ -450,8 +443,6 @@ set(VM_HEADERS_WKS
     multicorejit.h
     multicorejitimpl.h
     nativeeventsource.h
-    nativeoverlapped.h
-    nativelibrarynative.h
     objectlist.h
     olevariant.h
     pendingload.h
