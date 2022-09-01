@@ -600,12 +600,12 @@ namespace Wasm.Build.Tests
             foreach (var culture in icuCultures)
             {
                 // all: cjk, efigs and no_cjk have "en" inside.
-                // no_cjk has all cultures but "ko", "ja", "zn"
+                // no_cjk has all cultures but "ko", "ja", "zh"
                 switch (culture)
                 {
                     case "ko":
                     case "ja":
-                    case "zn":
+                    case "zh":
                         {
                             cjk = true;
                             break;
