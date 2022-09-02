@@ -626,26 +626,32 @@ namespace Wasm.Build.Tests
                         }
                 }
             }
-            if (noCjk)
+            if (cjk && efigs || noCjk && cjk)
             {
-                if (cjk)
-                {
-                    AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" });
-                    return;
-                }
-                if (efigs)
-                {
-                    AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
-                    return;
-                }
-                AssertFilesExist(bundleDir, new[] { "icudt_no_cjk_full.dat" });
+                AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" });
+                return;
+            }
+            if (noCjk && efigs)
+            {
+                AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
                 return;
             }
             if (cjk)
+            {
                 AssertFilesExist(bundleDir, new[] { "icudt_cjk_full.dat" });
+                return;
+            }
+            if (noCjk)
+            {
+                AssertFilesExist(bundleDir, new[] { "icudt_no_cjk_full.dat" });
+                return;
+            }
             if (efigs)
+            {
                 AssertFilesExist(bundleDir, new[] { "icudt_efigs_full.dat" });
-            return;
+                return;
+            }
+            AssertFilesExist(bundleDir, new[] { "icudt_full_full.dat" });
         }
 
         protected static void AssertDotNetWasmJs(string bundleDir, bool fromRuntimePack)
