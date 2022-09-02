@@ -327,8 +327,8 @@ public class WasmAppBuilder : Task
                 // sharding by culture:
                 if (IcuCulture == null || IcuCulture.Length == 0)
                     throw new LogAsErrorException("WasmIcuCulture list shouldn't be empty if EnableSharding=true");
-                List<string> filteredIcuFiles = FilterIcuFilesByCultures();
-                var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles.Any(name => name == Path.GetFileName(i.ItemSpec)));
+                string filteredIcuFiles = FilterIcuFilesByCultures();
+                var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles == Path.GetFileName(i.ItemSpec));
 
                 foreach (var item in icuFilesToLoad)
                 {
@@ -410,12 +410,12 @@ public class WasmAppBuilder : Task
         return !Log.HasLoggedErrors;
     }
 
-    private List<string> FilterIcuFilesByCultures()
+    private string FilterIcuFilesByCultures()
     {
         if (IcuCulture == null)
             throw new LogAsErrorException("WasmIcuCulture list shouldn't be null.");
         if (IcuCulture.Length == 1 && IcuCulture[0].ItemSpec == "en")
-            return new List<string> () { "icudt_efigs_full.dat" };
+            return "icudt_efigs_full.dat";
 
         bool efigs = false;
         bool cjk = false;
@@ -448,19 +448,17 @@ public class WasmAppBuilder : Task
                 }
             }
         }
-        if (noCjk){
-            if (cjk)
-                return new List<string> () { "icudt_full_full.dat" };
-            if (efigs)
-                return new List<string> () { "icudt_efigs_full.dat" };
-            return new List<string> () { "icudt_no_cjk_full.dat" };
-        }
-        List<string> shardNames = new List<string>();
+        if (cjk && efigs || noCjk && cjk)
+            return "icudt_full_full.dat" ;
+        if (noCjk && efigs)
+            return "icudt_efigs_full.dat";
         if (cjk)
-            shardNames.Add("icudt_cjk_full.dat");
+            return "icudt_cjk_full.dat";
+        if (noCjk)
+            return "icudt_no_cjk_full.dat";
         if (efigs)
-            shardNames.Add("icudt_efigs_full.dat");
-        return shardNames;
+            return "icudt_efigs_full.dat";
+        return "icudt_full_full.dat";
     }
 
     private bool TryCopyIcuFile(string sourcePath, string fileName)
