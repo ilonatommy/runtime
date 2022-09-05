@@ -254,6 +254,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\DateTime.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\DateTimeKind.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\DateTimeOffset.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\DateTimeOffset.NonAndroid.cs" Condition="'$(TargetsAndroid)' != 'true'" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\DateTimeOffset.Android.cs" Condition="'$(TargetsAndroid)' == 'true'" />
     <Compile Include="$(MSBuildThisFileDirectory)System\DayOfWeek.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\DBNull.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Decimal.cs" />
@@ -1642,9 +1644,6 @@
     <Compile Include="$(CommonPath)Interop\Windows\Kernel32\Interop.GetSystemTimes.cs">
       <Link>Common\Interop\Windows\Kernel32\Interop.GetSystemTimes.cs</Link>
     </Compile>
-    <Compile Include="$(CommonPath)Interop\Windows\Kernel32\Interop.GetTempFileNameW.cs">
-      <Link>Common\Interop\Windows\Kernel32\Interop.GetTempFileNameW.cs</Link>
-    </Compile>
     <Compile Include="$(CommonPath)Interop\Windows\Kernel32\Interop.GetVolumeInformation.cs">
       <Link>Common\Interop\Windows\Kernel32\Interop.GetVolumeInformation.cs</Link>
     </Compile>
@@ -2362,6 +2361,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\Intrinsics\Arm\Rdm.PlatformNotSupported.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\Intrinsics\Arm\Sha1.PlatformNotSupported.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\Intrinsics\Arm\Sha256.PlatformNotSupported.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SupportsWasmIntrinsics)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\Intrinsics\Wasm\PackedSimd.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SupportsWasmIntrinsics)' != 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\Intrinsics\Wasm\PackedSimd.PlatformNotSupported.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(FeaturePortableThreadPool)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)System\Threading\ThreadPool.Portable.cs" Condition="'$(FeatureCoreCLR)' != 'true'" />
