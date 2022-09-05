@@ -413,7 +413,7 @@ public class WasmAppBuilder : Task
         if (IcuCultures == null)
             throw new LogAsErrorException("WasmIcuCultures list shouldn't be null.");
         if (IcuCultures.Length == 1 && IcuCultures[0].ItemSpec == "en")
-            return BatchByFeatureSharding("efigs");
+            return BatchByFeatureShard("efigs");
 
         bool efigs = false;
         bool cjk = false;
@@ -447,18 +447,18 @@ public class WasmAppBuilder : Task
             }
         }
         if (cjk && efigs || noCjk && cjk)
-            return BatchByFeatureSharding("full");
+            return BatchByFeatureShard("full");
         if (noCjk && efigs)
-            return BatchByFeatureSharding("efigs");
+            return BatchByFeatureShard("efigs");
         if (cjk)
-            return BatchByFeatureSharding("cjk");
+            return BatchByFeatureShard("cjk");
         if (noCjk)
-            return BatchByFeatureSharding("no_cjk");
+            return BatchByFeatureShard("no_cjk");
         if (efigs)
-            return BatchByFeatureSharding("efigs");
-        return BatchByFeatureSharding("full");
+            return BatchByFeatureShard("efigs");
+        return BatchByFeatureShard("full");
 
-        IEnumerable<string> BatchByFeatureSharding(string shardName)
+        IEnumerable<string> BatchByFeatureShard(string shardName)
         {
             if (!IcuFeatures.Any())
                 return new List<string>() { $"icudt_{shardName}_full.dat" };
