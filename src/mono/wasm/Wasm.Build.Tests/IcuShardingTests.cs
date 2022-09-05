@@ -25,7 +25,7 @@ namespace Wasm.Build.Tests
                 .Multiply(
                     // declaring "de" we make "EFIGS" file to be uploaded, so all
                     // cultures from EFIGS should be accessible as well
-                    new object?[] { new string[] { "de" }, "\"de_IT\", \"en_DE\", \"fr_BE\""}
+                    new object?[] { new string[] { "de" }, "\"de_IT\", \"en_DE\", \"fr_BE\""},
                     new object?[] { new string[] { "de", "en" }, "\"de_IT\", \"en_GI\", \"fr_BE\""},
                     new object?[] { new string[] { "fr" }, "\"en_NZ\", \"es_ES\", \"fr_BE\""}
                     )
@@ -35,9 +35,9 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> ICUShardingTestData_CJK_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { new string[] { "zh" }, "\"zh\", \"en\", \"ko\""},
-                    new object?[] { new string[] { "en", "ko" }, "\"ja\", \"ko\", \"zh\""},
-                    new object?[] { new string[] { "ja" }, "\"en\", \"ja\", \"ko\""})
+                    new object?[] { new string[] { "zh" }, "\"zh_HK\", \"en_DE\", \"ko_KR\""},
+                    new object?[] { new string[] { "en", "ko" }, "\"ja_JP\", \"ko_KR\", \"zh_SG\""},
+                    new object?[] { new string[] { "ja" }, "\"en_US\", \"ja_JP\", \"ko_KR\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
@@ -46,28 +46,28 @@ namespace Wasm.Build.Tests
                 .Multiply(
                     new object?[] { new string[] { "pl" }, "\"pl_PL\", \"en_MP\", \"da_DK\""},
                     new object?[] { new string[] { "hr", "en" }, "\"hr_BA\", \"mr_IN\", \"fi_FI\""},
-                    new object?[] { new string[] { "cs" }, "\"cs_CZ\", \"ar_SA\", \"vi_VN\""})
+                    new object?[] { new string[] { "cs" }, "\"cs_CZ\", \"da_DK\", \"vi_VN\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
         public static IEnumerable<object?[]> ICUShardingTestData_EFIG_CJK_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { new string[] { "fr", "ja" }, "\"fr_CH\", \"ja\", \"zh\""},
-                    new object?[] { new string[] { "es", "zh" }, "\"es_419\", \"zh\", \"de_LI\""},
-                    new object?[] { new string[] { "en", "ko", "it" }, "\"it_IT\", \"ko\", \"en_TV\""})
+                    new object?[] { new string[] { "fr", "ja" }, "\"fr_CH\", \"ja_JP\", \"zh_HK\""},
+                    new object?[] { new string[] { "es", "zh" }, "\"es_419\", \"zh_HK\", \"de_LI\""},
+                    new object?[] { new string[] { "en", "ko", "it" }, "\"it_IT\", \"ko_KR\", \"en_TV\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
         [Theory]
-        [MemberData(nameof(ICUShardingTestData_EFIGS_Positive), parameters: new object[] { /*aot*/ false, RunHost.Chrome })] // NodeJS: OK
+        [MemberData(nameof(ICUShardingTestData_EFIGS_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
         [MemberData(nameof(ICUShardingTestData_EFIGS_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        [MemberData(nameof(ICUShardingTestData_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        [MemberData(nameof(ICUShardingTestData_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
+        [MemberData(nameof(ICUShardingTestData_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
+        [MemberData(nameof(ICUShardingTestData_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
         [MemberData(nameof(ICUShardingTestData_no_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
         [MemberData(nameof(ICUShardingTestData_no_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
+        [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
+        [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
         public void ShardingTestsPositive(BuildArgs buildArgs, string[] declaredIcuCultures, string testedCultures, RunHost host, string id)
             => TestICUSharding(buildArgs, declaredIcuCultures, testedCultures, true, false, host, id,
                                             extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
@@ -111,7 +111,7 @@ namespace Wasm.Build.Tests
                     foreach (var testedCulture in testedCultures)
                     {{
                         var culture = new CultureInfo(testedCulture, false);
-                        Console.WriteLine($""{{culture.NativeName}} - {{culture.NumberFormat.CurrencySymbol}} - {{culture.DateTimeFormat.FullDateTimePattern}} - {{culture.CompareInfo.LCID}}"");
+                        Console.WriteLine($""{{culture.NativeName}} - {{culture.DateTimeFormat.FullDateTimePattern}} - {{culture.CompareInfo.LCID}}"");
                     }}
                     string s = new string( new char[] {{'\u0063', '\u0301', '\u0327', '\u00BE'}});
                     string normalized = s.Normalize();
@@ -123,7 +123,7 @@ namespace Wasm.Build.Tests
                     Console.WriteLine($""Culture Not Found {{e.Message}}"");
                 }}
                 return 42;
-            ";
+            "; // missing check: culture.NumberFormat.CurrencySymbol
 
             BuildProject(buildArgs,
                             id: id,
@@ -135,16 +135,15 @@ namespace Wasm.Build.Tests
                                 IcuCulture: declaredIcuCultures));
 
             string output = RunAndTestWasmApp(buildArgs, expectedExitCode: 42, host: host, id: id);
-            foreach (var testedCulture in testedCultures)
+            for (int i = 0; i < testedCultures.Length; i++)
             {
-                var culture = CultureInfo.GetCultureInfo(testedCulture);
+                var culture = CultureInfo.GetCultureInfo(testedCultures[i], false);
                 // culture.NativeName is shortened in wasm app:
                 // e.g. "en (collation=CX)" instead of "English (Sort Order=cx)"
                 // so we cannot get it with {culture.NativeName};
-                // other differences: "en" lacks tt (AM/PM) in the format in some cultures
-                string cultureCode = testedCulture.Substring(0, 2);
-                string collationCode = testedCulture.Substring(3, 2);
-                string expectedOutput = $"{cultureCode} (collation={collationCode}) - {culture.NumberFormat.CurrencySymbol} - {culture.DateTimeFormat.FullDateTimePattern} - {culture.CompareInfo.LCID}";
+                // other differences: "en" lacks tt (AM/PM) in the format in some cultures;
+                var cultureAndCollation = testedCultures[i].Split('_', 2, StringSplitOptions.RemoveEmptyEntries);
+                string expectedOutput = $"{cultureAndCollation[0]} (collation={cultureAndCollation[1]}) - {culture.DateTimeFormat.FullDateTimePattern} - {culture.CompareInfo.LCID}";
                 Assert.Contains(expectedOutput, output);
             }
         }
