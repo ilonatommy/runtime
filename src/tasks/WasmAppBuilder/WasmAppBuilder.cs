@@ -39,12 +39,14 @@ public class WasmAppBuilder : Task
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
     public ITaskItem[]? IcuDataFileNames { get; set; }
     public ITaskItem[]? IcuCulture { get; set; }
+    public ITaskItem[]? IcuFeature { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
     public ITaskItem[]? FilesToIncludeInFileSystem { get; set; }
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
+    public bool ShardByFeatures { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
@@ -327,8 +329,8 @@ public class WasmAppBuilder : Task
                 // sharding by culture:
                 if (IcuCulture == null || IcuCulture.Length == 0)
                     throw new LogAsErrorException("WasmIcuCulture list shouldn't be empty if EnableSharding=true");
-                string filteredIcuFiles = FilterIcuFilesByCultures();
-                var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles == Path.GetFileName(i.ItemSpec));
+                var filteredIcuFiles = FilterIcuFilesByCultures();
+                var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles.Any(file => file == Path.GetFileName(i.ItemSpec)));
 
                 foreach (var item in icuFilesToLoad)
                 {
@@ -410,12 +412,12 @@ public class WasmAppBuilder : Task
         return !Log.HasLoggedErrors;
     }
 
-    private string FilterIcuFilesByCultures()
+    private IEnumerable<string> FilterIcuFilesByCultures()
     {
         if (IcuCulture == null)
             throw new LogAsErrorException("WasmIcuCulture list shouldn't be null.");
         if (IcuCulture.Length == 1 && IcuCulture[0].ItemSpec == "en")
-            return "icudt_efigs_full.dat";
+            return BatchByFeatureSharding("efigs");
 
         bool efigs = false;
         bool cjk = false;
@@ -449,16 +451,46 @@ public class WasmAppBuilder : Task
             }
         }
         if (cjk && efigs || noCjk && cjk)
-            return "icudt_full_full.dat" ;
+            return BatchByFeatureSharding("full");
         if (noCjk && efigs)
-            return "icudt_efigs_full.dat";
+            return BatchByFeatureSharding("efigs");
         if (cjk)
-            return "icudt_cjk_full.dat";
+            return BatchByFeatureSharding("cjk");
         if (noCjk)
-            return "icudt_no_cjk_full.dat";
+            return BatchByFeatureSharding("no_cjk");
         if (efigs)
-            return "icudt_efigs_full.dat";
-        return "icudt_full_full.dat";
+            return BatchByFeatureSharding("efigs");
+        return BatchByFeatureSharding("full");
+
+        IEnumerable<string> BatchByFeatureSharding(string shardName)
+        {
+            if (!ShardByFeatures)
+                return new List<string>() { $"icudt_{shardName}_full.dat" };
+            var baseBatch = shardName == "full" ?
+                new List<string>()
+                {
+                    "icudt_base.dat",
+                    "icudt_normalization.dat",
+                    "icudt_locales.dat",
+                    "icudt_coll.dat"
+                }
+                : new List<string>()
+                {
+                    "icudt_base.dat",
+                    "icudt_normalization.dat",
+                    $"icudt_{shardName}_locales.dat",
+                    $"icudt_{shardName}_coll.dat"
+                };
+
+            if (IcuFeature != null)
+            {
+                if (IcuFeature.Any(f => f.ItemSpec == "currency"))
+                    baseBatch.Add("icudt_currency.dat");
+                if (IcuFeature.Any(f => f.ItemSpec == "zones"))
+                    baseBatch.Add($"icudt_{shardName}_zones.dat");
+            }
+            return baseBatch;
+        }
     }
 
     private bool TryCopyIcuFile(string sourcePath, string fileName)
