@@ -38,15 +38,14 @@ public class WasmAppBuilder : Task
     // full list of ICU data files we produce can be found here:
     // https://github.com/dotnet/icu/tree/maint/maint-67/icu-filters
     public ITaskItem[]? IcuDataFileNames { get; set; }
-    public ITaskItem[]? IcuCulture { get; set; }
-    public ITaskItem[]? IcuFeature { get; set; }
+    public ITaskItem[]? IcuCultures { get; set; }
+    public ITaskItem[]? IcuFeatures { get; set; }
 
     public int DebugLevel { get; set; }
     public ITaskItem[]? SatelliteAssemblies { get; set; }
     public ITaskItem[]? FilesToIncludeInFileSystem { get; set; }
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
-    public bool ShardByFeatures { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
@@ -411,15 +410,15 @@ public class WasmAppBuilder : Task
 
     private IEnumerable<string> FilterIcuFilesByCultures()
     {
-        if (IcuCulture == null)
-            throw new LogAsErrorException("WasmIcuCulture list shouldn't be null.");
-        if (IcuCulture.Length == 1 && IcuCulture[0].ItemSpec == "en")
+        if (IcuCultures == null)
+            throw new LogAsErrorException("WasmIcuCultures list shouldn't be null.");
+        if (IcuCultures.Length == 1 && IcuCultures[0].ItemSpec == "en")
             return BatchByFeatureSharding("efigs");
 
         bool efigs = false;
         bool cjk = false;
         bool noCjk = false;
-        foreach (var culture in IcuCulture)
+        foreach (var culture in IcuCultures)
         {
             // all: cjk, efigs and no_cjk have "en" inside.
             // no_cjk has all cultures but "ko", "ja", "zh"
@@ -461,7 +460,7 @@ public class WasmAppBuilder : Task
 
         IEnumerable<string> BatchByFeatureSharding(string shardName)
         {
-            if (!ShardByFeatures)
+            if (!IcuFeatures.Any())
                 return new List<string>() { $"icudt_{shardName}_full.dat" };
             var baseBatch = shardName == "full" ?
                 new List<string>()
@@ -479,11 +478,11 @@ public class WasmAppBuilder : Task
                     $"icudt_{shardName}_coll.dat"
                 };
 
-            if (IcuFeature != null)
+            if (IcuFeatures != null)
             {
-                if (IcuFeature.Any(f => f.ItemSpec == "currency"))
+                if (IcuFeatures.Any(f => f.ItemSpec == "currency"))
                     baseBatch.Add("icudt_currency.dat");
-                if (IcuFeature.Any(f => f.ItemSpec == "zones"))
+                if (IcuFeatures.Any(f => f.ItemSpec == "zones"))
                     baseBatch.Add($"icudt_{shardName}_zones.dat");
             }
             return baseBatch;

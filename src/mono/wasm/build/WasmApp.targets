@@ -76,7 +76,7 @@
       - @(WasmNativeAsset)        - Native files to be added to `NativeAssets` in the bundle.
       - @(WasmIcuDataFileNames)   - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
       - @(IcuCulture)             - Culture names that are used in the application when we want ICU data to be sharded. Format: "en".
-      - @(IcuFeature)             - Files with ICU features that can be included additionally to ICU data. Accepted values: "zones", "currency". Default: no additional features.
+      - @(IcuFeatures)             - Files with ICU features that can be included additionally to ICU data. Accepted values: "zones", "currency". Default: no additional features.
 
       - @(WasmExtraConfig)        - json elements to add to `mono-config.json`
                                     Eg. <WasmExtraConfig Include="enableProfiler" Value="true" />
@@ -296,13 +296,13 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCulture)' != '' and '$(ShardByFeatures)' != 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCultures)' != '' and '@(WasmIcuFeatures)' == ''">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCulture)' != '' and '$(ShardByFeatures)' == 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCultures)' != '' and '@(WasmIcuFeatures)' != ''">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
@@ -359,9 +359,8 @@
       SatelliteAssemblies="@(_WasmSatelliteAssemblies)"
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
       IcuDataFileNames="@(WasmIcuDataFileNames)"
-      ShardByFeatures="$(ShardByFeatures)"
-      IcuFeature="@(WasmIcuFeature)"
-      IcuCulture="@(WasmIcuCulture)"
+      IcuFeatures="@(WasmIcuFeatures)"
+      IcuCulture="@(WasmIcuCultures)"
       RemoteSources="@(WasmRemoteSources)"
       ExtraFilesToDeploy="@(WasmExtraFilesToDeploy)"
       ExtraConfig="@(WasmExtraConfig)"
