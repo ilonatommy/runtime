@@ -296,13 +296,13 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(IcuCulture)' != '' and '$(ShardByFeatures)' != 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCulture)' != '' and '$(ShardByFeatures)' != 'true'">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(IcuCulture)' != '' and '$(ShardByFeatures)' == 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuCulture)' != '' and '$(ShardByFeatures)' == 'true'">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
