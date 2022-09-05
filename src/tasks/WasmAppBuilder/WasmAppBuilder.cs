@@ -317,7 +317,7 @@ public class WasmAppBuilder : Task
         {
             if (IcuDataFileNames.Length == 1)
             {
-                // loading full ICU data, no sharding:
+                // only icudt_full_full.dat, no sharding:
                 string fullIcuDataPath = IcuDataFileNames[0].ItemSpec;
                 string fileName = Path.GetFileName(fullIcuDataPath);
                 if (!TryCopyIcuFile(fullIcuDataPath, fileName))
@@ -326,9 +326,6 @@ public class WasmAppBuilder : Task
             }
             else
             {
-                // sharding by culture:
-                if (IcuCulture == null || IcuCulture.Length == 0)
-                    throw new LogAsErrorException("WasmIcuCulture list shouldn't be empty if EnableSharding=true");
                 var filteredIcuFiles = FilterIcuFilesByCultures();
                 var icuFilesToLoad = IcuDataFileNames.Where(i => filteredIcuFiles.Any(file => file == Path.GetFileName(i.ItemSpec)));
 

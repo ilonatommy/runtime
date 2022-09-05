@@ -30,8 +30,7 @@
       - $(AOTMode)           - Defaults to `LLVMOnlyInterp`
       - $(AOTProfilePath)    - profile data file to be used for profile-guided optimization
       - $(InvariantGlobalization)       - Whenever to disable ICU. Defaults to false.
-      - $(EnableSharding)       - Whenever to shard ICU into smaller chunks. Defaults to false.
-      - $(ShardByFeatures)      - Only when EnableSharding=true. Shards ICU files into locales/zones/currency etc. Defaults to false.
+      - $(ShardByFeatures)      - Shards ICU files into locales/zones/currency etc. Defaults to false.
 
       - $(WasmResolveAssembliesBeforeBuild) - Resolve the assembly dependencies. Defaults to false
       - $(WasmAssemblySearchPaths)          - used for resolving assembly dependencies
@@ -76,7 +75,7 @@
       - @(WasmFilesToIncludeInFileSystem) - Files to include in the vfs
       - @(WasmNativeAsset)        - Native files to be added to `NativeAssets` in the bundle.
       - @(WasmIcuDataFileNames)   - ICU files to be added conditionally to `IcuDataFileNames` in the bundle.
-      - @(IcuCulture)             - Culture names that are used in the application. Required for EnableSharding = true. Format: "en".
+      - @(IcuCulture)             - Culture names that are used in the application when we want ICU data to be sharded. Format: "en".
       - @(IcuFeature)             - Files with ICU features that can be included additionally to ICU data. Accepted values: "zones", "currency". Default: no additional features.
 
       - @(WasmExtraConfig)        - json elements to add to `mono-config.json`
@@ -297,13 +296,13 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true' and '$(ShardByFeatures)' != 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(IcuCulture)' != '' and '$(ShardByFeatures)' != 'true'">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_full.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(EnableSharding)' == 'true' and '$(ShardByFeatures)' == 'true'">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(IcuCulture)' != '' and '$(ShardByFeatures)' == 'true'">
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
