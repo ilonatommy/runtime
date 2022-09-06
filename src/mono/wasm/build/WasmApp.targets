@@ -307,18 +307,19 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
 
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_zones.dat"/>
 
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'$'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -364,7 +365,7 @@
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
       IcuDataFileNames="@(WasmIcuDataFileNames)"
       IcuFeatures="@(WasmIcuFeatures)"
-      IcuCulture="@(WasmIcuCultures)"
+      IcuCultures="@(WasmIcuCultures)"
       RemoteSources="@(WasmRemoteSources)"
       ExtraFilesToDeploy="@(WasmExtraFilesToDeploy)"
       ExtraConfig="@(WasmExtraConfig)"

@@ -411,7 +411,7 @@ public class WasmAppBuilder : Task
     private IEnumerable<string> FilterIcuFilesByCultures()
     {
         if (IcuCultures == null)
-            throw new LogAsErrorException("WasmIcuCultures list shouldn't be null.");
+            return BatchByFeatureShard("full");
         if (IcuCultures.Length == 1 && IcuCultures[0].ItemSpec == "en")
             return BatchByFeatureShard("efigs");
 
@@ -460,31 +460,19 @@ public class WasmAppBuilder : Task
 
         IEnumerable<string> BatchByFeatureShard(string shardName)
         {
-            if (!IcuFeatures.Any())
+            if (IcuFeatures == null || !IcuFeatures.Any())
                 return new List<string>() { $"icudt_{shardName}_full.dat" };
-            var baseBatch = shardName == "full" ?
-                new List<string>()
-                {
-                    "icudt_base.dat",
-                    "icudt_normalization.dat",
-                    "icudt_locales.dat",
-                    "icudt_coll.dat"
-                }
-                : new List<string>()
-                {
-                    "icudt_base.dat",
-                    "icudt_normalization.dat",
-                    $"icudt_{shardName}_locales.dat",
-                    $"icudt_{shardName}_coll.dat"
-                };
+            var baseBatch = new List<string>() {
+                "icudt_base.dat",
+                "icudt_normalization.dat",
+                $"icudt_{shardName}_locales.dat",
+                $"icudt_{shardName}_coll.dat"
+            };
 
-            if (IcuFeatures != null)
-            {
-                if (IcuFeatures.Any(f => f.ItemSpec == "currency"))
-                    baseBatch.Add("icudt_currency.dat");
-                if (IcuFeatures.Any(f => f.ItemSpec == "zones"))
-                    baseBatch.Add($"icudt_{shardName}_zones.dat");
-            }
+            if (IcuFeatures?.Any(f => f.ItemSpec == "currency") == true)
+                baseBatch.Add("icudt_currency.dat");
+            if (IcuFeatures?.Any(f => f.ItemSpec == "zones") == true)
+                baseBatch.Add($"icudt_{shardName}_zones.dat");
             return baseBatch;
         }
     }

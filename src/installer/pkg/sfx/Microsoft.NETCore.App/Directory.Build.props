@@ -261,6 +261,9 @@
     <PlatformManifestFileEntry Include="icudt_cjk_full.dat" IsNative="true" />
     <PlatformManifestFileEntry Include="icudt_no_cjk_full.dat" IsNative="true" />
     <PlatformManifestFileEntry Include="icudt_full_full.dat" IsNative="true" />
+    <PlatformManifestFileEntry Include="icudt_full_locales.dat" IsNative="true" />
+    <PlatformManifestFileEntry Include="icudt_full_zones.dat" IsNative="true" />
+    <PlatformManifestFileEntry Include="icudt_full_coll.dat" IsNative="true" />
   </ItemGroup>
 
  <ItemGroup>

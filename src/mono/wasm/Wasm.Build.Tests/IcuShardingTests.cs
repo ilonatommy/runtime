@@ -53,6 +53,7 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> ICUShardingTestData_EFIG_CJK_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
+                    // loads full_full
                     new object?[] { new string[] { "fr", "ja" }, "\"fr_CH\", \"ja_JP\", \"zh_HK\""},
                     new object?[] { new string[] { "es", "zh" }, "\"es_419\", \"zh_HK\", \"de_LI\""},
                     new object?[] { new string[] { "en", "ko", "it" }, "\"it_IT\", \"ko_KR\", \"en_TV\""})
@@ -69,11 +70,11 @@ namespace Wasm.Build.Tests
         [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
         [MemberData(nameof(ICUShardingTestData_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
         public void ShardingTestsPositive(BuildArgs buildArgs, string[] declaredIcuCultures, string testedCultures, RunHost host, string id)
-            => TestICUSharding(buildArgs, declaredIcuCultures, testedCultures, true, false, host, id,
+            => TestICUShardingByCulture(buildArgs, declaredIcuCultures, testedCultures, true, false, host, id,
                                             extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
                                             dotnetWasmFromRuntimePack: false);
 
-        private void TestICUSharding(BuildArgs buildArgs,
+        private void TestICUShardingByCulture(BuildArgs buildArgs,
                              string[] declaredIcuCultures,
                              string testedCulturesStr,
                              bool? enableSharding,
@@ -81,17 +82,16 @@ namespace Wasm.Build.Tests
                              RunHost host,
                              string id,
                              string extraProperties="",
-                             bool? dotnetWasmFromRuntimePack=null)
+                             bool? dotnetWasmFromRuntimePack=null,
+                             bool expectFailure=false)
         {
             string projectName = $"sharding_{string.Join("-", declaredIcuCultures)}";
             if (invariantGlobalization != null)
                 extraProperties = $"{extraProperties}<InvariantGlobalization>{invariantGlobalization}</InvariantGlobalization>";
-            if (enableSharding != null)
-                extraProperties = $"{extraProperties}<EnableSharding>{enableSharding}</EnableSharding>";
 
             string extraItems = "";
             foreach (var culture in declaredIcuCultures)
-                extraItems = $"{extraItems}<WasmIcuCulture Include=\"{culture}\"/>";
+                extraItems = $"{extraItems}<WasmIcuCultures Include=\"{culture}\"/>";
 
             buildArgs = buildArgs with { ProjectName = projectName };
             buildArgs = ExpandBuildArgs(buildArgs, extraProperties, extraItems);
@@ -131,20 +131,27 @@ namespace Wasm.Build.Tests
                                 InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), programText),
                                 DotnetWasmFromRuntimePack: dotnetWasmFromRuntimePack,
                                 HasInvariantGlobalization: invariantGlobalization != null && invariantGlobalization.Value == true,
-                                HasIcuSharding: enableSharding != null && enableSharding.Value == true,
-                                IcuCulture: declaredIcuCultures));
+                                IcuCultures: declaredIcuCultures));
 
             string output = RunAndTestWasmApp(buildArgs, expectedExitCode: 42, host: host, id: id);
-            for (int i = 0; i < testedCultures.Length; i++)
+            if (expectFailure)
             {
-                var culture = CultureInfo.GetCultureInfo(testedCultures[i], false);
-                // culture.NativeName is shortened in wasm app:
-                // e.g. "en (collation=CX)" instead of "English (Sort Order=cx)"
-                // so we cannot get it with {culture.NativeName};
-                // other differences: "en" lacks tt (AM/PM) in the format in some cultures;
-                var cultureAndCollation = testedCultures[i].Split('_', 2, StringSplitOptions.RemoveEmptyEntries);
-                string expectedOutput = $"{cultureAndCollation[0]} (collation={cultureAndCollation[1]}) - {culture.DateTimeFormat.FullDateTimePattern} - {culture.CompareInfo.LCID}";
+                string expectedOutput = "Culture Not Found";
                 Assert.Contains(expectedOutput, output);
+            }
+            else
+            {
+                for (int i = 0; i < testedCultures.Length; i++)
+                {
+                    var culture = CultureInfo.GetCultureInfo(testedCultures[i], false);
+                    // culture.NativeName is shortened in wasm app:
+                    // e.g. "en (collation=CX)" instead of "English (Sort Order=cx)"
+                    // so we cannot get it with {culture.NativeName};
+                    // other differences: "en" lacks tt (AM/PM) in the format in some cultures;
+                    var cultureAndCollation = testedCultures[i].Split('_', 2, StringSplitOptions.RemoveEmptyEntries);
+                    string expectedOutput = $"{cultureAndCollation[0]} (collation={cultureAndCollation[1]}) - {culture.DateTimeFormat.FullDateTimePattern} - {culture.CompareInfo.LCID}";
+                    Assert.Contains(expectedOutput, output);
+                }
             }
         }
     }
