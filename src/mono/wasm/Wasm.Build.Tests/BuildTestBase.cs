@@ -658,15 +658,16 @@ namespace Wasm.Build.Tests
                     AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_full.dat" });
                     return;
                 }
-                AssertFilesExist(bundleDir, new[] {
-                        "icudt_base.dat",
-                        "icudt_normalization.dat",
-                        $"icudt_{shardName}_locales.dat",
-                        $"icudt_{shardName}_coll.dat"
-                    });
+                AssertFilesExist(bundleDir, "icudt_base.dat");
 
                 if (icuFeatures.Any(f => f == "currency"))
                     AssertFilesExist(bundleDir, new[] { $"icudt_currency.dat" });
+                if (icuFeatures.Any(f => f == "normalization"))
+                    AssertFilesExist(bundleDir, new[] { $"icudt_normalization.dat" });
+                if (icuFeatures.Any(f => f == "locales"))
+                    AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_locales.dat" });
+                if (icuFeatures.Any(f => f == "collations"))
+                    AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_coll.dat" });
                 if (icuFeatures.Any(f => f == "zones"))
                     AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_zones.dat" });
                 return;

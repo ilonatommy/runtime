@@ -462,15 +462,16 @@ public class WasmAppBuilder : Task
         {
             if (IcuFeatures == null || !IcuFeatures.Any())
                 return new List<string>() { $"icudt_{shardName}_full.dat" };
-            var baseBatch = new List<string>() {
-                "icudt_base.dat",
-                "icudt_normalization.dat",
-                $"icudt_{shardName}_locales.dat",
-                $"icudt_{shardName}_coll.dat"
-            };
+            var baseBatch = new List<string>() { "icudt_base.dat" };
 
             if (IcuFeatures?.Any(f => f.ItemSpec == "currency") == true)
                 baseBatch.Add("icudt_currency.dat");
+            if (IcuFeatures?.Any(f => f.ItemSpec == "normalization") == true)
+                baseBatch.Add("icudt_normalization.dat");
+            if (IcuFeatures?.Any(f => f.ItemSpec == "locales") == true)
+                baseBatch.Add($"icudt_{shardName}_locales.dat");
+            if (IcuFeatures?.Any(f => f.ItemSpec == "collations") == true)
+                baseBatch.Add($"icudt_{shardName}_coll.dat");
             if (IcuFeatures?.Any(f => f.ItemSpec == "zones") == true)
                 baseBatch.Add($"icudt_{shardName}_zones.dat");
             return baseBatch;

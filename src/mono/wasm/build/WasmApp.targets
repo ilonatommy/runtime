@@ -30,7 +30,7 @@
       - $(AOTMode)           - Defaults to `LLVMOnlyInterp`
       - $(AOTProfilePath)    - profile data file to be used for profile-guided optimization
       - $(InvariantGlobalization)       - Whenever to disable ICU. Defaults to false.
-      - $(ShardByFeatures)      - Shards ICU files into locales/zones/currency etc. Defaults to false.
+      - $(WasmIcuFeatures)      - Loads additional ICU shards. Accepted values: locales/zones/currency/normalization/collations.
 
       - $(WasmResolveAssembliesBeforeBuild) - Resolve the assembly dependencies. Defaults to false
       - $(WasmAssemblySearchPaths)          - used for resolving assembly dependencies
