@@ -290,6 +290,7 @@
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
       <_HasDotnetJsSymbols Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'">true</_HasDotnetJsSymbols>
       <_HasDotnetJs Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js'">true</_HasDotnetJs>
+      <AllIcuFeatures>@(WasmIcuFeatures)</AllIcuFeatures>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuFeatures)' == ''">
@@ -302,24 +303,24 @@
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_full.dat"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '@(WasmIcuFeatures)' != ''">
+    <ItemGroup Condition="'$(InvariantGlobalization)' != 'true' and '$(AllIcuFeatures)' != ''">
+      <!-- base is always copied when any of WasmIcuFeatures is declared -->
       <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_base.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
-      <WasmIcuDataFileNames Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('normalization'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_normalization.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('currency'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_currency.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('locales'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_locales.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('collations'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_coll.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('zones'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_zones.dat"/>
 
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' == ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_full_zones.dat"/>
-
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
-      <WasmIcuDataFileNames Condition="'@(WasmIcuCultures)' != ''" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('locales'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_locales.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('collations'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_coll.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('zones'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_efigs_zones.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('locales'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('collations'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('zones'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_cjk_zones.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('locales'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_locales.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('collations'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_coll.dat"/>
+      <WasmIcuDataFileNames Condition="$(AllIcuFeatures.Contains('zones'))" Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_no_cjk_zones.dat"/>
     </ItemGroup>
 
     <ItemGroup>

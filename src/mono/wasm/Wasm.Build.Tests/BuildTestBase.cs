@@ -658,7 +658,7 @@ namespace Wasm.Build.Tests
                     AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_full.dat" });
                     return;
                 }
-                AssertFilesExist(bundleDir, "icudt_base.dat");
+                AssertFilesExist(bundleDir, new[] { "icudt_base.dat" });
 
                 if (icuFeatures.Any(f => f == "currency"))
                     AssertFilesExist(bundleDir, new[] { $"icudt_currency.dat" });

@@ -462,6 +462,13 @@ public class WasmAppBuilder : Task
         {
             if (IcuFeatures == null || !IcuFeatures.Any())
                 return new List<string>() { $"icudt_{shardName}_full.dat" };
+            if (IcuFeatures.Any(f => f.ItemSpec != "base" &&
+                f.ItemSpec != "currency" &&
+                f.ItemSpec != "normalization" &&
+                f.ItemSpec != "locales" &&
+                f.ItemSpec != "collations" &&
+                f.ItemSpec != "zones"))
+                throw new LogAsErrorException("'WasmIcuFeatures' item has an unknown value. Accepted values: base, currency, normalization, locales, collations, zones.");
             var baseBatch = new List<string>() { "icudt_base.dat" };
 
             if (IcuFeatures?.Any(f => f.ItemSpec == "currency") == true)
