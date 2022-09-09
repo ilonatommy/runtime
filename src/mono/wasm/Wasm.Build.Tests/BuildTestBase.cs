@@ -671,8 +671,8 @@ namespace Wasm.Build.Tests
                     AssertFilesExist(bundleDir, new[] { $"icudt_{shardName}_full.dat" });
                     return;
                 }
-                AssertFilesExist(bundleDir, new[] { "icudt_base.dat" });
-
+                if (icuFeatures.Any(f => f == "base"))
+                    AssertFilesExist(bundleDir, new[] { "icudt_base.dat" });
                 if (icuFeatures.Any(f => f == "currency"))
                     AssertFilesExist(bundleDir, new[] { $"icudt_currency.dat" });
                 if (icuFeatures.Any(f => f == "normalization"))
@@ -745,7 +745,7 @@ namespace Wasm.Build.Tests
         {
             var result = RunProcess(s_buildEnv.DotNet, _testOutput, args, workingDir: _projectDir, label: label, envVars: envVars, timeoutMs: timeoutMs ?? s_defaultPerTestTimeoutMs);
             if (expectSuccess && result.exitCode != 0)
-                throw new XunitException($"Build process exited with non-zero exit code: {result.exitCode}");
+                throw new XunitException($"Build process exited with non-zero exit code: {result.exitCode} {result.buildOutput}");
             if (!expectSuccess && result.exitCode == 0)
                 throw new XunitException($"Build should have failed, but it didn't. Process exited with exitCode : {result.exitCode}");
 

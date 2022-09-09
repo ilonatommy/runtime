@@ -469,8 +469,9 @@ public class WasmAppBuilder : Task
                 f.ItemSpec != "collations" &&
                 f.ItemSpec != "zones"))
                 throw new LogAsErrorException("'WasmIcuFeatures' item has an unknown value. Accepted values: base, currency, normalization, locales, collations, zones.");
-            var baseBatch = new List<string>() { "icudt_base.dat" };
-
+            var baseBatch = new List<string>();
+            if (IcuFeatures?.Any(f => f.ItemSpec == "base") == true)
+                baseBatch.Add("icudt_base.dat");
             if (IcuFeatures?.Any(f => f.ItemSpec == "currency") == true)
                 baseBatch.Add("icudt_currency.dat");
             if (IcuFeatures?.Any(f => f.ItemSpec == "normalization") == true)
