@@ -25,9 +25,9 @@ namespace Wasm.Build.Tests
                 .Multiply(
                     // declaring "de" we make "EFIGS" file to be uploaded, so all
                     // cultures from EFIGS should be accessible as well
-                    new object?[] { new string[] { "de" }, "\"de_IT\", \"en_DE\", \"fr_BE\""},
-                    new object?[] { new string[] { "de", "en" }, "\"de_IT\", \"en_GI\", \"fr_BE\""},
-                    new object?[] { new string[] { "fr" }, "\"en_NZ\", \"es_ES\", \"fr_BE\""}
+                    new object?[] { new string[] { "de" }, "\"de-IT\", \"en-DE\", \"fr-BE\""},
+                    new object?[] { new string[] { "de", "en" }, "\"de-IT\", \"en-GI\", \"fr-BE\""},
+                    new object?[] { new string[] { "fr" }, "\"en-NZ\", \"es-ES\", \"fr-BE\""}
                     )
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
@@ -35,18 +35,18 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> ICUShardingByCulture_CJK_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { new string[] { "zh" }, "\"zh_HK\", \"en_DE\", \"ko_KR\""},
-                    new object?[] { new string[] { "en", "ko" }, "\"ja_JP\", \"ko_KR\", \"zh_SG\""},
-                    new object?[] { new string[] { "ja" }, "\"en_US\", \"ja_JP\", \"ko_KR\""})
+                    new object?[] { new string[] { "zh" }, "\"zh-HK\", \"en-DE\", \"ko-KR\""},
+                    new object?[] { new string[] { "en", "ko" }, "\"ja-JP\", \"ko-KR\", \"zh-SG\""},
+                    new object?[] { new string[] { "ja" }, "\"en-US\", \"ja-JP\", \"ko-KR\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
         public static IEnumerable<object?[]> ICUShardingByCulture_no_CJK_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { new string[] { "pl" }, "\"pl_PL\", \"en_MP\", \"da_DK\""},
-                    new object?[] { new string[] { "hr", "en" }, "\"hr_BA\", \"mr_IN\", \"fi_FI\""},
-                    new object?[] { new string[] { "cs" }, "\"cs_CZ\", \"da_DK\", \"vi_VN\""})
+                    new object?[] { new string[] { "pl" }, "\"pl-PL\", \"en-MP\", \"da-DK\""},
+                    new object?[] { new string[] { "hr", "en" }, "\"hr-BA\", \"mr-IN\", \"fi-FI\""},
+                    new object?[] { new string[] { "cs" }, "\"cs-CZ\", \"da-DK\", \"vi-VN\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
@@ -54,25 +54,25 @@ namespace Wasm.Build.Tests
             => ConfigWithAOTData(aot)
                 .Multiply(
                     // loads full_full
-                    new object?[] { new string[] { "fr", "ja" }, "\"fr_CH\", \"ja_JP\", \"zh_HK\""},
-                    new object?[] { new string[] { "es", "zh" }, "\"es_419\", \"zh_HK\", \"de_LI\""},
-                    new object?[] { new string[] { "en", "ko", "it" }, "\"it_IT\", \"ko_KR\", \"en_TV\""})
+                    new object?[] { new string[] { "fr", "ja" }, "\"fr-CH\", \"ja-JP\", \"zh-HK\""},
+                    new object?[] { new string[] { "es", "zh" }, "\"es-419\", \"zh-HK\", \"de-LI\""},
+                    new object?[] { new string[] { "en", "ko", "it" }, "\"it-IT\", \"ko-KR\", \"en-TV\""})
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
-        // [Theory]
-        // [MemberData(nameof(ICUShardingByCulture_EFIGS_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        // [MemberData(nameof(ICUShardingByCulture_EFIGS_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        // [MemberData(nameof(ICUShardingByCulture_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
-        // [MemberData(nameof(ICUShardingByCulture_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
-        // [MemberData(nameof(ICUShardingByCulture_no_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        // [MemberData(nameof(ICUShardingByCulture_no_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        // [MemberData(nameof(ICUShardingByCulture_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
-        // [MemberData(nameof(ICUShardingByCulture_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
-        // public void ShardingTestsPositive(BuildArgs buildArgs, string[] declaredIcuCultures, string testedCultures, RunHost host, string id)
-        //     => TestICUShardingByCulture(buildArgs, declaredIcuCultures, testedCultures, false, host, id,
-        //                                     extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
-        //                                     dotnetWasmFromRuntimePack: false);
+        [Theory]
+        [MemberData(nameof(ICUShardingByCulture_EFIGS_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
+        [MemberData(nameof(ICUShardingByCulture_EFIGS_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
+        [MemberData(nameof(ICUShardingByCulture_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
+        [MemberData(nameof(ICUShardingByCulture_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
+        [MemberData(nameof(ICUShardingByCulture_no_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.All })]
+        [MemberData(nameof(ICUShardingByCulture_no_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.All })]
+        [MemberData(nameof(ICUShardingByCulture_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ false, RunHost.NodeJS })] // for Chrome fails
+        [MemberData(nameof(ICUShardingByCulture_EFIG_CJK_Positive), parameters: new object[] { /*aot*/ true, RunHost.NodeJS })]
+        public void ShardingTestsPositive(BuildArgs buildArgs, string[] declaredIcuCultures, string testedCultures, RunHost host, string id)
+            => TestICUShardingByCulture(buildArgs, declaredIcuCultures, testedCultures, false, host, id,
+                                            extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
+                                            dotnetWasmFromRuntimePack: false);
 
         private void TestICUShardingByCulture(BuildArgs buildArgs,
                              string[] declaredIcuCultures,
@@ -156,8 +156,8 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> ICUShardingByFeature_FULL_Positive(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { new string[] { "currency" }, "\"de_IT\", \"en_DE\", \"cs_CZ\""},
-                    new object?[] { new string[] { "currency" }, "\"hr_HR\", \"es_ES\", \"fr_BE\""}
+                    new object?[] { new string[] { "currency" }, "\"de-IT\", \"en-DE\", \"cs-CZ\""},
+                    new object?[] { new string[] { "currency" }, "\"hr-HR\", \"es-ES\", \"fr-BE\""}
                     // ToDo: CJK cultures to test when the data contents will start matching
                     )
                 .WithRunHosts(host)
