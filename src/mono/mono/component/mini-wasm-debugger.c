@@ -136,7 +136,7 @@ handle_multiple_ss_requests (void) {
 static void
 mono_wasm_enable_debugging_internal (int debug_level)
 {
-	log_level = debug_level;
+	log_level = 10;
 	if (debug_level != 0) {
 		wasm_debugger_log(1, "DEBUGGING ENABLED\n");
 		debugger_enabled = TRUE;
@@ -373,6 +373,7 @@ extern void mono_wasm_add_dbg_command_received(mono_bool res_ok, int id, void* b
 EMSCRIPTEN_KEEPALIVE gboolean
 mono_wasm_send_dbg_command_with_parms (int id, MdbgProtCommandSet command_set, int command, guint8* data, unsigned int size, int valtype, char* newvalue)
 {
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command_with_parms 1\n");
 	gboolean result = FALSE;
 	MONO_ENTER_GC_UNSAFE;
 	if (!debugger_enabled) {
@@ -389,7 +390,9 @@ mono_wasm_send_dbg_command_with_parms (int id, MdbgProtCommandSet command_set, i
 		result = TRUE;
 		goto done;
 	}
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command_with_parms 2\n");
 	mono_wasm_send_dbg_command(id, command_set, command, bufWithParms.buf, m_dbgprot_buffer_len(&bufWithParms));
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command_with_parms 3\n");
 	buffer_free (&bufWithParms);
 	result = TRUE;
 done:
@@ -400,6 +403,7 @@ done:
 EMSCRIPTEN_KEEPALIVE gboolean
 mono_wasm_send_dbg_command (int id, MdbgProtCommandSet command_set, int command, guint8* data, unsigned int size)
 {
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command 1\n");
 	gboolean result = FALSE;
 	MONO_ENTER_GC_UNSAFE;
 	if (!debugger_enabled) {
@@ -408,6 +412,7 @@ mono_wasm_send_dbg_command (int id, MdbgProtCommandSet command_set, int command,
 		result = TRUE;
 		goto done;
 	}
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command 2\n");
 	ss_calculate_framecount (NULL, NULL, TRUE, NULL, NULL);
 	MdbgProtBuffer buf;
 	buffer_init (&buf, 128);
@@ -415,11 +420,14 @@ mono_wasm_send_dbg_command (int id, MdbgProtCommandSet command_set, int command,
 	MdbgProtErrorCode error = 0;
 	if (command_set == MDBGPROT_CMD_SET_VM && command == MDBGPROT_CMD_VM_INVOKE_METHOD )
 	{
+		PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command 3; command == MDBGPROT_CMD_VM_INVOKE_METHOD\n");
 		DebuggerTlsData* tls = mono_wasm_get_tls ();
 		InvokeData invoke_data;
 		memset (&invoke_data, 0, sizeof (InvokeData));
 		invoke_data.endp = data + size;
+		PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command 4\n");
 		error = mono_do_invoke_method (tls, &buf, &invoke_data, data, &data);
+		PRINT_DEBUG_MSG (1, "[ILONA] mono_wasm_send_dbg_command 5, error=%d\n", error);
 	}
 	else if (command_set == MDBGPROT_CMD_SET_VM && (command ==  MDBGPROT_CMD_GET_ASSEMBLY_BYTES))
 	{

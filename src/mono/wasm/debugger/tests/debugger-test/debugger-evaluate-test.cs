@@ -516,10 +516,13 @@ namespace DebuggerTests
             public List<List<int>> numListOfLists;
             public string[][] textArrayOfArrays;
             public List<List<string>> textListOfLists;
+            public Dictionary<string, bool> indexedByStr;
+            public Dictionary<bool, string> indexedByBool;
             public int idx0;
             public int idx1;
 
             public bool this[string key] => key.Length > 3;
+            public string this[bool key] => key.ToString();
 
             public void run()
             {
@@ -531,6 +534,8 @@ namespace DebuggerTests
                 numListOfLists = new List<List<int>> { numList, numList };
                 textArrayOfArrays = new string[][] { textArray, textArray };
                 textListOfLists = new List<List<string>> { textList, textList };
+                indexedByStr = new Dictionary<string, bool>() { { "11", true }, { "111", false } };
+                indexedByBool = new Dictionary<bool, string>() { { true, "TRUE" }, { false, "FALSE" } };
                 idx0 = 0;
                 idx1 = 1;
             }

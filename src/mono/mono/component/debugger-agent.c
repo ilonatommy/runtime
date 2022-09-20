@@ -5336,7 +5336,7 @@ decode_vtype (MonoType *t, MonoDomain *domain, gpointer void_addr, gpointer void
 	if (t && klass != mono_class_from_mono_type_internal (t)) {
 		char *name = mono_type_full_name (t);
 		char *name2 = mono_type_full_name (m_class_get_byval_arg (klass));
-		PRINT_DEBUG_MSG (1, "[%p] Expected value of type %s, got %s.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, name2);
+		PRINT_DEBUG_MSG (1, "[%p] 1 Expected value of type %s, got %s.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, name2);
 		g_free (name);
 		g_free (name2);
 		return ERR_INVALID_ARGUMENT;
@@ -5416,6 +5416,7 @@ static ErrorCode
 decode_value_internal (MonoType *t, int type, MonoDomain *domain, guint8 *addr, guint8 *buf, guint8 **endbuf, guint8 *limit, gboolean check_field_datatype)
 {
 	ErrorCode err;
+	PRINT_DEBUG_MSG (1, "[ILONA] decode_value_internal t->type = %d, type = %d\n", t->type, type);
 
 	if (type != t->type && !MONO_TYPE_IS_REFERENCE (t) &&
 		!(t->type == MONO_TYPE_I && type == MONO_TYPE_VALUETYPE) &&
@@ -5426,7 +5427,7 @@ decode_value_internal (MonoType *t, int type, MonoDomain *domain, guint8 *addr, 
 		!(t->type == MONO_TYPE_GENERICINST && type == MONO_TYPE_VALUETYPE) &&
 		!(t->type == MONO_TYPE_VALUETYPE && type == MONO_TYPE_OBJECT)) {
 		char *name = mono_type_full_name (t);
-		PRINT_DEBUG_MSG (1, "[%p] Expected value of type %s, got 0x%0x.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, type);
+		PRINT_DEBUG_MSG (1, "[%p] 2 Expected value of type %s, got 0x%0x.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, type);
 		g_free (name);
 		return ERR_INVALID_ARGUMENT;
 	}
@@ -5581,7 +5582,7 @@ decode_value_internal (MonoType *t, int type, MonoDomain *domain, guint8 *addr, 
 				g_free (vtype_buf);
 			} else {
 				char *name = mono_type_full_name (t);
-				PRINT_DEBUG_MSG (1, "[%p] Expected value of type %s, got 0x%0x.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, type);
+				PRINT_DEBUG_MSG (1, "[%p] 3 Expected value of type %s, got 0x%0x. %s, %s\n", (gpointer) (gsize) mono_native_thread_id_get (), name, type, name, type);
 				g_free (name);
 				return ERR_INVALID_ARGUMENT;
 			}
@@ -5612,8 +5613,10 @@ decode_value (MonoType *t, MonoDomain *domain, gpointer void_addr, gpointer void
 	ERROR_DECL (error);
 	ErrorCode err;
 	int type = decode_byte (buf, &buf, limit);
+	PRINT_DEBUG_MSG (1, "[ILONA] decode_value type = %d, t->type = %d\n", type, t->type);
 
 	if (t->type == MONO_TYPE_GENERICINST && mono_class_is_nullable (mono_class_from_mono_type_internal (t))) {
+		PRINT_DEBUG_MSG (1, "[ILONA] decode_value type in if 1");
 		MonoType *targ = t->data.generic_class->context.class_inst->type_argv [0];
 		guint8 *nullable_buf;
 
@@ -5623,11 +5626,13 @@ decode_value (MonoType *t, MonoDomain *domain, gpointer void_addr, gpointer void
 		err = decode_value_internal (t, type, domain, addr, buf, endbuf, limit, check_field_datatype);
 		if (err == ERR_NONE)
 			return err;
+		PRINT_DEBUG_MSG (1, "[ILONA] decode_value type in if 2");
 
 		/*
 		 * Then try decoding as a primitive value or null.
 		 */
 		if (targ->type == type) {
+			PRINT_DEBUG_MSG (1, "[ILONA] decode_value type in if 3");
 			nullable_buf = (guint8 *)g_malloc (mono_class_instance_size (mono_class_from_mono_type_internal (targ)));
 			err = decode_value_internal (targ, type, domain, nullable_buf, buf, endbuf, limit, check_field_datatype);
 			if (err != ERR_NONE) {
@@ -6037,14 +6042,14 @@ mono_do_invoke_method (DebuggerTlsData *tls, Buffer *buf, InvokeData *invoke, gu
 		 * Invoke this method directly, currently only Environment.Exit () is supported.
 		 */
 		this_arg = NULL;
-		PRINT_DEBUG_MSG (1, "[%p] Invoking method '%s' on receiver '%s'.\n", (gpointer) (gsize) mono_native_thread_id_get (), mono_method_full_name (invoke->method, TRUE), this_arg ? m_class_get_name (this_arg->vtable->klass) : "<null>");
+		PRINT_DEBUG_MSG (1, "[%p] 1 Invoking method '%s' on receiver '%s'.\n", (gpointer) (gsize) mono_native_thread_id_get (), mono_method_full_name (invoke->method, TRUE), this_arg ? m_class_get_name (this_arg->vtable->klass) : "<null>");
 
 		mono_runtime_try_invoke (invoke->method, NULL, invoke->args, &exc, error);
 		mono_error_assert_ok (error);
 		g_assert_not_reached ();
 	}
 
-	m = decode_methodid (p, &p, end, &domain, &err);
+	m = decode_methodid (p, &p, end, &domain, &err); // exception after it
 	if (err != ERR_NONE)
 		return err;
 	sig = mono_method_signature_internal (m);
@@ -6116,7 +6121,7 @@ mono_do_invoke_method (DebuggerTlsData *tls, Buffer *buf, InvokeData *invoke, gu
 		}
 	}
 
-	PRINT_DEBUG_MSG (1, "[%p] Invoking method '%s' on receiver '%s'.\n", (gpointer) (gsize) mono_native_thread_id_get (), mono_method_full_name (m, TRUE), this_arg ? m_class_get_name (this_arg->vtable->klass) : "<null>");
+	PRINT_DEBUG_MSG (1, "[%p] 2 Invoking method '%s' on receiver '%s'.\n", (gpointer) (gsize) mono_native_thread_id_get (), mono_method_full_name (m, TRUE), this_arg ? m_class_get_name (this_arg->vtable->klass) : "<null>");
 
 	if (this_arg && this_arg->vtable->domain != domain)
 		NOT_IMPLEMENTED;
@@ -6141,6 +6146,7 @@ mono_do_invoke_method (DebuggerTlsData *tls, Buffer *buf, InvokeData *invoke, gu
 		return ERR_INVALID_ARGUMENT;
 
 	nargs = decode_int (p, &p, end);
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 1, nargs = %d, paramCnt = %d\n", nargs, sig->param_count);
 	if (nargs != sig->param_count)
 		return ERR_INVALID_ARGUMENT;
 	/* Use alloca to get gc tracking */
@@ -6148,32 +6154,42 @@ mono_do_invoke_method (DebuggerTlsData *tls, Buffer *buf, InvokeData *invoke, gu
 	memset (arg_buf, 0, nargs * sizeof (gpointer));
 	args = (gpointer *)g_alloca (nargs * sizeof (gpointer));
 	for (i = 0; i < nargs; ++i) {
+		PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method in the loop i = %d\n", i);
 		if (MONO_TYPE_IS_REFERENCE (sig->params [i])) {
+			PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 2\n");
 			err = decode_value (sig->params [i], domain, (guint8*)&args [i], p, &p, end, TRUE);
+			PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 3, err = %d\n", err);
 			if (err != ERR_NONE)
 				break;
 			if (args [i] && ((MonoObject*)args [i])->vtable->domain != domain)
 				NOT_IMPLEMENTED;
+			PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 4\n");
 
 			if (m_type_is_byref (sig->params [i])) {
+				PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 5\n");
 				arg_buf [i] = g_newa (guint8, sizeof (gpointer));
 				*(gpointer*)arg_buf [i] = args [i];
 				args [i] = arg_buf [i];
 			}
 		} else {
+			PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 6\n");
 			MonoClass *arg_class = mono_class_from_mono_type_internal (sig->params [i]);
 			arg_buf [i] = (guint8 *)g_alloca (mono_class_instance_size (arg_class));
 			err = decode_value (sig->params [i], domain, arg_buf [i], p, &p, end, TRUE);
+			PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 7, err = %d\n", err);
 			if (err != ERR_NONE)
 				break;
 			if (mono_class_is_nullable (arg_class)) {
+				PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 8\n");
 				args [i] = mono_nullable_box (arg_buf [i], arg_class, error);
 				mono_error_assert_ok (error);
 			} else {
+				PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 9\n");
 				args [i] = arg_buf [i];
 			}
 		}
 	}
+	PRINT_DEBUG_MSG (1, "[ILONA] mono_do_invoke_method 10, i = %d\n", i);
 
 	if (i < nargs)
 		return err;

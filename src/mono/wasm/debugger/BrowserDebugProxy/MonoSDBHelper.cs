@@ -778,7 +778,7 @@ namespace Microsoft.WebAssembly.Diagnostics
         private int VmMinorVersion { get; set; }
         private int VmMajorVersion { get; set; }
 
-        private Dictionary<int, MethodInfoWithDebugInformation> methods;
+        public Dictionary<int, MethodInfoWithDebugInformation> methods;
         private Dictionary<int, AssemblyInfo> assemblies;
         private Dictionary<int, TypeInfoWithDebugInformation> types;
 

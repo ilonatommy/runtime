@@ -458,19 +458,27 @@ namespace Microsoft.WebAssembly.Diagnostics
                                     return await ExpressionEvaluator.EvaluateSimpleExpression(this, eaFormatted, elementAccessStr, variableDefinitions, logger, token);
                                 }
                                 var typeIds = await context.SdbAgent.GetTypeIdsForObject(objectId.Value, true, token);
-                                int[] methodIds = await context.SdbAgent.GetMethodIdsByName(typeIds[0], "ToArray", token);
-                                // ToArray should not have an overload, but if user defined it, take the default one: without params
-                                if (methodIds == null)
-                                    throw new InvalidOperationException($"Type '{rootObject?["className"]?.Value<string>()}' cannot be indexed.");
+                                // int[] methodIds = await context.SdbAgent.GetMethodIdsByName(typeIds[0], "ToArray", token);
+                                // int allowedParamCnt = 0;
+                                // if (methodIds == null)
+                                // {
+                                    int allowedParamCnt = 1;
+                                    int[] methodIds = await context.SdbAgent.GetMethodIdsByName(typeIds[0], "get_Item", token);
+                                    if (methodIds == null)
+                                        throw new InvalidOperationException($"Type '{rootObject?["className"]?.Value<string>()}' cannot be indexed.");
+                                // }
 
+                                // ToArray / get_Item should not have an overload, but if user defined it, take the default one: without params / with one param: key
                                 int toArrayId = methodIds[0];
                                 if (methodIds.Length > 1)
                                 {
+                                    Console.WriteLine($"methodIds.Length > 1");
                                     foreach (var methodId in methodIds)
                                     {
                                         MethodInfoWithDebugInformation methodInfo = await context.SdbAgent.GetMethodInfo(methodId, token);
                                         ParameterInfo[] paramInfo = methodInfo.GetParametersInfo();
-                                        if (paramInfo.Length == 0)
+                                        Console.WriteLine($"name = {methodInfo.Name}; paramInfo = {paramInfo.Length}");
+                                        if (paramInfo.Length == allowedParamCnt)
                                         {
                                             toArrayId = methodId;
                                             break;
@@ -479,14 +487,29 @@ namespace Microsoft.WebAssembly.Diagnostics
                                 }
                                 try
                                 {
-                                    var toArrayRetMethod = await context.SdbAgent.InvokeMethod(objectId.Value, toArrayId, isValueType: false, token);
-                                    rootObject = await GetValueFromObject(toArrayRetMethod, token);
-                                    DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId arrayObjectId);
-                                    rootObject["value"] = await context.SdbAgent.GetArrayValues(arrayObjectId.Value, token);
-                                    return (JObject)rootObject["value"][elementIdx]["value"];
+                                    Console.WriteLine($"methodIds.Length == 1");
+                                    Console.WriteLine($"rootObject = {rootObject}, elementIdxStr = {elementIdxStr}");
+                                    if (allowedParamCnt == 0) // ToArray result
+                                    {
+                                        JObject toArrayRetObj = await context.SdbAgent.InvokeMethod(objectId.Value, toArrayId, isValueType: false, token);
+                                        rootObject = await GetValueFromObject(toArrayRetObj, token);
+                                        DotnetObjectId.TryParse(rootObject?["objectId"]?.Value<string>(), out DotnetObjectId arrayObjectId);
+                                        rootObject["value"] = await context.SdbAgent.GetArrayValues(arrayObjectId.Value, token);
+                                        return (JObject)rootObject["value"][elementIdx]["value"];
+                                    }
+                                    // get_Item result
+                                    using var ctorArgsWriter = new MonoBinaryWriter();
+                                    ctorArgsWriter.WriteObj(objectId, context.SdbAgent);
+                                    ctorArgsWriter.Write(1); // number of method args
+                                    // if we learn how to check properly the indexing obj type and pass elementIdx / elementIdxStr when we should, then ToArray won't be needed
+                                    if (!await ctorArgsWriter.WriteConst(ElementType.I4, elementIdx, context.SdbAgent, token)) // string? how do you know?
+                                        throw new InternalErrorException($"Unable to write index parameter to invoke the method in the runtime.");
+                                    JObject getItemRetObj = await context.SdbAgent.InvokeMethod(ctorArgsWriter.GetParameterBuffer(), toArrayId, token);
+                                    return (JObject)getItemRetObj["value"];
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
+                                    Console.WriteLine($"ex = {ex}");
                                     throw new InvalidOperationException($"Cannot apply indexing with [] to an object of type '{rootObject?["className"]?.Value<string>()}'");
                                 }
                             default:

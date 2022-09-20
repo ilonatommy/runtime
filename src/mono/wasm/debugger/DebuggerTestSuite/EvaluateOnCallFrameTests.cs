@@ -627,19 +627,51 @@ namespace DebuggerTests
 
            });
 
-        [Fact]
-        public async Task EvaluateIndexingByExpression() => await CheckInspectLocalsAtBreakpointSite(
+        [Fact] //FIXME: Type 'DebuggerTests.EvaluateLocalsWithIndexingTests.TestEvaluate' cannot be indexed.
+        public async Task EvaluateIndexingOfObjectsThatDoNotHaveToArrayMethod() => await CheckInspectLocalsAtBreakpointSite(
             "DebuggerTests.EvaluateLocalsWithIndexingTests", "EvaluateLocals", 5, "DebuggerTests.EvaluateLocalsWithIndexingTests.EvaluateLocals",
             "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.EvaluateLocalsWithIndexingTests:EvaluateLocals'); })",
             wait_for_event_fn: async (pause_location) =>
             {
                 var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
                 await EvaluateOnCallFrameAndCheck(id,
-                    ("f.numList[i + 1]", TNumber(2)),
-                    ("f.textList[(2 * j) - 1]", TString("2")),
-                    ("f.textList[j - 1]", TString("1")),
-                    //("f[\"longstring\"]", TBool(true)), FIXME: Broken case
-                    ("f.numArray[f.numList[j - 1]]", TNumber(2))
+                    ("f[\"longstring\"]", TBool(true))
+                    // ("f[\"-\"]", TBool(false))
+                    // ("f.arrIndexedByStr[\"longstring\"]", TBool(true)),
+                    // ("f.arrIndexedByStr[\"-\"]", TBool(false))
+                );
+            });
+
+        [Fact]
+        public async Task EvaluateIndexingByNonNumberType() => await CheckInspectLocalsAtBreakpointSite(
+            "DebuggerTests.EvaluateLocalsWithIndexingTests", "EvaluateLocals", 5, "DebuggerTests.EvaluateLocalsWithIndexingTests.EvaluateLocals",
+            "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.EvaluateLocalsWithIndexingTests:EvaluateLocals'); })",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+                await EvaluateOnCallFrameAndCheck(id,
+                    ("f.indexedByStr[\"11\"]", TBool(true)),
+                    ("f.indexedByStr[\"111\"]", TBool(false)),
+                    ("f.indexedByBool[true]", TString("TRUE")),
+                    ("f.indexedByStr[false]", TString("FALSE"))
+                );
+            });
+
+
+        [Fact]
+        public async Task EvaluateIndexingByExpression2() => await CheckInspectLocalsAtBreakpointSite(
+            "DebuggerTests.EvaluateLocalsWithIndexingTests", "EvaluateLocals", 5, "DebuggerTests.EvaluateLocalsWithIndexingTests.EvaluateLocals",
+            "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTests.EvaluateLocalsWithIndexingTests:EvaluateLocals'); })",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+                await EvaluateOnCallFrameAndCheck(id,
+                    // ("f.numList[i + 1]", TNumber(2)),
+                    // ("f.textList[(2 * j) - 1]", TString("2")),
+                    // ("f.textList[j - 1]", TString("1")),
+                    ("f.indexedByStr[\"1\" + \"1\"]", TBool(true)),
+                    ("f.indexedByStr[\'1\' + \"11\"]", TBool(false))
+                    // ("f.numArray[f.numList[j - 1]]", TNumber(2))
                 );
             });
 
