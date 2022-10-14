@@ -332,6 +332,8 @@ namespace BrowserDebugProxy
             {
                 retDebuggerCmdReader.ReadInt32(); //propertyId
                 string propName = retDebuggerCmdReader.ReadString();
+                if (propName == "Items")
+                    Console.WriteLine($"ILONA is this token the same? {typeInfo.Info.Token}");
                 var getMethodId = retDebuggerCmdReader.ReadInt32();
                 retDebuggerCmdReader.ReadInt32(); //setmethod
                 var attrs = (PropertyAttributes)retDebuggerCmdReader.ReadInt32(); //attrs

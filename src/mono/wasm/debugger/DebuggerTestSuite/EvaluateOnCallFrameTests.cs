@@ -1233,6 +1233,25 @@ namespace DebuggerTests
                    ("ClassToBreak.valueToCheck", TNumber(10)));
            });
 
+        [ConditionalTheory(nameof(RunningOnChrome))]
+        [InlineData("EvaluateBrowsableClass", "TestEvaluateFieldsNone", "testFieldsNone.list", 10)]
+        // List's Items are RootHidden
+        public async Task EvaluateNonUserDefinedRootHidden(
+            string outerClassName, string className, string localVarName, int breakLine, bool allMembersAreProperties = false) => await CheckInspectLocalsAtBreakpointSite(
+            $"DebuggerTests.{outerClassName}", "Evaluate", breakLine, $"DebuggerTests.{outerClassName}.Evaluate",
+            $"window.setTimeout(function() {{ invoke_static_method ('[debugger-test] DebuggerTests.{outerClassName}:Evaluate'); 1 }})",
+            wait_for_event_fn: async (pause_location) =>
+            {
+                var id = pause_location["callFrames"][0]["callFrameId"].Value<string>();
+
+                var (list, _) = await EvaluateOnCallFrame(id, localVarName);
+                Console.WriteLine(list);
+                // await CheckValue(list, TObject("System.Collections.Generic.List<int>", description: "Count = 2"), nameof(list));
+                // description is wrong, same as the class name
+                var listProps = await GetProperties(list["objectId"]?.Value<string>());
+                Console.WriteLine(listProps);
+            });
+
         [ConditionalFact(nameof(RunningOnChrome))]
         public async Task EvaluateLocalObjectFromAssemblyNotRelatedButLoaded()
          => await CheckInspectLocalsAtBreakpointSite(

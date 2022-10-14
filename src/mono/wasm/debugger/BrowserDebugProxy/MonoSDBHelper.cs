@@ -934,6 +934,8 @@ namespace Microsoft.WebAssembly.Diagnostics
 
             var typeToken = await GetTypeToken(typeId, token);
             var typeName = await GetTypeName(typeId, token);
+            if (typeName == "System.Collections.Generic.List<int>")
+                Console.WriteLine($"ILONA: typeToken = {typeToken}");
             var assemblyId = await GetAssemblyFromType(typeId, token);
             var asm = await GetAssemblyInfo(assemblyId, token);
 

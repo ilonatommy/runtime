@@ -734,12 +734,26 @@ namespace Microsoft.WebAssembly.Diagnostics
             else
                 FullName = name;
 
+            // var parentToken = 33556537;
+            var thisToken = 33556517;
+
+            if (Token == thisToken)
+            {
+                Console.WriteLine($"ILONA: fieldsCnt = {type.GetFields().Count}");
+                Console.WriteLine($"ILONA: propsCnt = {type.GetProperties().Count}");
+                Console.WriteLine($"ILONA: cattrsCnt = {type.GetCustomAttributes().Count}");
+            }
+
             foreach (var field in type.GetFields())
             {
                 try
                 {
                     var fieldDefinition = metadataReader.GetFieldDefinition(field);
                     var fieldName = assembly.EnCGetString(fieldDefinition.Name);
+                    if (Token == thisToken)
+                    {
+                        Console.WriteLine($"ILONA: fieldName = {fieldName}");
+                    }
                     AppendToBrowsable(DebuggerBrowsableFields, fieldDefinition.GetCustomAttributes(), fieldName);
                 }
                 catch (Exception ex)
@@ -755,6 +769,10 @@ namespace Microsoft.WebAssembly.Diagnostics
                 {
                     var propDefinition = metadataReader.GetPropertyDefinition(prop);
                     var propName = assembly.EnCGetString(propDefinition.Name);
+                    if (Token == thisToken)
+                    {
+                        Console.WriteLine($"ILONA: propName = {propName}");
+                    }
                     AppendToBrowsable(DebuggerBrowsableProperties, propDefinition.GetCustomAttributes(), propName);
                 }
                 catch (Exception ex)
@@ -771,6 +789,10 @@ namespace Microsoft.WebAssembly.Diagnostics
                     continue;
                 var container = metadataReader.GetMemberReference((MemberReferenceHandle)ctorHandle).Parent;
                 var attributeName = assembly.EnCGetString(metadataReader.GetTypeReference((TypeReferenceHandle)container).Name);
+                    if (Token == thisToken)
+                    {
+                        Console.WriteLine($"ILONA: attributeName = {attributeName}");
+                    }
                 switch (attributeName)
                 {
                     case nameof(CompilerGeneratedAttribute):
@@ -794,6 +816,9 @@ namespace Microsoft.WebAssembly.Diagnostics
                         var container = metadataReader.GetMemberReference((MemberReferenceHandle)ctorHandle).Parent;
                         var valueBytes = metadataReader.GetBlobBytes(metadataReader.GetCustomAttribute(cattr).Value);
                         var attributeName = assembly.EnCGetString(metadataReader.GetTypeReference((TypeReferenceHandle)container).Name);
+                        // _collection and Items do not have any cattr. WHY? Items should have RootHidden!
+                        if (Token == 33556517)
+                            Console.WriteLine($"ILONA: attributeName = {attributeName}");
                         if (attributeName != "DebuggerBrowsableAttribute")
                             continue;
                         var state = (DebuggerBrowsableState)valueBytes[2];
