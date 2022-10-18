@@ -3294,6 +3294,7 @@ static GENERATE_TRY_GET_CLASS_WITH_CACHE (non_user_klass, "System.Diagnostics", 
 static void
 init_jit_info_dbg_attrs (MonoJitInfo *ji)
 {
+	PRINT_DEBUG_MSG (1, "[ILONA] init_jit_info_dbg_attrs\n");
 	ERROR_DECL (error);
 	MonoCustomAttrInfo *ainfo;
 
@@ -3308,14 +3309,23 @@ init_jit_info_dbg_attrs (MonoJitInfo *ji)
 	ainfo = mono_custom_attrs_from_method_checked (jinfo_get_method (ji), error);
 	mono_error_cleanup (error); /* FIXME don't swallow the error? */
 	if (ainfo) {
-		if (hidden_klass && mono_custom_attrs_has_attr (ainfo, hidden_klass))
-			ji->dbg_hidden = TRUE;
+		PRINT_DEBUG_MSG (1, "[ILONA] ainfo not null, %s\n", ainfo->image->name);
+		if (hidden_klass)
+		{
+			PRINT_DEBUG_MSG (1, "[ILONA] hidden_klass not null\n");
+			if (mono_custom_attrs_has_attr (ainfo, hidden_klass))
+			{
+				PRINT_DEBUG_MSG (1, "[ILONA] mono_custom_attrs_has_attr hidden_klass\n");
+				ji->dbg_hidden = TRUE;
+			}
+		}
 		if (step_through_klass && mono_custom_attrs_has_attr (ainfo, step_through_klass))
 			ji->dbg_step_through = TRUE;
 		if (non_user_klass && mono_custom_attrs_has_attr (ainfo, non_user_klass))
 			ji->dbg_non_user_code = TRUE;
 		mono_custom_attrs_free (ainfo);
 	}
+	PRINT_DEBUG_MSG (1, "[ILONA]\n");
 
 	ainfo = mono_custom_attrs_from_class_checked (jinfo_get_method (ji)->klass, error);
 	mono_error_cleanup (error); /* FIXME don't swallow the error? */
@@ -8093,11 +8103,15 @@ type_commands_internal (int command, MonoClass *klass, MonoDomain *domain, guint
 	case CMD_TYPE_GET_CATTRS: {
 		MonoClass *attr_klass;
 		MonoCustomAttrInfo *cinfo;
+		
 
 		attr_klass = decode_typeid (p, &p, end, NULL, &err);
 		/* attr_klass can be NULL */
 		if (err != ERR_NONE)
 			goto exit;
+		char* s;
+		s = mono_type_full_name (m_class_get_byval_arg (attr_klass));
+		PRINT_DEBUG_MSG (1, "[ILONA] CMD_TYPE_GET_CATTRS case");
 
 		cinfo = mono_custom_attrs_from_class_checked (klass, error);
 		if (!is_ok (error)) {
@@ -8116,6 +8130,7 @@ type_commands_internal (int command, MonoClass *klass, MonoDomain *domain, guint
 		MonoClassField *field;
 
 		field = decode_fieldid (p, &p, end, NULL, &err);
+		PRINT_DEBUG_MSG (1, "[ILONA] CMD_TYPE_GET_FIELD_CATTRS case field_id = %d\n", field);
 		if (err != ERR_NONE)
 			goto exit;
 		attr_klass = decode_typeid (p, &p, end, NULL, &err);
@@ -8139,6 +8154,7 @@ type_commands_internal (int command, MonoClass *klass, MonoDomain *domain, guint
 		MonoProperty *prop;
 
 		prop = decode_propertyid (p, &p, end, NULL, &err);
+		PRINT_DEBUG_MSG (1, "[ILONA] CMD_TYPE_GET_PROPERTY_CATTRS case prop_id = %d\n", prop);
 		if (err != ERR_NONE)
 			goto exit;
 		attr_klass = decode_typeid (p, &p, end, NULL, &err);

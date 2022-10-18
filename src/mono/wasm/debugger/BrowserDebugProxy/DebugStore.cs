@@ -21,6 +21,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Diagnostics;
 using System.Text;
+using Microsoft.CodeAnalysis;
 
 namespace Microsoft.WebAssembly.Diagnostics
 {
@@ -716,6 +717,22 @@ namespace Microsoft.WebAssembly.Diagnostics
             Token = typeToken;
         }
 
+        public async Task PopulateTypeInfo(MonoSDBHelper sdbHelper, int typeId, CancellationToken token)
+        {
+            if (Token == 33556517)
+            {
+                Console.WriteLine($"ILONA: PopulateTypeInfo typeId = {typeId}");
+            }
+            var getCAttrsRetReader = await sdbHelper.GetCAttrsFromType(typeId, "System.Diagnostics.DebuggerHiddenAttribute", token);
+            if (Token == 33556517)
+            {
+                Console.WriteLine($"ILONA: PopulateTypeInfo {getCAttrsRetReader == null}");
+            }
+            if (getCAttrsRetReader == null)
+                return;
+            Console.WriteLine($"{getCAttrsRetReader} ignore this: {DebuggerBrowsableProperties.Count}");
+        }
+
         internal TypeInfo(AssemblyInfo assembly, TypeDefinitionHandle typeHandle, TypeDefinition type, MetadataReader metadataReader, ILogger logger)
         {
             this.logger = logger;
@@ -771,7 +788,7 @@ namespace Microsoft.WebAssembly.Diagnostics
                     var propName = assembly.EnCGetString(propDefinition.Name);
                     if (Token == thisToken)
                     {
-                        Console.WriteLine($"ILONA: propName = {propName}");
+                        Console.WriteLine($"ILONA: propName = {propName} propCAttrCnt = {propDefinition.GetCustomAttributes().Count}");
                     }
                     AppendToBrowsable(DebuggerBrowsableProperties, propDefinition.GetCustomAttributes(), propName);
                 }
@@ -789,10 +806,10 @@ namespace Microsoft.WebAssembly.Diagnostics
                     continue;
                 var container = metadataReader.GetMemberReference((MemberReferenceHandle)ctorHandle).Parent;
                 var attributeName = assembly.EnCGetString(metadataReader.GetTypeReference((TypeReferenceHandle)container).Name);
-                    if (Token == thisToken)
-                    {
-                        Console.WriteLine($"ILONA: attributeName = {attributeName}");
-                    }
+                if (Token == thisToken)
+                {
+                    Console.WriteLine($"ILONA: attributeName = {attributeName}");
+                }
                 switch (attributeName)
                 {
                     case nameof(CompilerGeneratedAttribute):
@@ -812,7 +829,23 @@ namespace Microsoft.WebAssembly.Diagnostics
                     {
                         var ctorHandle = metadataReader.GetCustomAttribute(cattr).Constructor;
                         if (ctorHandle.Kind != HandleKind.MemberReference)
+                        {
+                            // it comes to us only with MethodDefinition, we have no MemberReference
+                            if (Token == 33556517)
+                            {
+                                Console.WriteLine($"ILONA: attributeKind = {ctorHandle.Kind}");
+                                var metDef = metadataReader.GetMethodDefinition((MethodDefinitionHandle)ctorHandle);
+                                var attrs = metDef.Attributes;
+                                var name = assembly.EnCGetString(metDef.Name);
+                                Console.WriteLine($"ILONA: attrs = {attrs} name = {name}");
+                                foreach (var ca in metDef.GetCustomAttributes())
+                                {
+                                    var caH = metadataReader.GetCustomAttribute(ca).Constructor;
+                                    Console.WriteLine($"ILONA: customAttribute = {caH.Kind}");
+                                }
+                            }
                             continue;
+                        }
                         var container = metadataReader.GetMemberReference((MemberReferenceHandle)ctorHandle).Parent;
                         var valueBytes = metadataReader.GetBlobBytes(metadataReader.GetCustomAttribute(cattr).Value);
                         var attributeName = assembly.EnCGetString(metadataReader.GetTypeReference((TypeReferenceHandle)container).Name);
@@ -1138,7 +1171,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             return null;
         }
 
-        public TypeInfo CreateTypeInfo(TypeDefinitionHandle typeHandle, TypeDefinition type, MetadataReader metadataReader)
+        public TypeInfo CreateTypeInfo(TypeDefinitionHandle typeHandle, TypeDefinition type, MetadataReader asmMetadataReader)
         {
             var typeInfo = new TypeInfo(this, typeHandle, type, asmMetadataReader, logger);
             TypesByName[typeInfo.FullName] = typeInfo;
@@ -1146,9 +1179,10 @@ namespace Microsoft.WebAssembly.Diagnostics
             return typeInfo;
         }
 
-        public TypeInfo CreateTypeInfo(string typeName, int typeToken)
+        public async Task<TypeInfo> CreateTypeInfo(MonoSDBHelper sdbHelper, string typeName, int typeToken, int typeId, CancellationToken token)
         {
             var typeInfo = new TypeInfo(this, typeName, typeToken, logger);
+            await typeInfo.PopulateTypeInfo(sdbHelper, typeId, token);
             TypesByName[typeInfo.FullName] = typeInfo;
             TypesByToken[typeInfo.Token] = typeInfo;
             return typeInfo;

@@ -2001,6 +2001,7 @@ mono_custom_attrs_from_class (MonoClass *klass)
 	ERROR_DECL (error);
 	MonoCustomAttrInfo *result = mono_custom_attrs_from_class_checked (klass, error);
 	mono_error_cleanup (error);
+	// g_print ("[ILONA] mono_custom_attrs_from_class token = %s\n", klass->name);
 	return result;
 }
 

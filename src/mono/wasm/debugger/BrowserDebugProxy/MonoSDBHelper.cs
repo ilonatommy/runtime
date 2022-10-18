@@ -945,9 +945,9 @@ namespace Microsoft.WebAssembly.Diagnostics
                 return null;
             }
 
-            asm.TypesByToken.TryGetValue(typeToken, out TypeInfo type);
+            //asm.TypesByToken.TryGetValue(typeToken, out TypeInfo type);
 
-            type ??= asm.CreateTypeInfo(typeName, typeToken);
+            TypeInfo type = await asm.CreateTypeInfo(this, typeName, typeToken, typeId, token);
 
             types[typeId] = new TypeInfoWithDebugInformation(type, typeId, typeName);
             return types[typeId];
@@ -1524,6 +1524,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             commandParamsWriter.Write(0);
             var retDebuggerCmdReader = await SendDebuggerAgentCommand(CmdType.GetCattrs, commandParamsWriter, token);
             var count = retDebuggerCmdReader.ReadInt32();
+            Console.WriteLine($"GetCAttrsFromType count = {count}");
             if (count == 0)
                 return null;
             for (int i = 0 ; i < count; i++)
