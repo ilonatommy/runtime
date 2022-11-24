@@ -44,6 +44,7 @@ public class WasmAppBuilder : Task
     public ITaskItem[]? FilesToIncludeInFileSystem { get; set; }
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
+    public bool NativeGlobalization { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
@@ -85,6 +86,8 @@ public class WasmAppBuilder : Task
         public List<object> Assets { get; } = new List<object>();
         [JsonPropertyName("remoteSources")]
         public List<string> RemoteSources { get; set; } = new List<string>();
+        [JsonPropertyName("globalizationMode")]
+        public string GlobalizationMode { get; set; } = InvariantGlobalization ? "invariant" : NativeGlobalization ? "native" : "icu"; // to be changed later
         [JsonExtensionData]
         public Dictionary<string, object?> Extra { get; set; } = new();
     }

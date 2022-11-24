@@ -168,13 +168,13 @@ export interface AssetEntry extends ResourceRequest {
     /**
      * If true, an attempt will be made to load the asset from each location in MonoConfig.remoteSources.
      */
-    loadRemote?: boolean, // 
+    loadRemote?: boolean, //
     /**
      * If true, the runtime startup would not fail if the asset download was not successful.
      */
     isOptional?: boolean
     /**
-     * If provided, runtime doesn't have to fetch the data. 
+     * If provided, runtime doesn't have to fetch the data.
      * Runtime would set the buffer to null after instantiation to free the memory.
      */
     buffer?: ArrayBuffer
@@ -230,7 +230,8 @@ export type RuntimeHelpers = {
 export type GlobalizationMode =
     "icu" | // load ICU globalization data from any runtime assets with behavior "icu".
     "invariant" | //  operate in invariant globalization mode.
-    "auto" // (default): if "icu" behavior assets are present, use ICU, otherwise invariant.
+    "auto" | // if "icu" behavior assets are present, use ICU, otherwise invariant.
+    "native" // (default): use platform native functions, not icu
 
 
 export type AOTProfilerOptions = {

@@ -13,6 +13,7 @@ namespace System.Globalization
         private static partial class Settings
         {
             internal static bool Invariant { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.Invariant", "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT");
+            internal static bool Native { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.Native", "DOTNET_SYSTEM_GLOBALIZATION_NATIVE", GlobalizationMode.Invariant); // how System.Globalization.Native is set?
             internal static bool PredefinedCulturesOnly { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.PredefinedCulturesOnly", "DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", GlobalizationMode.Invariant);
         }
 
@@ -21,6 +22,7 @@ namespace System.Globalization
         // static cctor (on Unix) to be preserved when Invariant=false.
         internal static bool Invariant => Settings.Invariant;
         internal static bool PredefinedCulturesOnly => Settings.PredefinedCulturesOnly;
+        internal static bool Native => Settings.Native;
 
         private static bool TryGetAppLocalIcuSwitchValue([NotNullWhen(true)] out string? value) =>
             TryGetStringValue("System.Globalization.AppLocalIcu", "DOTNET_SYSTEM_GLOBALIZATION_APPLOCALICU", out value);
