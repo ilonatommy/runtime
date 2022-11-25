@@ -87,7 +87,7 @@ public class WasmAppBuilder : Task
         [JsonPropertyName("remoteSources")]
         public List<string> RemoteSources { get; set; } = new List<string>();
         [JsonPropertyName("globalizationMode")]
-        public string GlobalizationMode { get; set; } = InvariantGlobalization ? "invariant" : NativeGlobalization ? "native" : "icu"; // to be changed later
+        public string? GlobalizationMode { get; set; }
         [JsonExtensionData]
         public Dictionary<string, object?> Extra { get; set; } = new();
     }
@@ -184,6 +184,7 @@ public class WasmAppBuilder : Task
         var config = new WasmAppConfig ()
         {
             MainAssemblyName = MainAssemblyName,
+            GlobalizationMode = InvariantGlobalization ? "invariant" : NativeGlobalization ? "native" : "icu" // to be changed later
         };
 
         // Create app
