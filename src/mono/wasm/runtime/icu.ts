@@ -31,11 +31,13 @@ export function mono_wasm_get_icudt_name(culture: string): string {
 export function mono_wasm_globalization_init(): void {
     const config = runtimeHelpers.config;
     let invariantMode = false;
-    if (!config.globalizationMode || config.globalizationMode === "native")
+    if (!config.globalizationMode)
+        config.globalizationMode = "auto";
+    if (config.globalizationMode === "native")
     {
-        config.globalizationMode = "native";
         console.debug("MONO_WASM: Native globalization mode is on");
         cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_NATIVE", "1");
+        return;
     }
     if (config.globalizationMode === "invariant")
         invariantMode = true;

@@ -13,7 +13,7 @@ namespace System.Globalization
         private static partial class Settings
         {
             internal static bool Invariant { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.Invariant", "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT");
-            internal static bool Native { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.Native", "DOTNET_SYSTEM_GLOBALIZATION_NATIVE", GlobalizationMode.Invariant); // how System.Globalization.Native is set?
+            internal static bool Native { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.Native", "DOTNET_SYSTEM_GLOBALIZATION_NATIVE");
             internal static bool PredefinedCulturesOnly { get; } = AppContextConfigHelper.GetBooleanConfig("System.Globalization.PredefinedCulturesOnly", "DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", GlobalizationMode.Invariant);
         }
 

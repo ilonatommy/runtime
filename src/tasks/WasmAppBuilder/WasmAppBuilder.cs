@@ -164,8 +164,8 @@ public class WasmAppBuilder : Task
     {
         if (!File.Exists(MainJS))
             throw new LogAsErrorException($"File MainJS='{MainJS}' doesn't exist.");
-        if (!InvariantGlobalization && string.IsNullOrEmpty(IcuDataFileName))
-            throw new LogAsErrorException("IcuDataFileName property shouldn't be empty if InvariantGlobalization=false");
+        if (!InvariantGlobalization && !NativeGlobalization && string.IsNullOrEmpty(IcuDataFileName))
+            throw new LogAsErrorException("IcuDataFileName property shouldn't be empty if InvariantGlobalization=false and NativeGlobalization=false");
 
         if (Assemblies.Length == 0)
         {
@@ -314,7 +314,7 @@ public class WasmAppBuilder : Task
             }
         }
 
-        if (!InvariantGlobalization)
+        if (config.GlobalizationMode == "icu")
             config.Assets.Add(new IcuData(IcuDataFileName!) { LoadRemote = RemoteSources?.Length > 0 });
 
         config.Assets.Add(new VfsEntry ("dotnet.timezones.blat") { VirtualPath = "/usr/share/zoneinfo/"});
