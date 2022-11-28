@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Globalization", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invariant.Tests", "tests\Invariant\Invariant.Tests.csproj", "{DD7E56B4-65B7-4822-A4E1-ECDD51524927}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NativeIcu.Tests", "tests\NativeIcu\NativeIcu.Tests.csproj", "{DD7E56B4-65B7-4822-A4E1-ECDD51524927}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Globalization.Nls.Tests", "tests\NlsTests\System.Globalization.Nls.Tests.csproj", "{9B797657-6BBC-4240-9903-3FCE3E1FC713}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "System.Globalization.Tests", "tests\System.Globalization.Tests.csproj", "{A66D589C-6FEE-41EE-A7D9-C5306BF5AE47}"
