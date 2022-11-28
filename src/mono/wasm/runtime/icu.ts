@@ -36,7 +36,7 @@ export function mono_wasm_globalization_init(): void {
     if (config.globalizationMode === "native")
     {
         console.debug("MONO_WASM: Native globalization mode is on");
-        cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_NATIVE", "1");
+        cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_NATIVE_ICU", "1");
         return;
     }
     if (config.globalizationMode === "invariant")

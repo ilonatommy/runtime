@@ -5,7 +5,7 @@ namespace System.Globalization
 {
     internal static partial class GlobalizationMode
     {
-        internal static bool UseNls { get; } = !Invariant &&
+        internal static bool UseNls { get; } = !Invariant && !NativeIcu
             (AppContextConfigHelper.GetBooleanConfig("System.Globalization.UseNls", "DOTNET_SYSTEM_GLOBALIZATION_USENLS") ||
                 !LoadIcu());
 

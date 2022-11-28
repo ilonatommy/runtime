@@ -32,7 +32,8 @@ namespace System.Globalization
                 _isAsciiEqualityOrdinal = _sortName.Length == 0 ||
                     (_sortName.Length >= 2 && _sortName[0] == 'e' && _sortName[1] == 'n' && (_sortName.Length == 2 || _sortName[2] == '-'));
 
-                _sortHandle = SortHandleCache.GetCachedSortHandle(interopCultureName);
+                if(!GlobalizationMode.NativeIcu) // should we cache handles in a similar manner for Native?
+                    _sortHandle = SortHandleCache.GetCachedSortHandle(interopCultureName);
             }
         }
 
