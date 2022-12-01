@@ -348,6 +348,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureData.Icu.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureData.Nls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureData.WebAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureNotFoundException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\CultureTypes.cs" />
@@ -2528,4 +2529,9 @@
   <ItemGroup Condition="'$(FeatureMono)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)System\SpanHelpers.Mono.cs" />
   </ItemGroup>
+  <ItemGroup>
+     <Reference Include="Tools">
+        <HintPath>$(ToolsDllPath)</HintPath>
+     </Reference>
+</ItemGroup>
 </Project>

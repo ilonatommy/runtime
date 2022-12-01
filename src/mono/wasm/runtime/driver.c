@@ -43,6 +43,8 @@
 void core_initialize_internals ();
 #endif
 
+extern void mono_wasm_get_browser_cultures ();
+
 extern void mono_wasm_set_entrypoint_breakpoint (const char* assembly_name, int method_token);
 
 // Blazor specific custom routines - see dotnet_support.js for backing code
@@ -1496,4 +1498,11 @@ EMSCRIPTEN_KEEPALIVE const char * mono_wasm_method_get_full_name (MonoMethod *me
 
 EMSCRIPTEN_KEEPALIVE const char * mono_wasm_method_get_name (MonoMethod *method) {
 	return mono_method_get_name(method);
+}
+
+// ----------------------Native Globalization functions, to be moved later -----------------------------
+
+EMSCRIPTEN_KEEPALIVE void GlobalizationNativeJS_GetLocales(){
+    printf("ILONA mono_wasm_get_icu_cultures\n");
+	mono_wasm_get_browser_cultures();
 }

@@ -300,3 +300,8 @@ export function mono_wasm_invoke_js_blazor(exceptionMessage: Int32Ptr, callInfo:
         return 0;
     }
 }
+
+// ----------------------Native Globalization functions, to be moved later -----------------------------
+export function mono_wasm_get_browser_cultures(){
+    console.log("ILONA mono_wasm_get_browser_cultures");
+}

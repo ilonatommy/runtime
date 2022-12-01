@@ -540,6 +540,11 @@ namespace System.Globalization
                 return new CultureInfo[] { new CultureInfo("") };
             }
 
+            if (GlobalizationMode.NativeIcu)
+            {
+                JSEnumCultures();
+            }
+
 #pragma warning restore 618
             return GlobalizationMode.UseNls ? NlsEnumCultures(types) : IcuEnumCultures(types);
         }

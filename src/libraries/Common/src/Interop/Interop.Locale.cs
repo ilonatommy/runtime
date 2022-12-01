@@ -37,5 +37,10 @@ internal static partial class Interop
 
         [LibraryImport(Libraries.GlobalizationNative, EntryPoint = "GlobalizationNative_GetLocales", StringMarshalling = StringMarshalling.Utf16)]
         internal static partial int GetLocales([Out] char[]? value, int valueLength);
+
+
+        // ToDo: move the below to a separate location
+        [LibraryImport(Libraries.GlobalizationNative, EntryPoint = "GlobalizationNativeJS_GetLocales", StringMarshalling = StringMarshalling.Utf16)] // we can think about DllImport and ICall
+        internal static partial void GetLocalesJS(); // arg: CultureTypes types
     }
 }
