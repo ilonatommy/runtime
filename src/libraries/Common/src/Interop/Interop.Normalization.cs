@@ -13,5 +13,9 @@ internal static partial class Interop
 
         [LibraryImport(Libraries.GlobalizationNative, EntryPoint = "GlobalizationNative_NormalizeString", StringMarshalling = StringMarshalling.Utf16)]
         internal static unsafe partial int NormalizeString(NormalizationForm normalizationForm, char* src, int srcLen, char* dstBuffer, int dstBufferCapacity);
+
+        // ToDo: move the below to a separate location
+        [LibraryImport(Libraries.GlobalizationNative, EntryPoint = "GlobalizationNativeJS_NormalizeString", StringMarshalling = StringMarshalling.Utf16)]
+        internal static unsafe partial string NormalizeStringJS(int normalizationForm, char* strInput, int strLen);
     }
 }

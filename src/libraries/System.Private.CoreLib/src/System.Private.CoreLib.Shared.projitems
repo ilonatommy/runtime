@@ -384,6 +384,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\Normalization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\Normalization.Icu.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\Normalization.Nls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\Normalization.WebAssembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\NumberFormatInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\NumberStyles.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\Globalization\Ordinal.cs" />
@@ -2529,9 +2530,4 @@
   <ItemGroup Condition="'$(FeatureMono)' == 'true'">
     <Compile Include="$(MSBuildThisFileDirectory)System\SpanHelpers.Mono.cs" />
   </ItemGroup>
-  <ItemGroup>
-     <Reference Include="Tools">
-        <HintPath>$(ToolsDllPath)</HintPath>
-     </Reference>
-</ItemGroup>
 </Project>

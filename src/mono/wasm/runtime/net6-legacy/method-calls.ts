@@ -305,3 +305,23 @@ export function mono_wasm_invoke_js_blazor(exceptionMessage: Int32Ptr, callInfo:
 export function mono_wasm_get_browser_cultures(){
     console.log("ILONA mono_wasm_get_browser_cultures");
 }
+
+export function mono_wasm_normalize_string(normalizationForm: number, strPtr: number, strLength: number) : string{
+    const view = new Uint16Array(Module.HEAPU16.buffer, strPtr, strLength);
+    let string = "";
+    for (let i = 0; i < strLength; i++)
+    {
+        string += String.fromCharCode(view[i]);
+    }
+    switch (normalizationForm) {
+        case 1:
+            return string.normalize("NFC");
+        case 2:
+            return string.normalize("NFD");
+        case 5:
+            return string.normalize("NFKC");
+        case 6:
+            return string.normalize("NFKD");
+    }
+    return string.normalize("NFC");
+}

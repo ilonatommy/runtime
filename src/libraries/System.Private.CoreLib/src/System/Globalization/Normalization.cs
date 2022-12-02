@@ -31,6 +31,11 @@ namespace System.Globalization
                 return strInput;
             }
 
+            if (GlobalizationMode.NativeIcu)
+            {
+                return NativeNormalize(strInput, normalizationForm);
+            }
+
             return GlobalizationMode.UseNls ?
                 NlsNormalize(strInput, normalizationForm) :
                 IcuNormalize(strInput, normalizationForm);

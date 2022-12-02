@@ -14,32 +14,37 @@ namespace System.Globalization.Tests
 {
     public class NativeIcuModeTests
     {
-        private static bool PredefinedCulturesOnlyIsDisabled { get; } = !PredefinedCulturesOnly();
-        private static bool PredefinedCulturesOnly()
+        [Theory]
+        [InlineData("ą", NormalizationForm.FormC)]
+        // [InlineData("", NormalizationForm.FormC)]
+        // [InlineData("\uFB01", NormalizationForm.FormC)] // fi
+        // [InlineData("\uFB01", NormalizationForm.FormD)]
+        // [InlineData("\uFB01", NormalizationForm.FormKC)]
+        // [InlineData("\uFB01", NormalizationForm.FormKD)]
+        // [InlineData("\u1E9b\u0323", NormalizationForm.FormC)]
+        // [InlineData("\u1E9b\u0323", NormalizationForm.FormD)]
+        // [InlineData("\u1E9b\u0323", NormalizationForm.FormKC)]
+        // [InlineData("\u1E9b\u0323", NormalizationForm.FormKD)]
+        // [InlineData("\u00C4\u00C7", NormalizationForm.FormC)]
+        // [InlineData("\u00C4\u00C7", NormalizationForm.FormD)]
+        // [InlineData("A\u0308C\u0327", NormalizationForm.FormC)]
+        // [InlineData("A\u0308C\u0327", NormalizationForm.FormD)]
+        public void TestNormalization(string s, NormalizationForm form)
         {
-            bool ret;
-
-            try
-            {
-                ret = (bool) typeof(object).Assembly.GetType("System.Globalization.GlobalizationMode").GetProperty("PredefinedCulturesOnly", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
-            }
-            catch
-            {
-                ret = false;
-            }
-
-            return ret;
+            Console.WriteLine($"ILONA: start testing {s}");
+            // Assert.True(s.IsNormalized());
+            // Assert.True(s.IsNormalized(form));
+            // Assert.Equal(s, s.Normalize());
+            string normalized = s.Normalize(form);
+            Console.WriteLine($"ILONA: normalized = {normalized}");
+            // Assert.Equal(s, normalized);
         }
 
-        private static readonly string[] s_cultureNames = new string[] { "en-US", "ja-JP", "fr-FR", "tr-TR", "" };
-
-        [ConditionalFact(nameof(PredefinedCulturesOnlyIsDisabled))]
-        public static void CulturesLoaded()
-        {
-            Console.WriteLine($"TEST");
-            foreach (var a in CultureInfo.GetCultures(CultureTypes.AllCultures))
-                Console.WriteLine($"TEST {a}");
-        }
+        // [Fact]
+        // public static void CulturesLoaded()
+        // {
+        //     CultureInfo.GetCultures(CultureTypes.AllCultures);
+        // }
 
     }
 }
