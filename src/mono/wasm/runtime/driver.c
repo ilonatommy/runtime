@@ -47,6 +47,8 @@ extern void mono_wasm_set_entrypoint_breakpoint (const char* assembly_name, int 
 
 // Blazor specific custom routines - see dotnet_support.js for backing code
 extern void* mono_wasm_invoke_js_blazor (MonoString **exceptionMessage, void *callInfo, void* arg0, void* arg1, void* arg2);
+extern void mono_wasm_normalize_string (int normalizationForm, MonoString **strInput, MonoString **strOutput);
+extern int mono_wasm_is_string_normalized (int normalizationForm, MonoString **strInput);
 
 void mono_wasm_enable_debugging (int);
 
@@ -448,6 +450,8 @@ void mono_initialize_internals (void)
 {
 	// Blazor specific custom routines - see dotnet_support.js for backing code
 	mono_add_internal_call ("WebAssembly.JSInterop.InternalCalls::InvokeJS", mono_wasm_invoke_js_blazor);
+	mono_add_internal_call ("System.Globalization.NormalizationInterop::NormalizeStringJS", mono_wasm_normalize_string);
+	mono_add_internal_call ("System.Globalization.NormalizationInterop::IsStringNormalizedJS", mono_wasm_is_string_normalized);
 
 #ifdef CORE_BINDINGS
 	core_initialize_internals();
@@ -1501,12 +1505,8 @@ EMSCRIPTEN_KEEPALIVE const char * mono_wasm_method_get_name (MonoMethod *method)
 // ----------------------Native Globalization functions, to be moved later -----------------------------
 
 extern void mono_wasm_get_browser_cultures ();
-extern char * mono_wasm_normalize_string (int normalizationForm, const uint16_t * strInput, uint16_t strLength);
 
 EMSCRIPTEN_KEEPALIVE void GlobalizationNativeJS_GetLocales(){
     printf("ILONA mono_wasm_get_icu_cultures\n");
 	mono_wasm_get_browser_cultures();
 }
-
-EMSCRIPTEN_KEEPALIVE char * GlobalizationNativeJS_NormalizeString(int normalizationForm, const uint16_t* strInput, uint16_t strLength){ //uint16_t == UChar
-	return mono_wasm_normalize_string(normalizationForm, strInput, strLength);

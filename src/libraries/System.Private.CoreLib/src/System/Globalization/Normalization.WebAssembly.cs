@@ -5,9 +5,19 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace System.Globalization
 {
+    internal static unsafe class NormalizationInterop
+    {
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal static extern unsafe void NormalizeStringJS(int normalizationForm, in string strInput, out string strOutput);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal static extern unsafe int IsStringNormalizedJS(int normalizationForm, in string strInput);
+    }
+
     internal static partial class Normalization
     {
         private static unsafe string NativeNormalize(string strInput, NormalizationForm normalizationForm)
@@ -16,13 +26,17 @@ namespace System.Globalization
             Debug.Assert(!GlobalizationMode.UseNls);
             Debug.Assert(GlobalizationMode.NativeIcu);
 
-            string normalized;
-            int normalizationFormInt = (int)normalizationForm;
-            fixed (char* pInput = strInput)
-            {
-                normalized = Interop.Globalization.NormalizeStringJS(normalizationFormInt, pInput, strInput.Length);
-            }
-            return normalized;
+            NormalizationInterop.NormalizeStringJS((int)normalizationForm, strInput, out string pDest);
+            return pDest;
+        }
+
+        private static unsafe bool NativeIsNormalized(string strInput, NormalizationForm normalizationForm)
+        {
+            Debug.Assert(!GlobalizationMode.Invariant);
+            Debug.Assert(!GlobalizationMode.UseNls);
+            Debug.Assert(GlobalizationMode.NativeIcu);
+
+            return NormalizationInterop.IsStringNormalizedJS((int)normalizationForm, strInput) == 1;
         }
     }
 }

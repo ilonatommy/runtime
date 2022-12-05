@@ -17,6 +17,11 @@ namespace System.Globalization
                 return true;
             }
 
+            if (GlobalizationMode.NativeIcu)
+            {
+                return NativeIsNormalized(strInput, normalizationForm);
+            }
+
             return GlobalizationMode.UseNls ?
                 NlsIsNormalized(strInput, normalizationForm) :
                 IcuIsNormalized(strInput, normalizationForm);

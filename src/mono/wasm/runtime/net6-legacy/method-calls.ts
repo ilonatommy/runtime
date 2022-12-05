@@ -306,22 +306,57 @@ export function mono_wasm_get_browser_cultures(){
     console.log("ILONA mono_wasm_get_browser_cultures");
 }
 
-export function mono_wasm_normalize_string(normalizationForm: number, strPtr: number, strLength: number) : string{
-    const view = new Uint16Array(Module.HEAPU16.buffer, strPtr, strLength);
-    let string = "";
-    for (let i = 0; i < strLength; i++)
-    {
-        string += String.fromCharCode(view[i]);
+export function mono_wasm_normalize_string(normalizationForm: number, inputStr: MonoStringRef, outputStr: MonoStringRef) : void{
+    const inputRoot = mono_wasm_new_external_root<MonoString>(inputStr);
+    const outputRoot = mono_wasm_new_external_root<MonoString>(outputStr);
+    try {
+        const jsString = conv_string_root(inputRoot);
+        let normalization = "NFC";
+        switch (normalizationForm) {
+            case 1:
+                normalization = "NFC";
+                break;
+            case 2:
+                normalization = "NFD";
+                break;
+            case 5:
+                normalization = "NFKC";
+                break;
+            case 6:
+                normalization = "NFKD";
+                break;
+        }
+        const result = jsString?.normalize(normalization);
+        js_to_mono_obj_root(result, outputRoot, false);
+    } catch (ex) {
+        // wrap_error_root(is_exception, ex, resultRoot);
+        console.log("ILONA error: " + ex);
+    } finally {
+        inputRoot.release();
     }
+    return;
+}
+
+export function mono_wasm_is_string_normalized(normalizationForm: number, inputStr: MonoStringRef) : number{
+    const inputRoot = mono_wasm_new_external_root<MonoString>(inputStr);
+    const jsString = conv_string_root(inputRoot);
+    let normalization = "NFC";
     switch (normalizationForm) {
         case 1:
-            return string.normalize("NFC");
+            normalization = "NFC";
+            break;
         case 2:
-            return string.normalize("NFD");
+            normalization = "NFD";
+            break;
         case 5:
-            return string.normalize("NFKC");
+            normalization = "NFKC";
+            break;
         case 6:
-            return string.normalize("NFKD");
+            normalization = "NFKD";
+            break;
     }
-    return string.normalize("NFC");
+    const result = jsString?.normalize(normalization);
+    if (result === jsString)
+        return 1;
+    return 0;
 }

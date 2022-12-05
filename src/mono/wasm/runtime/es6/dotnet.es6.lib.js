@@ -81,6 +81,7 @@ const linked_functions = [
     // driver.c native globalization
     "mono_wasm_get_browser_cultures",
     "mono_wasm_normalize_string",
+    "mono_wasm_is_string_normalized",
 
     // jiterpreter.c / interp.c / transform.c
     "mono_interp_tier_prepare_jiterpreter",
