@@ -333,6 +333,7 @@ export function mono_wasm_normalize_string(normalizationForm: number, inputStr: 
         console.log("ILONA error: " + ex);
     } finally {
         inputRoot.release();
+        outputRoot.release();
     }
     return;
 }
@@ -356,6 +357,7 @@ export function mono_wasm_is_string_normalized(normalizationForm: number, inputS
             break;
     }
     const result = jsString?.normalize(normalization);
+    inputRoot.release();
     if (result === jsString)
         return 1;
     return 0;
