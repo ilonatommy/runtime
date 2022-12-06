@@ -230,8 +230,8 @@ export type RuntimeHelpers = {
 export type GlobalizationMode =
     "icu" | // load ICU globalization data from any runtime assets with behavior "icu".
     "invariant" | //  operate in invariant globalization mode.
-    "auto" | // if "icu" behavior assets are present, use ICU, otherwise invariant.
-    "native" // (default): use platform native functions, not icu
+    "auto" | // (default): if "icu" behavior assets are present, use ICU, otherwise invariant.
+    "nativeIcu" // use platform native functions, when available, if not - use reduced icu data file
 
 
 export type AOTProfilerOptions = {

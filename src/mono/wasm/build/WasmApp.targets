@@ -309,6 +309,8 @@
     <PropertyGroup>
       <NativeGlobalization Condition="'$(InvariantGlobalization)' == 'true'">false</NativeGlobalization>
       <WasmIcuDataFileName Condition="'$(InvariantGlobalization)' != 'true' and '$(NativeGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
+      <!-- change following icu name for e.g. icudtNative.dat that will be a file with reduced amount of data that will be provided natively -->
+      <WasmIcuDataFileName Condition="'$(InvariantGlobalization)' != 'true' and '$(NativeGlobalization)' == 'true'">icudt.dat</WasmIcuDataFileName>
 
       <_HasDotnetWasm Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.wasm'">true</_HasDotnetWasm>
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
@@ -326,7 +328,7 @@
                                   '$(_HasDotnetJsSymbols)' != 'true' and
                                   Exists('$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.js.symbols')" />
 
-      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFileName)" Condition="'$(InvariantGlobalization)' != 'true' and '$(NativeGlobalization)' != 'true'" />
+      <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFileName)" Condition="'$(InvariantGlobalization)' != 'true'" />
       <WasmNativeAsset Include="$(MicrosoftNetCoreAppRuntimePackRidNativeDir)dotnet.timezones.blat" />
 
       <WasmFilesToIncludeInFileSystem Include="@(WasmNativeAsset)" Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'" />

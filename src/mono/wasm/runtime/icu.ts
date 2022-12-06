@@ -33,12 +33,6 @@ export function mono_wasm_globalization_init(): void {
     let invariantMode = false;
     if (!config.globalizationMode)
         config.globalizationMode = "auto";
-    if (config.globalizationMode === "native")
-    {
-        console.debug("MONO_WASM: Native globalization mode is on");
-        cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_NATIVE_ICU", "1");
-        return;
-    }
     if (config.globalizationMode === "invariant")
         invariantMode = true;
 
@@ -56,6 +50,13 @@ export function mono_wasm_globalization_init(): void {
             const msg = "invariant globalization mode is inactive and no ICU data archives were loaded";
             Module.printErr(`MONO_WASM: ERROR: ${msg}`);
             throw new Error(msg);
+        }
+
+        if (config.globalizationMode === "nativeIcu")
+        {
+            console.debug("MONO_WASM: Native globalization mode is on");
+            cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_NATIVE_ICU", "1");
+            return;
         }
     }
 
