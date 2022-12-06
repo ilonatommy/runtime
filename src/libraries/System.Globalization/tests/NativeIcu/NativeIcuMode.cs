@@ -30,6 +30,7 @@ namespace System.Globalization.Tests
         public void TestNormalization(string s, string normalized, NormalizationForm form)
         {
             string result = s.Normalize(form);
+            Assert.True(result.IsNormalized(form));
             Assert.Equal(normalized, result);
         }
 
