@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace System.Globalization
 {
+    // this saves us 59KB = 3,8% of current icudt.dat size on wasm
     internal static unsafe class NormalizationInterop
     {
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
