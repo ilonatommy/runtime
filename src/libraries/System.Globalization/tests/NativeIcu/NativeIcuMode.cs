@@ -14,37 +14,24 @@ namespace System.Globalization.Tests
 {
     public class NativeIcuModeTests
     {
-        [Theory]
-        [InlineData("ą", NormalizationForm.FormC)]
-        // [InlineData("", NormalizationForm.FormC)]
-        // [InlineData("\uFB01", NormalizationForm.FormC)] // fi
-        // [InlineData("\uFB01", NormalizationForm.FormD)]
-        // [InlineData("\uFB01", NormalizationForm.FormKC)]
-        // [InlineData("\uFB01", NormalizationForm.FormKD)]
-        // [InlineData("\u1E9b\u0323", NormalizationForm.FormC)]
-        // [InlineData("\u1E9b\u0323", NormalizationForm.FormD)]
-        // [InlineData("\u1E9b\u0323", NormalizationForm.FormKC)]
-        // [InlineData("\u1E9b\u0323", NormalizationForm.FormKD)]
-        // [InlineData("\u00C4\u00C7", NormalizationForm.FormC)]
-        // [InlineData("\u00C4\u00C7", NormalizationForm.FormD)]
-        // [InlineData("A\u0308C\u0327", NormalizationForm.FormC)]
-        // [InlineData("A\u0308C\u0327", NormalizationForm.FormD)]
-        public void TestNormalization(string s, NormalizationForm form)
-        {
-            Console.WriteLine($"ILONA: start testing {s}");
-            // Assert.True(s.IsNormalized());
-            // Assert.True(s.IsNormalized(form));
-            // Assert.Equal(s, s.Normalize());
-            string normalized = s.Normalize(form);
-            Console.WriteLine($"ILONA: normalized = {normalized}");
-            // Assert.Equal(s, normalized);
-        }
+        // Mobile / Browser ICU doesn't support FormKC and FormKD
 
-        // [Fact]
-        // public static void CulturesLoaded()
-        // {
-        //     CultureInfo.GetCultures(CultureTypes.AllCultures);
-        // }
+        // for more complex tests see and adapt: NormalizationAll.cs
+        [Theory]
+        [InlineData("", "", NormalizationForm.FormC)]
+        [InlineData("\uFB01", "\uFB01", NormalizationForm.FormC)]
+        [InlineData("\uFB01", "\uFB01", NormalizationForm.FormD)]
+        [InlineData("\u1E9b\u0323", "\u1E9b\u0323", NormalizationForm.FormC)]
+        [InlineData("\u1E9b\u0323", "\u017F\u0323\u0307", NormalizationForm.FormD)]
+        [InlineData("\u00C4\u00C7", "\u00C4\u00C7", NormalizationForm.FormC)]
+        [InlineData("\u00C4\u00C7", "A\u0308C\u0327", NormalizationForm.FormD)]
+        [InlineData("A\u0308C\u0327", "\u00C4\u00C7", NormalizationForm.FormC)]
+        [InlineData("A\u0308C\u0327", "A\u0308C\u0327", NormalizationForm.FormD)]
+        public void TestNormalization(string s, string normalized, NormalizationForm form)
+        {
+            string result = s.Normalize(form);
+            Assert.Equal(normalized, result);
+        }
 
     }
 }
