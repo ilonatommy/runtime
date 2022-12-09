@@ -34,5 +34,42 @@ namespace System.Globalization.Tests
             Assert.Equal(normalized, result);
         }
 
+        [Theory]
+        [MemberData(nameof(ToUpper_TestData))]
+        public void ToUpper(string name, string str, string expected)
+        {
+            var culture = new CultureInfo(name);
+            var result = culture.TextInfo.ToUpper(str);
+            if (str != result){
+                Console.WriteLine($"culture = {culture.DisplayName}, str = {str} result = {result}; expected = {expected}");
+                Assert.Equal(str, result);
+            }
+        }
+
+        public static IEnumerable<string> GetTestLocales()
+        {
+            yield return "tr";
+            yield return "tr-TR";
+        }
+
+        private static readonly string [] s_cultureNames = new string[] { "en-US", "fr", "fr-FR" };
+
+        public static IEnumerable<object[]> ToUpper_TestData()
+        {
+            // Turkish i
+            foreach (string cultureName in GetTestLocales())
+            {
+                // Android has its own ICU, which doesn't work well with tr
+                if (!PlatformDetection.IsAndroid && !PlatformDetection.IsLinuxBionic)
+                {
+                    yield return new object[] { cultureName, "i", "\u0130" };
+                    yield return new object[] { cultureName, "H\u0131\n\0Hi\u0009!", "HI\n\0H\u0130\t!" };
+                }
+                yield return new object[] { cultureName, "\u0130", "\u0130" };
+                yield return new object[] { cultureName, "\u0131", "I" };
+                yield return new object[] { cultureName, "I", "I" };
+            }
+        }
+
     }
 }

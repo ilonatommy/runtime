@@ -82,6 +82,7 @@ const linked_functions = [
     "mono_wasm_get_browser_cultures",
     "mono_wasm_normalize_string",
     "mono_wasm_is_string_normalized",
+    "mono_wasm_change_case",
 
     // jiterpreter.c / interp.c / transform.c
     "mono_interp_tier_prepare_jiterpreter",

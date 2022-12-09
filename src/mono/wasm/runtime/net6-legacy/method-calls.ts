@@ -362,3 +362,18 @@ export function mono_wasm_is_string_normalized(normalizationForm: number, inputS
         return 1;
     return 0;
 }
+
+export function mono_wasm_change_case(inputStr: MonoStringRef, toUpper: number, localeCode: MonoStringRef, outputStr: MonoStringRef) : void{
+    const inputRoot = mono_wasm_new_external_root<MonoString>(inputStr);
+    const outputRoot = mono_wasm_new_external_root<MonoString>(outputStr);
+    const localeRoot = mono_wasm_new_external_root<MonoString>(localeCode);
+    const jsString = conv_string_root(inputRoot);
+    const jsLocale = conv_string_root(localeRoot);
+    if (!jsLocale)
+        return;
+    const result = toUpper == 1 ? jsString?.toLocaleUpperCase(jsLocale) : jsString?.toLocaleLowerCase(jsLocale);
+    js_to_mono_obj_root(result, outputRoot, false);
+    inputRoot.release();
+    outputRoot.release();
+    localeRoot.release();
+}

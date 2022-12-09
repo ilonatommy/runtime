@@ -49,6 +49,7 @@ extern void mono_wasm_set_entrypoint_breakpoint (const char* assembly_name, int 
 extern void* mono_wasm_invoke_js_blazor (MonoString **exceptionMessage, void *callInfo, void* arg0, void* arg1, void* arg2);
 extern void mono_wasm_normalize_string (int normalizationForm, MonoString **strInput, MonoString **strOutput);
 extern int mono_wasm_is_string_normalized (int normalizationForm, MonoString **strInput);
+extern void mono_wasm_change_case (MonoString **strInput, int toUpper, MonoString **localeCode, MonoString **strOutput);
 
 void mono_wasm_enable_debugging (int);
 
@@ -452,6 +453,7 @@ void mono_initialize_internals (void)
 	mono_add_internal_call ("WebAssembly.JSInterop.InternalCalls::InvokeJS", mono_wasm_invoke_js_blazor);
 	mono_add_internal_call ("System.Globalization.NormalizationInterop::NormalizeStringJS", mono_wasm_normalize_string);
 	mono_add_internal_call ("System.Globalization.NormalizationInterop::IsStringNormalizedJS", mono_wasm_is_string_normalized);
+	mono_add_internal_call ("System.Globalization.TextInfoInterop::ChangeCaseJS", mono_wasm_change_case);
 
 #ifdef CORE_BINDINGS
 	core_initialize_internals();

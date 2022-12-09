@@ -13,7 +13,8 @@ import { mono_interp_jit_wasm_jit_call_trampoline, mono_interp_invoke_wasm_jit_c
 import { mono_wasm_typed_array_from_ref } from "./net6-legacy/buffers";
 import {
     mono_wasm_invoke_js_blazor, mono_wasm_invoke_js_with_args_ref, mono_wasm_get_object_property_ref, mono_wasm_set_object_property_ref,
-    mono_wasm_get_by_index_ref, mono_wasm_set_by_index_ref, mono_wasm_get_global_object_ref, mono_wasm_get_browser_cultures, mono_wasm_normalize_string, mono_wasm_is_string_normalized,
+    mono_wasm_get_by_index_ref, mono_wasm_set_by_index_ref, mono_wasm_get_global_object_ref, mono_wasm_get_browser_cultures, mono_wasm_normalize_string,
+    mono_wasm_is_string_normalized, mono_wasm_change_case,
 } from "./net6-legacy/method-calls";
 import { mono_wasm_marshal_promise } from "./marshal-to-js";
 import { mono_wasm_pthread_on_pthread_attached } from "./pthreads/worker";
@@ -76,6 +77,7 @@ export function export_linker(): any {
         mono_wasm_get_browser_cultures,
         mono_wasm_normalize_string,
         mono_wasm_is_string_normalized,
+        mono_wasm_change_case,
 
         // corebindings.c
         mono_wasm_invoke_js_with_args_ref,

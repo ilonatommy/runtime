@@ -758,6 +758,18 @@ namespace System.Globalization
 
         private unsafe void ChangeCaseCore(char* src, int srcLen, char* dstBuffer, int dstBufferCapacity, bool bToUpper)
         {
+            if (GlobalizationMode.NativeIcu)
+            {
+                // something is wrong here with strings
+                string result = NativeChangeCaseCore(new string(src), bToUpper);
+                fixed (char* pResult = result)
+                {
+                    dstBuffer = pResult;
+                    dstBufferCapacity = result.Length;
+                }
+                return;
+            }
+
             if (GlobalizationMode.UseNls)
             {
                 NlsChangeCase(src, srcLen, dstBuffer, dstBufferCapacity, bToUpper);
