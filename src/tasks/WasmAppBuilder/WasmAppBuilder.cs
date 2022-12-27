@@ -44,6 +44,7 @@ public class WasmAppBuilder : Task
     public ITaskItem[]? FilesToIncludeInFileSystem { get; set; }
     public ITaskItem[]? RemoteSources { get; set; }
     public bool InvariantGlobalization { get; set; }
+    public bool HybridGlobalization { get; set; }
     public ITaskItem[]? ExtraFilesToDeploy { get; set; }
     public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
@@ -85,6 +86,8 @@ public class WasmAppBuilder : Task
         public List<object> Assets { get; } = new List<object>();
         [JsonPropertyName("remoteSources")]
         public List<string> RemoteSources { get; set; } = new List<string>();
+        [JsonPropertyName("globalizationMode")]
+        public string? GlobalizationMode { get; set; }
         [JsonExtensionData]
         public Dictionary<string, object?> Extra { get; set; } = new();
     }
@@ -181,6 +184,7 @@ public class WasmAppBuilder : Task
         var config = new WasmAppConfig ()
         {
             MainAssemblyName = MainAssemblyName,
+            GlobalizationMode = InvariantGlobalization ? "invariant" : HybridGlobalization ? "hybrid" : "icu"
         };
 
         // Create app

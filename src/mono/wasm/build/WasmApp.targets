@@ -30,6 +30,7 @@
       - $(AOTMode)           - Defaults to `LLVMOnlyInterp`
       - $(AOTProfilePath)    - profile data file to be used for profile-guided optimization
       - $(InvariantGlobalization)       - Whenever to disable ICU. Defaults to false.
+      - $(HybridGlobalization) - Whenever to enable reduced ICU + native platform functions. Defaults to false and can be set only for InvariantGlobalization=false.
 
       - $(WasmResolveAssembliesBeforeBuild) - Resolve the assembly dependencies. Defaults to false
       - $(WasmAssemblySearchPaths)          - used for resolving assembly dependencies
@@ -308,12 +309,17 @@
 
   <Target Name="_GetWasmGenerateAppBundleDependencies">
     <PropertyGroup>
-      <WasmIcuDataFileName Condition="'$(InvariantGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
+      <HybridGlobalization Condition="'$(InvariantGlobalization)' == 'true'">false</HybridGlobalization>
 
       <_HasDotnetWasm Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.wasm'">true</_HasDotnetWasm>
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
       <_HasDotnetJsSymbols Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'">true</_HasDotnetJsSymbols>
       <_HasDotnetJs Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js'">true</_HasDotnetJs>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(InvariantGlobalization)' != 'true'">
+      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
+      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' == 'true'">icudt_wasm.dat</WasmIcuDataFileName>
     </PropertyGroup>
 
     <ItemGroup>
@@ -357,6 +363,7 @@
       RuntimeArgsForHost="@(WasmMonoRuntimeArgs)"
       DefaultHostConfig="$(DefaultWasmHostConfig)"
       InvariantGlobalization="$(InvariantGlobalization)"
+      HybridGlobalization="$(HybridGlobalization)"
       SatelliteAssemblies="@(_WasmSatelliteAssemblies)"
       FilesToIncludeInFileSystem="@(WasmFilesToIncludeInFileSystem)"
       IcuDataFileName="$(WasmIcuDataFileName)"
