@@ -615,7 +615,7 @@ namespace Wasm.Build.Tests
                                                    string mainJS,
                                                    bool hasV8Script,
                                                    string targetFramework,
-                                                   bool hasIcudt = true,
+                                                   IcuMode hasIcudt = IcuMode.Standard,
                                                    bool dotnetWasmFromRuntimePack = true)
         {
             AssertFilesExist(bundleDir, new []
@@ -629,7 +629,8 @@ namespace Wasm.Build.Tests
             });
 
             AssertFilesExist(bundleDir, new[] { "run-v8.sh" }, expectToExist: hasV8Script);
-            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: hasIcudt);
+            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: hasIcudt == IcuMode.Standard);
+            AssertFilesExist(bundleDir, new[] { "icudt_wasm.dat" }, expectToExist: hasIcudt == IcuMode.Hybrid);
 
             string managedDir = Path.Combine(bundleDir, "managed");
             AssertFilesExist(managedDir, new[] { $"{projectName}.dll" });
@@ -1083,22 +1084,29 @@ namespace Wasm.Build.Tests
 
     public record BuildProjectOptions
     (
-        Action? InitProject               = null,
-        bool?   DotnetWasmFromRuntimePack = null,
-        bool    HasIcudt                  = true,
-        bool    UseCache                  = true,
-        bool    ExpectSuccess             = true,
-        bool    AssertAppBundle           = true,
-        bool    CreateProject             = true,
-        bool    Publish                   = true,
-        bool    BuildOnlyAfterPublish     = true,
-        bool    HasV8Script               = true,
-        string? Verbosity                 = null,
-        string? Label                     = null,
-        string? TargetFramework           = null,
-        string? MainJS                    = null,
+        Action?     InitProject               = null,
+        bool?       DotnetWasmFromRuntimePack = null,
+        IcuMode     HasIcudt                  = IcuMode.Standard,
+        bool        UseCache                  = true,
+        bool        ExpectSuccess             = true,
+        bool        AssertAppBundle           = true,
+        bool        CreateProject             = true,
+        bool        Publish                   = true,
+        bool        BuildOnlyAfterPublish     = true,
+        bool        HasV8Script               = true,
+        string?     Verbosity                 = null,
+        string?     Label                     = null,
+        string?     TargetFramework           = null,
+        string?     MainJS                    = null,
         IDictionary<string, string>? ExtraBuildEnvironmentVariables = null
     );
+
+    public enum IcuMode
+    {
+        None,
+        Standard,
+        Hybrid
+    }
 
     public record BlazorBuildOptions
     (

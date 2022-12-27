@@ -28,38 +28,38 @@ namespace Wasm.Build.NativeRebuild.Tests
         {
             List<object?[]> data = new();
             // relinking
-            data.AddRange(GetData(aot: false, nativeRelinking: true, invariant: false));
-            data.AddRange(GetData(aot: false, nativeRelinking: true, invariant: true));
+            data.AddRange(GetData(aot: false, nativeRelinking: true, icuMode: IcuMode.Standard));
+            data.AddRange(GetData(aot: false, nativeRelinking: true, icuMode: IcuMode.None));
 
             // aot
-            data.AddRange(GetData(aot: true, nativeRelinking: false, invariant: false));
-            data.AddRange(GetData(aot: true, nativeRelinking: false, invariant: true));
+            data.AddRange(GetData(aot: true, nativeRelinking: false, icuMode: IcuMode.Standard));
+            data.AddRange(GetData(aot: true, nativeRelinking: false, icuMode: IcuMode.None));
 
             return data;
 
-            IEnumerable<object?[]> GetData(bool aot, bool nativeRelinking, bool invariant)
+            IEnumerable<object?[]> GetData(bool aot, bool nativeRelinking, IcuMode icuMode)
                 => ConfigWithAOTData(aot)
-                        .Multiply(new object[] { nativeRelinking, invariant })
+                        .Multiply(new object[] { nativeRelinking, icuMode })
                         .WithRunHosts(RunHost.Chrome)
                         .UnwrapItemsAsArrays().ToList();
         }
 
-        internal (BuildArgs BuildArgs, BuildPaths paths) FirstNativeBuild(string programText, bool nativeRelink, bool invariant, BuildArgs buildArgs, string id, string extraProperties="")
+        internal (BuildArgs BuildArgs, BuildPaths paths) FirstNativeBuild(string programText, bool nativeRelink, IcuMode icuMode, BuildArgs buildArgs, string id, string extraProperties="")
         {
-            buildArgs = GenerateProjectContents(buildArgs, nativeRelink, invariant, extraProperties);
+            buildArgs = GenerateProjectContents(buildArgs, nativeRelink, icuMode, extraProperties);
             BuildProject(buildArgs,
                             id: id,
                             new BuildProjectOptions(
                                 InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), programText),
                                 DotnetWasmFromRuntimePack: false,
-                                HasIcudt: !invariant,
+                                HasIcudt: icuMode,
                                 CreateProject: true));
 
             RunAndTestWasmApp(buildArgs, buildDir: _projectDir, expectedExitCode: 42, host: RunHost.Chrome, id: id);
             return (buildArgs, GetBuildPaths(buildArgs));
         }
 
-        protected string Rebuild(bool nativeRelink, bool invariant, BuildArgs buildArgs, string id, string extraProperties="", string extraBuildArgs="", string? verbosity=null)
+        protected string Rebuild(bool nativeRelink, IcuMode icuMode, BuildArgs buildArgs, string id, string extraProperties="", string extraBuildArgs="", string? verbosity=null)
         {
             if (!_buildContext.TryGetBuildFor(buildArgs, out BuildProduct? product))
                 throw new XunitException($"Test bug: could not get the build product in the cache");
@@ -67,7 +67,7 @@ namespace Wasm.Build.NativeRebuild.Tests
             File.Move(product!.LogFile, Path.ChangeExtension(product.LogFile!, ".first.binlog"));
 
             buildArgs = buildArgs with { ExtraBuildArgs = $"{buildArgs.ExtraBuildArgs} {extraBuildArgs}" };
-            var newBuildArgs = GenerateProjectContents(buildArgs, nativeRelink, invariant, extraProperties);
+            var newBuildArgs = GenerateProjectContents(buildArgs, nativeRelink, icuMode, extraProperties);
 
             // key(buildArgs) being changed
             _buildContext.RemoveFromCache(product.ProjectDir);
@@ -82,7 +82,7 @@ namespace Wasm.Build.NativeRebuild.Tests
                                             id: id,
                                             new BuildProjectOptions(
                                                 DotnetWasmFromRuntimePack: false,
-                                                HasIcudt: !invariant,
+                                                HasIcudt: icuMode,
                                                 CreateProject: false,
                                                 UseCache: false,
                                                 Verbosity: verbosity));
@@ -90,13 +90,13 @@ namespace Wasm.Build.NativeRebuild.Tests
             return output;
         }
 
-        protected BuildArgs GenerateProjectContents(BuildArgs buildArgs, bool nativeRelink, bool invariant, string extraProperties)
+        protected BuildArgs GenerateProjectContents(BuildArgs buildArgs, bool nativeRelink, IcuMode icuMode, string extraProperties)
         {
             StringBuilder propertiesBuilder = new();
             propertiesBuilder.Append("<_WasmDevel>true</_WasmDevel>");
             if (nativeRelink)
                 propertiesBuilder.Append($"<WasmBuildNative>true</WasmBuildNative>");
-            if (invariant)
+            if (icuMode == IcuMode.None)
                 propertiesBuilder.Append($"<InvariantGlobalization>true</InvariantGlobalization>");
             propertiesBuilder.Append(extraProperties);
 
