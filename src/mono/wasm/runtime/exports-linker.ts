@@ -11,10 +11,7 @@ import { mono_interp_tier_prepare_jiterpreter } from "./jiterpreter";
 import { mono_interp_jit_wasm_entry_trampoline, mono_interp_record_interp_entry } from "./jiterpreter-interp-entry";
 import { mono_interp_jit_wasm_jit_call_trampoline, mono_interp_invoke_wasm_jit_call_trampoline, mono_interp_flush_jitcall_queue, mono_jiterp_do_jit_call_indirect } from "./jiterpreter-jit-call";
 import { mono_wasm_typed_array_from_ref } from "./net6-legacy/buffers";
-import {
-    mono_wasm_invoke_js_blazor, mono_wasm_invoke_js_with_args_ref, mono_wasm_get_object_property_ref, mono_wasm_set_object_property_ref,
-    mono_wasm_get_by_index_ref, mono_wasm_set_by_index_ref, mono_wasm_get_global_object_ref
-} from "./net6-legacy/method-calls";
+import * as methodCalls from "./net6-legacy/method-calls";
 import { mono_wasm_marshal_promise } from "./marshal-to-js";
 import { mono_wasm_pthread_on_pthread_attached } from "./pthreads/worker";
 import { mono_set_timeout, schedule_background_exec } from "./scheduling";
@@ -26,6 +23,7 @@ import { mono_wasm_create_cs_owned_object_ref } from "./net6-legacy/cs-to-js";
 import { mono_wasm_typed_array_to_array_ref } from "./net6-legacy/js-to-cs";
 import { mono_wasm_trace_logger } from "./logging";
 import { mono_wasm_profiler_leave, mono_wasm_profiler_enter } from "./profiler";
+import { mono_wasm_change_case } from "./net6-legacy/method-calls";
 
 // the methods would be visible to EMCC linker
 // --- keep in sync with dotnet.cjs.lib.js ---
@@ -68,18 +66,22 @@ export function export_linker(): any {
         mono_wasm_profiler_leave,
 
         // driver.c
-        mono_wasm_invoke_js_blazor,
+        mono_wasm_invoke_js_blazor: methodCalls.mono_wasm_invoke_js_blazor,
         mono_wasm_trace_logger,
         mono_wasm_set_entrypoint_breakpoint,
         mono_wasm_event_pipe_early_startup_callback,
 
+        // driver.c hybrid globalization
+        mono_wasm_change_case_invariant: methodCalls.mono_wasm_change_case_invariant,
+        mono_wasm_change_case,
+
         // corebindings.c
-        mono_wasm_invoke_js_with_args_ref,
-        mono_wasm_get_object_property_ref,
-        mono_wasm_set_object_property_ref,
-        mono_wasm_get_by_index_ref,
-        mono_wasm_set_by_index_ref,
-        mono_wasm_get_global_object_ref,
+        mono_wasm_invoke_js_with_args_ref: methodCalls.mono_wasm_invoke_js_with_args_ref,
+        mono_wasm_get_object_property_ref: methodCalls.mono_wasm_get_object_property_ref,
+        mono_wasm_set_object_property_ref: methodCalls.mono_wasm_set_object_property_ref,
+        mono_wasm_get_by_index_ref: methodCalls.mono_wasm_get_by_index_ref,
+        mono_wasm_set_by_index_ref: methodCalls.mono_wasm_set_by_index_ref,
+        mono_wasm_get_global_object_ref: methodCalls.mono_wasm_get_global_object_ref,
         mono_wasm_create_cs_owned_object_ref,
         mono_wasm_release_cs_owned_object,
         mono_wasm_typed_array_to_array_ref,

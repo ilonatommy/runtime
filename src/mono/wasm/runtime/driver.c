@@ -48,6 +48,10 @@ extern void mono_wasm_set_entrypoint_breakpoint (const char* assembly_name, int 
 // Blazor specific custom routines - see dotnet_support.js for backing code
 extern void* mono_wasm_invoke_js_blazor (MonoString **exceptionMessage, void *callInfo, void* arg0, void* arg1, void* arg2);
 
+// HybridGlobalization - calls from managed to JS
+extern void mono_wasm_change_case_invariant(MonoString **exceptionMessage, const uint16_t* src, int32_t srcLength, uint16_t* dst, int32_t dstLength, mono_bool bToUpper);
+extern void mono_wasm_change_case(MonoString **exceptionMessage, MonoString **culture, const uint16_t* src, int32_t srcLength, uint16_t* dst, int32_t dstLength, mono_bool bToUpper);
+
 void mono_wasm_enable_debugging (int);
 
 static int _marshal_type_from_mono_type (int mono_type, MonoClass *klass, MonoType *type);
@@ -448,6 +452,8 @@ void mono_initialize_internals (void)
 {
 	// Blazor specific custom routines - see dotnet_support.js for backing code
 	mono_add_internal_call ("WebAssembly.JSInterop.InternalCalls::InvokeJS", mono_wasm_invoke_js_blazor);
+	mono_add_internal_call ("System.Globalization.TextInfoInterop::ChangeCaseInvariantJS", mono_wasm_change_case_invariant);
+	mono_add_internal_call ("System.Globalization.TextInfoInterop::ChangeCaseJS", mono_wasm_change_case);
 
 #ifdef CORE_BINDINGS
 	core_initialize_internals();

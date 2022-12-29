@@ -78,6 +78,10 @@ const linked_functions = [
     "mono_wasm_trace_logger",
     "mono_wasm_event_pipe_early_startup_callback",
 
+    // driver.c hybrid globalization
+    "mono_wasm_change_case_invariant",
+    "mono_wasm_change_case",
+
     // jiterpreter.c / interp.c / transform.c
     "mono_interp_tier_prepare_jiterpreter",
     "mono_interp_record_interp_entry",
