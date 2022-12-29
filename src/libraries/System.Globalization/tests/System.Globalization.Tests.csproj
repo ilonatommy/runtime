@@ -115,6 +115,7 @@
     <Compile Include="System\Globalization\StringInfoTests.cs" />
     <Compile Include="System\Globalization\SortVersionTests.cs" />
     <Compile Include="System\Globalization\TextInfoTests.cs" />
+    <Compile Include="System\Globalization\TextInfoTestsData.cs" />
     <Compile Include="System\Globalization\TextElementEnumeratorTests.cs" />
     <Compile Include="System\Globalization\UnicodeCategoryTests.cs" />
     <!-- Helpers -->

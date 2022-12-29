@@ -3,11 +3,13 @@
     <TargetFramework>$(NetCoreAppCurrent)</TargetFramework>
     <TestRuntime>true</TestRuntime>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantGlobalization>false</InvariantGlobalization>
     <PredefinedCulturesOnly>false</PredefinedCulturesOnly>
+    <HybridGlobalization>true</HybridGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="InvariantMode.cs" />
-    <Compile Include="InvariantTestsData.cs" />
+    <Compile Include="HybridGlobalization.cs" />
+    <Compile Include="../Invariant/InvariantTestData.cs" />
+    <Compile Include="../System/Globalization/TextInfoTestsData.cs" />
   </ItemGroup>
 </Project>
