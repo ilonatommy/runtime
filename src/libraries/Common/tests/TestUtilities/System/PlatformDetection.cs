@@ -351,6 +351,7 @@ namespace System
         public static bool IsNotInvariantGlobalization => !IsInvariantGlobalization;
         public static bool IsIcuGlobalization => ICUVersion > new Version(0, 0, 0, 0);
         public static bool IsNlsGlobalization => IsNotInvariantGlobalization && !IsIcuGlobalization;
+        public static bool IsHybridGlobalization => IsNotInvariantGlobalization && (bool?)Type.GetType("System.Globalization.GlobalizationMode")?.GetProperty("Hybrid", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null) == true;
 
         public static bool IsSubstAvailable
         {

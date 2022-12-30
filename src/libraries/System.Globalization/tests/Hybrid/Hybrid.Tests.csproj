@@ -11,5 +11,6 @@
     <Compile Include="HybridGlobalization.cs" />
     <Compile Include="../Invariant/InvariantTestData.cs" />
     <Compile Include="../System/Globalization/TextInfoTestsData.cs" />
+    <Compile Include="../CompareInfo/CompareInfoTests.CompareData.cs" />
   </ItemGroup>
 </Project>
