@@ -23,7 +23,6 @@ import { mono_wasm_create_cs_owned_object_ref } from "./net6-legacy/cs-to-js";
 import { mono_wasm_typed_array_to_array_ref } from "./net6-legacy/js-to-cs";
 import { mono_wasm_trace_logger } from "./logging";
 import { mono_wasm_profiler_leave, mono_wasm_profiler_enter } from "./profiler";
-import { mono_wasm_change_case } from "./net6-legacy/method-calls";
 
 // the methods would be visible to EMCC linker
 // --- keep in sync with dotnet.cjs.lib.js ---
@@ -73,7 +72,8 @@ export function export_linker(): any {
 
         // driver.c hybrid globalization
         mono_wasm_change_case_invariant: methodCalls.mono_wasm_change_case_invariant,
-        mono_wasm_change_case,
+        mono_wasm_change_case: methodCalls.mono_wasm_change_case,
+        mono_wasm_compare_string: methodCalls.mono_wasm_compare_string,
 
         // corebindings.c
         mono_wasm_invoke_js_with_args_ref: methodCalls.mono_wasm_invoke_js_with_args_ref,

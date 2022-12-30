@@ -81,6 +81,7 @@ const linked_functions = [
     // driver.c hybrid globalization
     "mono_wasm_change_case_invariant",
     "mono_wasm_change_case",
+    "mono_wasm_compare_string",
 
     // jiterpreter.c / interp.c / transform.c
     "mono_interp_tier_prepare_jiterpreter",

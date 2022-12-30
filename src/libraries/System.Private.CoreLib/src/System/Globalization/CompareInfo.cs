@@ -174,7 +174,7 @@ namespace System.Globalization
             {
                 NlsInitSortHandle();
             }
-            else
+            else if (!GlobalizationMode.Hybrid)
             {
                 IcuInitSortHandle(culture.InteropName!);
             }
@@ -487,6 +487,8 @@ namespace System.Globalization
         private unsafe int CompareStringCore(ReadOnlySpan<char> string1, ReadOnlySpan<char> string2, CompareOptions options) =>
             GlobalizationMode.UseNls ?
                 NlsCompareString(string1, string2, options) :
+            GlobalizationMode.Hybrid ?
+                JsCompareString(string1, string2, options) :
                 IcuCompareString(string1, string2, options);
 
         /// <summary>

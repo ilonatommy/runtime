@@ -334,6 +334,45 @@ export function mono_wasm_change_case(exceptionMessage: Int32Ptr, culture: MonoS
     }
 }
 
+export function mono_wasm_compare_string(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
+    const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
+    try{
+        const cultureName = conv_string_root(cultureRoot);
+        const string1 = get_uft16_string_from_memory(str1, str1Length);
+        const string2 = get_uft16_string_from_memory(str2, str2Length);
+        const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
+        switch (options & 0x1f)
+        {
+            case 0: // None - default algorithm for the platform OR
+                // StringSort - since .Net 5 it gives the same result as None, even for hyphen etc.
+                return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
+            case 1: // IgnoreCase
+                return string1.localeCompare(string2, locale, { sensitivity: "accent" }); // a ≠ b, a ≠ á, a = A
+            case 2: // IgnoreNonSpace
+                return string1.localeCompare(string2, locale, { sensitivity: "case" }); // a ≠ b, a = á, a ≠ A
+            case 3: // IgnoreNonSpace | IgnoreCase
+                return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a ≠ A
+            case 4: // IgnoreSymbols
+                // does not ignore: currency symbols
+                return string1.localeCompare(string2, locale, { ignorePunctuation: true }); // by default ignorePunctuation: false
+            case 5: // IgnoreSymbols | IgnoreCase
+                return string1.localeCompare(string2, locale, { sensitivity: "accent", ignorePunctuation: true });
+            case 6: // IgnoreSymbols | IgnoreNonSpace
+                return string1.localeCompare(string2, locale, { sensitivity: "case", ignorePunctuation: true });
+            case 7: // IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+                return string1.localeCompare(string2, locale, { sensitivity: "base", ignorePunctuation: true });
+            default:
+                throw new Error(`${options} is an invalid comparison option.`);
+        }
+    }
+    catch (ex: any) {
+        throw new Error(`${ex}`);
+    }
+    finally {
+        cultureRoot.release();
+    }
+}
+
 export function get_uft16_string_from_memory(ptr: number, length: number): string{
     const view = new Uint16Array(Module.HEAPU16.buffer, ptr, length);
     let string = "";
