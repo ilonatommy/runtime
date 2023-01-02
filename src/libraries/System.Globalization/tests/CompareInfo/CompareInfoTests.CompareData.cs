@@ -177,9 +177,9 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "\"", "\uFF02", CompareOptions.None, -1 };
 
             // Hungarian
-            // yield return new object[] { s_hungarianCompare, "dzsdzs", "ddzs", CompareOptions.Ordinal, 1 };
+            yield return new object[] { s_hungarianCompare, "dzsdzs", "ddzs", CompareOptions.Ordinal, 1 };
             yield return new object[] { s_invariantCompare, "dzsdzs", "ddzs", CompareOptions.None, 1 };
-            // yield return new object[] { s_invariantCompare, "dzsdzs", "ddzs", CompareOptions.Ordinal, 1 };
+            yield return new object[] { s_invariantCompare, "dzsdzs", "ddzs", CompareOptions.Ordinal, 1 };
 
             // Turkish
             yield return new object[] { s_turkishCompare, "i", "I", CompareOptions.None, 1 };
@@ -197,12 +197,12 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "i", "\u0130", CompareOptions.IgnoreCase, -1 };
 
             yield return new object[] { s_invariantCompare, "\u00C0", "A\u0300", CompareOptions.None, 0 };
-            // yield return new object[] { s_invariantCompare, "\u00C0", "A\u0300", CompareOptions.Ordinal, 1 };
+            yield return new object[] { s_invariantCompare, "\u00C0", "A\u0300", CompareOptions.Ordinal, 1 };
             yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.None, 1 };
             yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.IgnoreCase, 0 };
-            // yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.Ordinal, 1 };
-            // yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.OrdinalIgnoreCase, 1 };
-            // yield return new object[] { s_invariantCompare, "FooBar", "Foo\u0400Bar", CompareOptions.Ordinal, -1 };
+            yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.Ordinal, 1 };
+            yield return new object[] { s_invariantCompare, "\u00C0", "a\u0300", CompareOptions.OrdinalIgnoreCase, 1 };
+            yield return new object[] { s_invariantCompare, "FooBar", "Foo\u0400Bar", CompareOptions.Ordinal, -1 };
             yield return new object[] { s_invariantCompare, "FooBA\u0300R", "FooB\u00C0R", CompareOptions.IgnoreNonSpace, 0 };
 
             yield return new object[] { s_invariantCompare, "Test's", "Tests", CompareOptions.IgnoreSymbols, 0 };
@@ -290,15 +290,15 @@ namespace System.Globalization.Tests
             // Ordinal comparisons with ignore casing.
             //
 
-            // yield return new object[] { s_invariantCompare, "abcd", "abcd", CompareOptions.OrdinalIgnoreCase, 0};
-            // yield return new object[] { s_invariantCompare, "abcd", "ABCD", CompareOptions.OrdinalIgnoreCase, 0};
-            // yield return new object[] { s_invariantCompare, "Hello\u00F6", "HELLO\u00D6", CompareOptions.OrdinalIgnoreCase, 0};
-            // yield return new object[] { s_invariantCompare, "Hello\uFE6A", "Hello\U0001F601", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
-            // yield return new object[] { s_invariantCompare, "Hello\U0001F601", "Hello\uFE6A", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 1};
-            // yield return new object[] { s_invariantCompare, "\uDBFF", "\uD800\uDC00", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
-            // yield return new object[] { s_invariantCompare, "\uD800\uDC00", "\uDBFF", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 1};
-            // yield return new object[] { s_invariantCompare, "abcdefg\uDBFF", "abcdefg\uD800\uDC00", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
-            // yield return new object[] { s_invariantCompare, "\U00010400", "\U00010428", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 0};
+            yield return new object[] { s_invariantCompare, "abcd", "abcd", CompareOptions.OrdinalIgnoreCase, 0};
+            yield return new object[] { s_invariantCompare, "abcd", "ABCD", CompareOptions.OrdinalIgnoreCase, 0};
+            yield return new object[] { s_invariantCompare, "Hello\u00F6", "HELLO\u00D6", CompareOptions.OrdinalIgnoreCase, 0};
+            yield return new object[] { s_invariantCompare, "Hello\uFE6A", "Hello\U0001F601", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
+            yield return new object[] { s_invariantCompare, "Hello\U0001F601", "Hello\uFE6A", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 1};
+            yield return new object[] { s_invariantCompare, "\uDBFF", "\uD800\uDC00", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
+            yield return new object[] { s_invariantCompare, "\uD800\uDC00", "\uDBFF", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 1};
+            yield return new object[] { s_invariantCompare, "abcdefg\uDBFF", "abcdefg\uD800\uDC00", CompareOptions.OrdinalIgnoreCase, useNls ? 1 : -1};
+            yield return new object[] { s_invariantCompare, "\U00010400", "\U00010428", CompareOptions.OrdinalIgnoreCase, useNls ? -1 : 0};
         }
         public static IEnumerable<object[]> Compare_Advanced_TestData()
         {

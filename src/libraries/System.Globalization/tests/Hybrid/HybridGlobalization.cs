@@ -14,6 +14,7 @@ namespace System.Globalization.Tests
 {
     public class HybridGlobalizationTests
     {
+        private static CompareInfo s_polishCompare = new CultureInfo("pl-PL").CompareInfo;
         public static IEnumerable<object[]> ToUpper_TestData_Invariant() => InvariantTestData.ToUpper_TestData();
         public static IEnumerable<object[]> ToLower_TestData_Invariant() => InvariantTestData.ToLower_TestData();
         public static IEnumerable<object[]> ToUpper_TestData() => TextInfoMiscTestsData.ToUpper_TestData();
@@ -88,7 +89,9 @@ namespace System.Globalization.Tests
             Compare_Advanced(compareInfo, string1, 0, string1?.Length ?? 0, string2, 0, string2?.Length ?? 0, options, expected);
         }
 
-        private void Compare_Advanced(CompareInfo compareInfo, string string1, int offset1, int length1, string string2, int offset2, int length2, CompareOptions options, int expected)
+        [Theory]
+        [MemberData(nameof(Compare_Advanced_TestData))]
+        public void Compare_Advanced(CompareInfo compareInfo, string string1, int offset1, int length1, string string2, int offset2, int length2, CompareOptions options, int expected)
         {
             if (offset1 + length1 == (string1?.Length ?? 0) && offset2 + length2 == (string2?.Length ?? 0))
             {
@@ -144,5 +147,19 @@ namespace System.Globalization.Tests
                 Assert.Equal(-expected, Math.Sign(compareInfo.Compare(string2, string1, options)));
             }
         }
+
+        [Theory]
+        [InlineData(CompareOptions.None, "\u017a", "\u0179", -1)] // ź, Ź
+        [InlineData(CompareOptions.OrdinalIgnoreCase, "\u017a", "\u0179", 0)] // ź, Ź
+        [InlineData(CompareOptions.Ordinal, "\u017a", "\u0179", 1)] // ź, Ź
+        [InlineData(CompareOptions.None, "\u0119", "\u0118", -1)] // ę, Ę
+        [InlineData(CompareOptions.OrdinalIgnoreCase, "\u0119", "\u0118", 0)] // ę, Ę
+        [InlineData(CompareOptions.Ordinal, "\u0119", "\u0118", 1)] // ę, Ę
+        public void CompareOrdinal(CompareOptions options, string string1, string string2, int expected)
+        {
+            Assert.Equal(expected, Math.Sign(String.Compare(string1, string2, new CultureInfo("pl-PL"), options)));
+            Assert.Equal(expected, Math.Sign(s_polishCompare.Compare(string1, string2, options)));
+        }
+
     }
 }
