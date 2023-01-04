@@ -349,7 +349,8 @@ export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Len
         const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
         const source = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana); // source string
         const casePicker = (options & 0x1f) % 8;
-        return get_index_of(source, value, locale, casePicker, matchLengthPointer);
+        const ignoreSymbols = (options & 0x4) == 0x4;
+        return get_index_of(source, value, locale, casePicker, ignoreSymbols, matchLengthPointer);
     }
     catch (ex: any) {
         throw new Error(`${ex}`);
@@ -359,18 +360,24 @@ export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Len
     }
 }
 
-export function get_index_of(source: string, value: string, locale: string | undefined, casePicker: number, matchLengthPointer: number){
+export function get_index_of(source: string, value: string, locale: string | undefined, casePicker: number, ignoreSymbols: boolean, matchLengthPointer: number){
     // FixMe: some letters consist of more than one grapheme,
     // e.g. Czech/Slovak "ch" is 1 letter, 2 graphemes
     // also, in any language searching for a whitecarts will fail because their sequence is treated as one grapheme,
     // we can fix it later by detecting graphemes that are whitespaces and check them unicode code by code
     // in such cases, this algorithm will return an incorrect value
     const segmenter = new Intl.Segmenter(locale, { granularity: "grapheme" });
-    const graphemesSource = Array.from(segmenter.segment(source));
-    const graphemesValue = Array.from(segmenter.segment(value));
 
-    // naive implementations: FixMe - compare chunks of source with value only once
-    // it will fix indexOf for IgnoreSymbols and IgnoreNonSpace option
+    const graphemesSource = ignoreSymbols ?
+        Array.from(segmenter.segment(source)).filter(({ segment }) => compare_strings(segment, ".", locale, 4) !== 0) :
+        Array.from(segmenter.segment(source));
+
+    const graphemesValue = ignoreSymbols ?
+        Array.from(segmenter.segment(value)).filter(({ segment }) => compare_strings(segment, ".", locale, 4) !== 0) :
+        Array.from(segmenter.segment(value));
+
+    // naive implementation:
+    // can be fixed once https://github.com/tc39/ecma402/issues/506 is resolved
     const lastChar = graphemesSource.length - graphemesValue.length;
     for (let i = 0; i <= lastChar; i++)
     {
