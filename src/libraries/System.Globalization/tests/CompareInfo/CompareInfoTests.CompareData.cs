@@ -9,7 +9,7 @@ namespace System.Globalization.Tests
 {
     public class CompareInfoCompareTestsData
     {
-        private static CompareInfo s_invariantCompare = CultureInfo.InvariantCulture.CompareInfo;
+        public static CompareInfo s_invariantCompare = CultureInfo.InvariantCulture.CompareInfo;
         private static CompareInfo s_currentCompare = CultureInfo.CurrentCulture.CompareInfo;
         private static CompareInfo s_hungarianCompare = new CultureInfo("hu-HU").CompareInfo;
         private static CompareInfo s_turkishCompare = new CultureInfo("tr-TR").CompareInfo;

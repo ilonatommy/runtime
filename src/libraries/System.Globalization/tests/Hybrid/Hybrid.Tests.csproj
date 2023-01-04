@@ -8,7 +8,8 @@
     <HybridGlobalization>true</HybridGlobalization>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="HybridGlobalization.cs" />
+    <Compile Include="Casing.cs" />
+    <Compile Include="Comparison.cs" />
     <Compile Include="../Invariant/InvariantTestData.cs" />
     <Compile Include="../System/Globalization/TextInfoTestsData.cs" />
     <Compile Include="../CompareInfo/CompareInfoTests.CompareData.cs" />

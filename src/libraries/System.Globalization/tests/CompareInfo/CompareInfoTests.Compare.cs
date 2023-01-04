@@ -16,14 +16,14 @@ namespace System.Globalization.Tests
         // There is a regression in Windows 190xx version with the Kana comparison. Avoid running this test there.
         public static bool IsNotWindowsKanaRegressedVersion() => !PlatformDetection.IsWindows10Version1903OrGreater ||
                                                               PlatformDetection.IsIcuGlobalization ||
-                                                              s_invariantCompare.Compare("\u3060", "\uFF80\uFF9E", CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth | CompareOptions.IgnoreCase) == 0;
+                                                              CompareInfoCompareTestsData.s_invariantCompare.Compare("\u3060", "\uFF80\uFF9E", CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth | CompareOptions.IgnoreCase) == 0;
 
         [Fact]
         public void CompareWithUnassignedChars()
         {
             int result = PlatformDetection.IsNlsGlobalization ? 0 : -1;
-            Compare(s_invariantCompare, "FooBar", "Foo\uFFFFBar", CompareOptions.None, result);
-            Compare(s_invariantCompare, "FooBar", "Foo\uFFFFBar", CompareOptions.IgnoreNonSpace, result);
+            Compare(CompareInfoCompareTestsData.s_invariantCompare, "FooBar", "Foo\uFFFFBar", CompareOptions.None, result);
+            Compare(CompareInfoCompareTestsData.s_invariantCompare, "FooBar", "Foo\uFFFFBar", CompareOptions.IgnoreNonSpace, result);
         }
 
         [ConditionalTheory(nameof(IsNotWindowsKanaRegressedVersion))]
@@ -105,65 +105,65 @@ namespace System.Globalization.Tests
         public void Compare_Invalid()
         {
             // Compare options are invalid
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", "Tests", (CompareOptions)(-1)));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, "Tests", 0, (CompareOptions)(-1)));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, (CompareOptions)(-1)));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", "Tests", (CompareOptions)(-1)));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, "Tests", 0, (CompareOptions)(-1)));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, (CompareOptions)(-1)));
 
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", "Tests", CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, "Tests", 0, CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", "Tests", CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, "Tests", 0, CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, CompareOptions.Ordinal | CompareOptions.IgnoreWidth));
 
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", "Tests", CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, "Tests", 0, CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
-            AssertExtensions.Throws<ArgumentException>("options", () => s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", "Tests", CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, "Tests", 0, CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
+            AssertExtensions.Throws<ArgumentException>("options", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Tests", 0, 2, "Tests", 0, 2, CompareOptions.OrdinalIgnoreCase | CompareOptions.IgnoreWidth));
 
             // Offset1 < 0
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => s_invariantCompare.Compare("Test", -1, "Test", 0));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => s_invariantCompare.Compare("Test", -1, "Test", 0, CompareOptions.None));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => s_invariantCompare.Compare("Test", -1, 2, "Test", 0, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => s_invariantCompare.Compare("Test", -1, 2, "Test", 0, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", -1, "Test", 0));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", -1, "Test", 0, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", -1, 2, "Test", 0, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", -1, 2, "Test", 0, 2, CompareOptions.None));
 
             // Offset1 > string1.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => s_invariantCompare.Compare("Test", 5, "Test", 0));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => s_invariantCompare.Compare("Test", 5, "Test", 0, CompareOptions.None));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 5, 0, "Test", 0, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 5, 0, "Test", 0, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 5, "Test", 0));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 5, "Test", 0, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 5, 0, "Test", 0, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 5, 0, "Test", 0, 2, CompareOptions.None));
 
             // Offset2 < 0
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => s_invariantCompare.Compare("Test", 0, "Test", -1));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => s_invariantCompare.Compare("Test", 0, "Test", -1, CompareOptions.None));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", -1, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", -1, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, "Test", -1));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, "Test", -1, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", -1, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("offset2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", -1, 2, CompareOptions.None));
 
             // Offset2 > string2.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => s_invariantCompare.Compare("Test", 0, "Test", 5));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => s_invariantCompare.Compare("Test", 0, "Test", 5, CompareOptions.None));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 5, 0));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 5, 0, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, "Test", 5));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, "Test", 5, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 5, 0));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 5, 0, CompareOptions.None));
 
             // Length1 < 0
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => s_invariantCompare.Compare("Test", 0, -1, "Test", 0, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => s_invariantCompare.Compare("Test", 0, -1, "Test", 0, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, -1, "Test", 0, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, -1, "Test", 0, 2, CompareOptions.None));
 
             // Length1 > string1.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 0, 5, "Test", 0, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 0, 5, "Test", 0, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 5, "Test", 0, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 5, "Test", 0, 2, CompareOptions.None));
 
             // Length2 < 0
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 0, -1));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 0, -1, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 0, -1));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("length2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 0, -1, CompareOptions.None));
 
             // Length2 > string2.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 0, 5));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 0, 5, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 0, 5));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 0, 5, CompareOptions.None));
 
             // Offset1 + length1 > string1.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 2, 3, "Test", 0, 2));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => s_invariantCompare.Compare("Test", 2, 3, "Test", 0, 2, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 2, 3, "Test", 0, 2));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string1", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 2, 3, "Test", 0, 2, CompareOptions.None));
 
             // Offset2 + length2 > string2.Length
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 2, 3));
-            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => s_invariantCompare.Compare("Test", 0, 2, "Test", 2, 3, CompareOptions.None));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 2, 3));
+            AssertExtensions.Throws<ArgumentOutOfRangeException>("string2", () => CompareInfoCompareTestsData.s_invariantCompare.Compare("Test", 0, 2, "Test", 2, 3, CompareOptions.None));
         }
 
         [Fact]
@@ -259,8 +259,8 @@ namespace System.Globalization.Tests
                         char hiraganaChar2 = hiraganaList[j];
                         char katakanaChar2 = (char)(hiraganaChar2 + hiraganaToKatakanaOffset);
 
-                        int hiraganaResult = s_invariantCompare.Compare(new string(hiraganaChar1, 1), new string(hiraganaChar2, 1), option);
-                        int katakanaResult = s_invariantCompare.Compare(new string(katakanaChar1, 1), new string(katakanaChar2, 1), option);
+                        int hiraganaResult = CompareInfoCompareTestsData.s_invariantCompare.Compare(new string(hiraganaChar1, 1), new string(hiraganaChar2, 1), option);
+                        int katakanaResult = CompareInfoCompareTestsData.s_invariantCompare.Compare(new string(katakanaChar1, 1), new string(katakanaChar2, 1), option);
                         Assert.True(hiraganaResult == katakanaResult,
                             $"Expect Compare({(int)hiraganaChar1:x4}, {(int)hiraganaChar2:x4}) == Compare({(int)katakanaChar1:x4}, {(int)katakanaChar2:x4}) with CompareOptions.{option}");
                     }
