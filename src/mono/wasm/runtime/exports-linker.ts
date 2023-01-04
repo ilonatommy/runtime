@@ -74,6 +74,7 @@ export function export_linker(): any {
         mono_wasm_change_case_invariant: methodCalls.mono_wasm_change_case_invariant,
         mono_wasm_change_case: methodCalls.mono_wasm_change_case,
         mono_wasm_compare_string: methodCalls.mono_wasm_compare_string,
+        mono_wasm_index_of: methodCalls.mono_wasm_index_of,
 
         // corebindings.c
         mono_wasm_invoke_js_with_args_ref: methodCalls.mono_wasm_invoke_js_with_args_ref,

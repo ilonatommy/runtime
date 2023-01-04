@@ -52,6 +52,7 @@ extern void* mono_wasm_invoke_js_blazor (MonoString **exceptionMessage, void *ca
 extern void mono_wasm_change_case_invariant(MonoString **exceptionMessage, const uint16_t* src, int32_t srcLength, uint16_t* dst, int32_t dstLength, mono_bool bToUpper);
 extern void mono_wasm_change_case(MonoString **exceptionMessage, MonoString **culture, const uint16_t* src, int32_t srcLength, uint16_t* dst, int32_t dstLength, mono_bool bToUpper);
 extern int mono_wasm_compare_string(MonoString **culture, const uint16_t* str1, int32_t str1Length, const uint16_t* str2, int32_t str2Length, int32_t options);
+extern int mono_wasm_index_of(MonoString **culture, const uint16_t* str1, int32_t str1Length, const uint16_t* str2, int32_t str2Length, int32_t options, int32_t* matchLengthPointer);
 
 void mono_wasm_enable_debugging (int);
 
@@ -456,6 +457,7 @@ void mono_initialize_internals (void)
 	mono_add_internal_call ("System.Globalization.TextInfoInterop::ChangeCaseInvariantJS", mono_wasm_change_case_invariant);
 	mono_add_internal_call ("System.Globalization.TextInfoInterop::ChangeCaseJS", mono_wasm_change_case);
 	mono_add_internal_call ("System.Globalization.CompareInfoInterop::CompareStringJS", mono_wasm_compare_string);
+	mono_add_internal_call ("System.Globalization.CompareInfoInterop::IndexOfJS", mono_wasm_index_of);
 
 #ifdef CORE_BINDINGS
 	core_initialize_internals();

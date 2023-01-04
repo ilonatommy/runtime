@@ -4,7 +4,7 @@
 import { get_js_obj, mono_wasm_get_jsobj_from_js_handle } from "../gc-handles";
 import { Module, runtimeHelpers, INTERNAL } from "../imports";
 import { wrap_error_root, wrap_no_error_root } from "../invoke-js";
-import { _release_temp_frame, setU16 } from "../memory";
+import { _release_temp_frame, setU16, setU32 } from "../memory";
 import { mono_wasm_new_external_root, mono_wasm_new_root } from "../roots";
 import { find_entry_point } from "../run";
 import { conv_string_root, js_string_to_mono_string_root } from "../strings";
@@ -334,6 +334,72 @@ export function mono_wasm_change_case(exceptionMessage: Int32Ptr, culture: MonoS
     }
 }
 
+export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number, matchLengthPointer: number): number{
+    const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
+    try{
+        const ignoreKana = (options & 0x8) == 0x8;
+        const ignoreWidth = (options & 0x10) == 0x10;
+        const value = get_uft16_string_for_comparison(str1, str1Length, ignoreWidth, ignoreKana); // searched value in source string
+        // no need to look for an empty string
+        const result = "".localeCompare(value, undefined);
+        if (result === 0)
+            return 0;
+
+        const cultureName = conv_string_root(cultureRoot);
+        const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
+        const source = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana); // source string
+        const casePicker = (options & 0x1f) % 8;
+        return get_index_of(source, value, locale, casePicker, matchLengthPointer);
+    }
+    catch (ex: any) {
+        throw new Error(`${ex}`);
+    }
+    finally {
+        cultureRoot.release();
+    }
+}
+
+export function get_index_of(source: string, value: string, locale: string | undefined, casePicker: number, matchLengthPointer: number){
+    // FixMe: some letters consist of more than one grapheme,
+    // e.g. Czech/Slovak "ch" is 1 letter, 2 graphemes
+    // also, in any language searching for a whitecarts will fail because their sequence is treated as one grapheme,
+    // we can fix it later by detecting graphemes that are whitespaces and check them unicode code by code
+    // in such cases, this algorithm will return an incorrect value
+    const segmenter = new Intl.Segmenter(locale, { granularity: "grapheme" });
+    const graphemesSource = Array.from(segmenter.segment(source));
+    const graphemesValue = Array.from(segmenter.segment(value));
+
+    // naive implementations: FixMe - compare chunks of source with value only once
+    // it will fix indexOf for IgnoreSymbols and IgnoreNonSpace option
+    const lastChar = graphemesSource.length - graphemesValue.length;
+    for (let i = 0; i <= lastChar; i++)
+    {
+        let index = -1;
+        for (let j = 0; j < graphemesValue.length; j++)
+        {
+            const isEqual = compare_strings(graphemesSource[i + j].segment, graphemesValue[j].segment, locale, casePicker);
+            if (isEqual !== 0)
+            {
+                index = -1;
+                break;
+            }
+            if (index === -1 && isEqual === 0)
+                index = graphemesSource[i].index;
+        }
+        if (index !== -1)
+        {
+            const lastGraphemeOriginalStartIxd = graphemesSource[i + graphemesValue.length - 1].index;
+            const lastGraphemeLen = (index + 1 < graphemesSource.length) ?
+                graphemesSource[index + 1].index - graphemesSource[index].index :
+                source.length - graphemesSource[index].index;
+            const matchLen = (lastGraphemeOriginalStartIxd + lastGraphemeLen) - index ;
+            setU32(matchLengthPointer, matchLen);
+            return index;
+        }
+    }
+    return -1;
+}
+
 export function mono_wasm_compare_string(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
@@ -344,65 +410,72 @@ export function mono_wasm_compare_string(culture: MonoStringRef, str1: number, s
         const string2 = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana);
         const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
         const casePicker = (options & 0x1f) % 8;
-        switch (casePicker)
-        {
-            case 0:
-                // 0: None - default algorithm for the platform OR StringSort - since .Net 5 it gives the same result as None, even for hyphen etc.
-                // 8: IgnoreKanaType
-                // 16: IgnoreWidth
-                // 24: IgnoreKanaType | IgnoreWidth
-                return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
-            case 1:
-                // 1: IgnoreCase
-                // 9: IgnoreKanaType | IgnoreCase
-                // 17: IgnoreWidth | IgnoreCase
-                // 25: IgnoreKanaType | IgnoreWidth | IgnoreCase
-                return string1.localeCompare(string2, locale, { sensitivity: "accent" }); // a ≠ b, a ≠ á, a = A
-            case 2:
-                // 2: IgnoreNonSpace
-                // 10: IgnoreKanaType | IgnoreNonSpace
-                // 18: IgnoreWidth | IgnoreNonSpace
-                // 26: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace
-                return string1.localeCompare(string2, locale, { sensitivity: "case" }); // a ≠ b, a = á, a ≠ A
-            case 3:
-                // 3: IgnoreNonSpace | IgnoreCase
-                // 11: IgnoreKanaType | IgnoreNonSpace | IgnoreCase
-                // 19: IgnoreWidth | IgnoreNonSpace | IgnoreCase
-                // 27: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace | IgnoreCase
-                return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a ≠ A
-            case 4:
-                // 4: IgnoreSymbols - does not ignore currency symbols
-                // 12: IgnoreKanaType | IgnoreSymbols
-                // 20: IgnoreWidth | IgnoreSymbols
-                // 28: IgnoreKanaType | IgnoreWidth | IgnoreSymbols
-                return string1.localeCompare(string2, locale, { ignorePunctuation: true }); // by default ignorePunctuation: false
-            case 5:
-                // 5: IgnoreSymbols | IgnoreCase
-                // 13: IgnoreKanaType | IgnoreSymbols | IgnoreCase
-                // 21: IgnoreWidth | IgnoreSymbols | IgnoreCase
-                // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreCase
-                return string1.localeCompare(string2, locale, { sensitivity: "accent", ignorePunctuation: true });
-            case 6:
-                // 6: IgnoreSymbols | IgnoreNonSpace
-                // 14: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace
-                // 22: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
-                // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
-                return string1.localeCompare(string2, locale, { sensitivity: "case", ignorePunctuation: true });
-            case 7:
-                // 7: IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-                // 15: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-                // 23: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-                // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-                return string1.localeCompare(string2, locale, { sensitivity: "base", ignorePunctuation: true });
-            default:
-                throw new Error(`${options} is an invalid comparison option.`);
-        }
+        const result = compare_strings(string1, string2, locale, casePicker);
+        if (result == -2)
+            throw new Error(`${options} is an invalid comparison option.`);
+        return result;
     }
     catch (ex: any) {
         throw new Error(`${ex}`);
     }
     finally {
         cultureRoot.release();
+    }
+}
+
+export function compare_strings(string1: string, string2: string, locale: string | undefined, casePicker: number){
+    switch (casePicker)
+    {
+        case 0:
+            // 0: None - default algorithm for the platform OR StringSort - since .Net 5 it gives the same result as None, even for hyphen etc.
+            // 8: IgnoreKanaType
+            // 16: IgnoreWidth
+            // 24: IgnoreKanaType | IgnoreWidth
+            return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
+        case 1:
+            // 1: IgnoreCase
+            // 9: IgnoreKanaType | IgnoreCase
+            // 17: IgnoreWidth | IgnoreCase
+            // 25: IgnoreKanaType | IgnoreWidth | IgnoreCase
+            return string1.localeCompare(string2, locale, { sensitivity: "accent" }); // a ≠ b, a ≠ á, a = A
+        case 2:
+            // 2: IgnoreNonSpace
+            // 10: IgnoreKanaType | IgnoreNonSpace
+            // 18: IgnoreWidth | IgnoreNonSpace
+            // 26: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace
+            return string1.localeCompare(string2, locale, { sensitivity: "case" }); // a ≠ b, a = á, a ≠ A
+        case 3:
+            // 3: IgnoreNonSpace | IgnoreCase
+            // 11: IgnoreKanaType | IgnoreNonSpace | IgnoreCase
+            // 19: IgnoreWidth | IgnoreNonSpace | IgnoreCase
+            // 27: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace | IgnoreCase
+            return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a ≠ A
+        case 4:
+            // 4: IgnoreSymbols - does not ignore currency symbols
+            // 12: IgnoreKanaType | IgnoreSymbols
+            // 20: IgnoreWidth | IgnoreSymbols
+            // 28: IgnoreKanaType | IgnoreWidth | IgnoreSymbols
+            return string1.localeCompare(string2, locale, { ignorePunctuation: true }); // by default ignorePunctuation: false
+        case 5:
+            // 5: IgnoreSymbols | IgnoreCase
+            // 13: IgnoreKanaType | IgnoreSymbols | IgnoreCase
+            // 21: IgnoreWidth | IgnoreSymbols | IgnoreCase
+            // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreCase
+            return string1.localeCompare(string2, locale, { sensitivity: "accent", ignorePunctuation: true });
+        case 6:
+            // 6: IgnoreSymbols | IgnoreNonSpace
+            // 14: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace
+            // 22: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
+            // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
+            return string1.localeCompare(string2, locale, { sensitivity: "case", ignorePunctuation: true });
+        case 7:
+            // 7: IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+            // 15: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+            // 23: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+            // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+            return string1.localeCompare(string2, locale, { sensitivity: "base", ignorePunctuation: true });
+        default:
+            return -2;
     }
 }
 

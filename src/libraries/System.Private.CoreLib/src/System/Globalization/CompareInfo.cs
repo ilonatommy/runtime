@@ -1098,6 +1098,8 @@ namespace System.Globalization
         private unsafe int IndexOfCore(ReadOnlySpan<char> source, ReadOnlySpan<char> target, CompareOptions options, int* matchLengthPtr, bool fromBeginning) =>
             GlobalizationMode.UseNls ?
                 NlsIndexOfCore(source, target, options, matchLengthPtr, fromBeginning) :
+            GlobalizationMode.Hybrid ?
+                JsIndexOfCore(source, target, options, matchLengthPtr, fromBeginning) :
                 IcuIndexOfCore(source, target, options, matchLengthPtr, fromBeginning);
 
         /// <summary>
