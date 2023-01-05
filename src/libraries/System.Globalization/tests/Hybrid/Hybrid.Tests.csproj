@@ -11,9 +11,11 @@
     <Compile Include="Casing.cs" />
     <Compile Include="Comparison.cs" />
     <Compile Include="IndexOf.cs" />
+    <Compile Include="LastIndexOf.cs" />
     <Compile Include="../Invariant/InvariantTestData.cs" />
     <Compile Include="../System/Globalization/TextInfoTestsData.cs" />
     <Compile Include="../CompareInfo/CompareInfoTests.CompareData.cs" />
     <Compile Include="../CompareInfo/CompareInfoTests.IndexOfData.cs" />
+    <Compile Include="../CompareInfo/CompareInfoTests.LastIndexOfData.cs" />
   </ItemGroup>
 </Project>

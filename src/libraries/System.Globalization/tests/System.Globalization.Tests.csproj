@@ -20,6 +20,7 @@
     <Compile Include="CompareInfo\CompareInfoTests.CompareData.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.IsSuffix.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.LastIndexOf.cs" />
+    <Compile Include="CompareInfo\CompareInfoTests.LastIndexOfData.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoCurrentInfo.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoValidateParseStyle.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoData.cs" />
