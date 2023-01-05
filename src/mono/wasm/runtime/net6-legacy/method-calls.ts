@@ -334,7 +334,7 @@ export function mono_wasm_change_case(exceptionMessage: Int32Ptr, culture: MonoS
     }
 }
 
-export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number, matchLengthPointer: number): number{
+export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number, matchLengthPointer: number, fromBeginning: boolean): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
         const ignoreKana = (options & 0x8) == 0x8;
@@ -343,14 +343,19 @@ export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Len
         // no need to look for an empty string
         const result = "".localeCompare(value, undefined);
         if (result === 0)
-            return 0;
+            return fromBeginning ? 0 : str2Length;
 
         const cultureName = conv_string_root(cultureRoot);
         const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
         const source = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana); // source string
         const casePicker = (options & 0x1f) % 8;
         const ignoreSymbols = (options & 0x4) == 0x4;
-        return get_index_of(source, value, locale, casePicker, ignoreSymbols, matchLengthPointer);
+        const graphemesSource = segment_string_locale_sensitive(source, locale, ignoreSymbols);
+        const graphemesValue = segment_string_locale_sensitive(value, locale, ignoreSymbols);
+        if (fromBeginning)
+            return get_index_of(graphemesSource, graphemesValue, locale, casePicker, matchLengthPointer, source.length);
+        else
+            return get_last_index_of(graphemesSource, graphemesValue, locale, casePicker, matchLengthPointer, source.length);
     }
     catch (ex: any) {
         throw new Error(`${ex}`);
@@ -360,21 +365,20 @@ export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Len
     }
 }
 
-export function get_index_of(source: string, value: string, locale: string | undefined, casePicker: number, ignoreSymbols: boolean, matchLengthPointer: number){
+export function segment_string_locale_sensitive(string: string, locale: string | undefined, ignoreSymbols: boolean) : Intl.SegmentData[]
+{
     // FixMe: some letters consist of more than one grapheme,
     // e.g. Czech/Slovak "ch" is 1 letter, 2 graphemes
     // also, in any language searching for a whitecarts will fail because their sequence is treated as one grapheme,
     // we can fix it later by detecting graphemes that are whitespaces and check them unicode code by code
     // in such cases, this algorithm will return an incorrect value
     const segmenter = new Intl.Segmenter(locale, { granularity: "grapheme" });
+    return ignoreSymbols ?
+        Array.from(segmenter.segment(string)).filter(({ segment }) => compare_strings(segment, ".", locale, 4) !== 0) :
+        Array.from(segmenter.segment(string));
+}
 
-    const graphemesSource = ignoreSymbols ?
-        Array.from(segmenter.segment(source)).filter(({ segment }) => compare_strings(segment, ".", locale, 4) !== 0) :
-        Array.from(segmenter.segment(source));
-
-    const graphemesValue = ignoreSymbols ?
-        Array.from(segmenter.segment(value)).filter(({ segment }) => compare_strings(segment, ".", locale, 4) !== 0) :
-        Array.from(segmenter.segment(value));
+export function get_index_of(graphemesSource: Intl.SegmentData[], graphemesValue: Intl.SegmentData[], locale: string | undefined, casePicker: number, matchLengthPointer: number, srcOriginalLen: number){
 
     // naive implementation:
     // can be fixed once https://github.com/tc39/ecma402/issues/506 is resolved
@@ -396,9 +400,43 @@ export function get_index_of(source: string, value: string, locale: string | und
         if (index !== -1)
         {
             const lastGraphemeOriginalStartIxd = graphemesSource[i + graphemesValue.length - 1].index;
-            const lastGraphemeLen = (index + 1 < graphemesSource.length) ?
+            const lastGraphemeLen = (index + 1 < graphemesSource.length) ? // this might be wrong, try multipgrapheme in value longer than 2
                 graphemesSource[index + 1].index - graphemesSource[index].index :
-                source.length - graphemesSource[index].index;
+                srcOriginalLen - graphemesSource[index].index;
+            const matchLen = (lastGraphemeOriginalStartIxd + lastGraphemeLen) - index ;
+            setU32(matchLengthPointer, matchLen);
+            return index;
+        }
+    }
+    return -1;
+}
+
+export function get_last_index_of(graphemesSource: Intl.SegmentData[], graphemesValue: Intl.SegmentData[], locale: string | undefined, casePicker: number, matchLengthPointer: number, srcOriginalLen: number){
+
+    // naive implementation:
+    // can be fixed once https://github.com/tc39/ecma402/issues/506 is resolved
+    for (let i = graphemesSource.length - 1; i >= graphemesValue.length - 1; i--)
+    {
+        let index = -1;
+        const lastGraphemeIdx = graphemesValue.length - 1;
+        const firstGraphemeId = i - graphemesValue.length + 1;
+        for (let j = lastGraphemeIdx; j >= 0; j--)
+        {
+            const isEqual = compare_strings(graphemesSource[i - (lastGraphemeIdx - j)].segment, graphemesValue[j].segment, locale, casePicker);
+            if (isEqual !== 0)
+            {
+                index = -1;
+                break;
+            }
+            if (index === -1 && isEqual === 0)
+                index = graphemesSource[firstGraphemeId].index;
+        }
+        if (index !== -1)
+        {
+            const lastGraphemeOriginalStartIxd = graphemesSource[i].index;
+            const lastGraphemeLen = (i + 1 < graphemesSource.length) ?
+                graphemesSource[i + 1].index - graphemesSource[i].index :
+                srcOriginalLen - graphemesSource[i].index;
             const matchLen = (lastGraphemeOriginalStartIxd + lastGraphemeLen) - index ;
             setU32(matchLengthPointer, matchLen);
             return index;

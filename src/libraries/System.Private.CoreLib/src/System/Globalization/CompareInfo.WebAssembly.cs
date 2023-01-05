@@ -13,7 +13,7 @@ namespace System.Globalization
         internal static extern unsafe int CompareStringJS(in string culture, char* str1, int str1Len, char* str2, int str2Len, global::System.Globalization.CompareOptions options);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal static extern unsafe int IndexOfJS(in string culture, char* str1, int str1Len, char* str2, int str2Len, global::System.Globalization.CompareOptions options, int* matchLengthPtr);
+        internal static extern unsafe int IndexOfJS(in string culture, char* str1, int str1Len, char* str2, int str2Len, global::System.Globalization.CompareOptions options, int* matchLengthPtr, bool fromBeginning);
     }
 
     public partial class CompareInfo
@@ -45,10 +45,7 @@ namespace System.Globalization
             fixed (char* pSource = &MemoryMarshal.GetReference(source))
             fixed (char* pTarget = &MemoryMarshal.GetReference(target))
             {
-                if (fromBeginning)
-                    return CompareInfoInterop.IndexOfJS(m_name, pTarget, target.Length, pSource, source.Length, options, matchLengthPtr);
-                else
-                    throw new NotImplementedException();
+                return CompareInfoInterop.IndexOfJS(m_name, pTarget, target.Length, pSource, source.Length, options, matchLengthPtr, fromBeginning);
             }
         }
     }
