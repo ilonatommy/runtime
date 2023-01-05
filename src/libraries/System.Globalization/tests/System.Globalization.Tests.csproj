@@ -14,13 +14,10 @@
     <Compile Include="IcuTests.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.IndexOf.cs" />
-    <Compile Include="CompareInfo\CompareInfoTests.IndexOfData.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.IsPrefix.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.Compare.cs" />
-    <Compile Include="CompareInfo\CompareInfoTests.CompareData.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.IsSuffix.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.LastIndexOf.cs" />
-    <Compile Include="CompareInfo\CompareInfoTests.LastIndexOfData.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoCurrentInfo.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoValidateParseStyle.cs" />
     <Compile Include="NumberFormatInfo\NumberFormatInfoData.cs" />
@@ -118,7 +115,6 @@
     <Compile Include="System\Globalization\StringInfoTests.cs" />
     <Compile Include="System\Globalization\SortVersionTests.cs" />
     <Compile Include="System\Globalization\TextInfoTests.cs" />
-    <Compile Include="System\Globalization\TextInfoTestsData.cs" />
     <Compile Include="System\Globalization\TextElementEnumeratorTests.cs" />
     <Compile Include="System\Globalization\UnicodeCategoryTests.cs" />
     <!-- Helpers -->
