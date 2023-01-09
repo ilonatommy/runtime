@@ -489,33 +489,33 @@ export function compare_strings(string1: string, string2: string, locale: string
             // 26: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace - case ignores all of them
             return string1.localeCompare(string2, locale, { sensitivity: "case" });// a ≠ b, a = á, a ≠ A
         case 2:
+        case 3:
         case 6:
         case 7:
         case 10:
+        case 11:
         case 14:
         case 15:
         case 18:
+        case 19:
         case 22:
         case 23:
             // sensitivity: "case" works as IgnoreNonSpace | IgnoreKanaType | IgnoreWidth combined
             // if user wants to ignore only 1 or 2 of them, the result would be incorrect - PNSE
             // 2: IgnoreNonSpace
+            // 3: IgnoreNonSpace | IgnoreCase
             // 6: IgnoreSymbols | IgnoreNonSpace
             // 7: IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             // 10: IgnoreKanaType | IgnoreNonSpace
+            // 11: IgnoreKanaType | IgnoreNonSpace | IgnoreCase
             // 14: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace
             // 15: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             // 18: IgnoreWidth | IgnoreNonSpace
+            // 19: IgnoreWidth | IgnoreNonSpace | IgnoreCase
             // 22: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
             // 23: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             return -2;
-        case 3:
-        case 11:
-        case 19:
         case 27:
-            // 3: IgnoreNonSpace | IgnoreCase
-            // 11: IgnoreKanaType | IgnoreNonSpace | IgnoreCase
-            // 19: IgnoreWidth | IgnoreNonSpace | IgnoreCase
             // 27: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace | IgnoreCase
             return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a = A
         case 4:

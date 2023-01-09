@@ -223,7 +223,7 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "", "", CompareOptions.None, 0 };
 
             yield return new object[] { s_invariantCompare, new string('a', 5555), new string('a', 5555), CompareOptions.None, 0 };
-            yield return new object[] { s_invariantCompare, "foobar", "FooB\u00C0R", CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreCase, 0 };
+            yield return new object[] { s_invariantCompare, "foobar", "FooB\u00C0R", supportedIgnoreNonSpaceOption | CompareOptions.IgnoreCase, 0 };
             yield return new object[] { s_invariantCompare, "foobar", "FooB\u00C0R", supportedIgnoreNonSpaceOption, -1 };
             if (!PlatformDetection.IsHybridGlobalization)
             {
