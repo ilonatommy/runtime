@@ -174,7 +174,11 @@ namespace System.Globalization
             {
                 NlsInitSortHandle();
             }
-            else if (!GlobalizationMode.Hybrid)
+            else if (GlobalizationMode.Hybrid)
+            {
+                JsInit(culture.InteropName!);
+            }
+            else
             {
                 IcuInitSortHandle(culture.InteropName!);
             }
