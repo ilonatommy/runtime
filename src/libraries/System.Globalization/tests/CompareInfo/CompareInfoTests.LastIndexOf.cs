@@ -15,6 +15,9 @@ namespace System.Globalization.Tests
         private static CompareInfo s_hungarianCompare = new CultureInfo("hu-HU").CompareInfo;
         private static CompareInfo s_turkishCompare = new CultureInfo("tr-TR").CompareInfo;
         private static CompareInfo s_slovakCompare = new CultureInfo("sk-SK").CompareInfo;
+        private static CompareOptions supportedIgnoreNonSpaceOption = PlatformDetection.IsHybridGlobalization ?
+            CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth :
+            CompareOptions.IgnoreNonSpace;
 
         public static IEnumerable<object[]> LastIndexOf_TestData()
         {
@@ -88,10 +91,10 @@ namespace System.Globalization.Tests
             yield return new object[] { s_invariantCompare, "Exhibit \u00C0", "a\u0300", 8, 9, CompareOptions.OrdinalIgnoreCase, -1, 0 };
             yield return new object[] { s_invariantCompare, "Exhibit \u00C0", "a\u0300", 8, 9, CompareOptions.Ordinal, -1, 0 };
             yield return new object[] { s_invariantCompare, "FooBar", "Foo\u0400Bar", 5, 6, CompareOptions.Ordinal, -1, 0 };
-            yield return new object[] { s_invariantCompare, "TestFooBA\u0300R", "FooB\u00C0R", 10, 11, CompareOptions.IgnoreNonSpace, 4, 7 };
+            yield return new object[] { s_invariantCompare, "TestFooBA\u0300R", "FooB\u00C0R", 10, 11, supportedIgnoreNonSpaceOption, 4, 7 };
             yield return new object[] { s_invariantCompare, "o\u0308", "o", 1, 2, CompareOptions.None, -1, 0 };
             if (!PlatformDetection.IsHybridGlobalization)
-                yield return new object[] { s_invariantCompare, "\r\n", "\n", 1, 2, CompareOptions.None, 1, 1 };
+                yield return new object[] { s_invariantCompare, "\r\n", "\n", 1, 2, CompareOptions.None, 1, 1 }; // both are treated as one grapheme
 
             // Weightless characters
             // NLS matches weightless characters at the end of the string
@@ -124,13 +127,13 @@ namespace System.Globalization.Tests
             // Inputs where matched length does not equal value string length
             if (!PlatformDetection.IsHybridGlobalization)
             {
-                yield return new object[] { s_invariantCompare, "abcdzxyz", "\u01F3", 7, 8, CompareOptions.IgnoreNonSpace, 3, 2 };
-                yield return new object[] { s_invariantCompare, "abc\u01F3xyz", "dz", 6, 7, CompareOptions.IgnoreNonSpace, 3, 1 };
-                yield return new object[] { s_germanCompare, "abc Strasse Strasse xyz", "stra\u00DFe", 22, 23, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace, 12, 7 };
-                yield return new object[] { s_germanCompare, "abc stra\u00DFe stra\u00DFe xyz", "Strasse", 20, 21, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace, 11, 6 };
+                yield return new object[] { s_invariantCompare, "abcdzxyz", "\u01F3", 7, 8, supportedIgnoreNonSpaceOption, 3, 2 };
+                yield return new object[] { s_invariantCompare, "abc\u01F3xyz", "dz", 6, 7, supportedIgnoreNonSpaceOption, 3, 1 };
+                yield return new object[] { s_germanCompare, "abc Strasse Strasse xyz", "stra\u00DFe", 22, 23, CompareOptions.IgnoreCase | supportedIgnoreNonSpaceOption, 12, 7 };
+                yield return new object[] { s_germanCompare, "abc stra\u00DFe stra\u00DFe xyz", "Strasse", 20, 21, CompareOptions.IgnoreCase | supportedIgnoreNonSpaceOption, 11, 6 };
             }
-            yield return new object[] { s_germanCompare, "abc Strasse Strasse xyz", "xtra\u00DFe", 22, 23, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace, -1, 0 };
-            yield return new object[] { s_germanCompare, "abc stra\u00DFe stra\u00DFe xyz", "Xtrasse", 20, 21, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace, -1, 0 };
+            yield return new object[] { s_germanCompare, "abc Strasse Strasse xyz", "xtra\u00DFe", 22, 23, CompareOptions.IgnoreCase | supportedIgnoreNonSpaceOption, -1, 0 };
+            yield return new object[] { s_germanCompare, "abc stra\u00DFe stra\u00DFe xyz", "Xtrasse", 20, 21, CompareOptions.IgnoreCase | supportedIgnoreNonSpaceOption, -1, 0 };
         }
 
         public static IEnumerable<object[]> LastIndexOf_Aesc_Ligature_TestData()
@@ -306,7 +309,7 @@ namespace System.Globalization.Tests
             bool useNls = PlatformDetection.IsNlsGlobalization;
             int expectedMatchLength = (useNls) ? 6 : 0;
             LastIndexOf_String(s_invariantCompare, "FooBar", "Foo\uFFFFBar", 5, 6, CompareOptions.None, useNls ? 0 : -1, expectedMatchLength);
-            LastIndexOf_String(s_invariantCompare, "~FooBar", "Foo\uFFFFBar", 6, 7, CompareOptions.IgnoreNonSpace, useNls ? 1 : -1, expectedMatchLength);
+            LastIndexOf_String(s_invariantCompare, "~FooBar", "Foo\uFFFFBar", 6, 7, supportedIgnoreNonSpaceOption, useNls ? 1 : -1, expectedMatchLength);
         }
 
         [Fact]

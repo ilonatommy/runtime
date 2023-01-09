@@ -337,18 +337,16 @@ export function mono_wasm_change_case(exceptionMessage: Int32Ptr, culture: MonoS
 export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number, matchLengthPointer: number, fromBeginning: boolean): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
-        const ignoreKana = (options & 0x8) == 0x8;
-        const ignoreWidth = (options & 0x10) == 0x10;
-        const value = get_uft16_string_for_comparison(str1, str1Length, ignoreWidth, ignoreKana); // searched value in source string
+        const cultureName = conv_string_root(cultureRoot);
+        const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
+        const value = get_uft16_string_for_comparison(str1, str1Length, locale, options); // searched value in source string
         // no need to look for an empty string
         const result = "".localeCompare(value, undefined);
         if (result === 0)
             return fromBeginning ? 0 : str2Length;
 
-        const cultureName = conv_string_root(cultureRoot);
-        const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
-        const source = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana); // source string
-        const casePicker = (options & 0x1f) % 8;
+        const source = get_uft16_string_for_comparison(str2, str2Length,locale, options); // source string
+        const casePicker = (options & 0x1f);
         const ignoreSymbols = (options & 0x4) == 0x4;
         const graphemesSource = segment_string_locale_sensitive(source, locale, ignoreSymbols);
         const graphemesValue = segment_string_locale_sensitive(value, locale, ignoreSymbols);
@@ -449,12 +447,10 @@ export function mono_wasm_compare_string(culture: MonoStringRef, str1: number, s
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
         const cultureName = conv_string_root(cultureRoot);
-        const ignoreKana = (options & 0x8) == 0x8;
-        const ignoreWidth = (options & 0x10) == 0x10;
-        const string1 = get_uft16_string_for_comparison(str1, str1Length, ignoreWidth, ignoreKana);
-        const string2 = get_uft16_string_for_comparison(str2, str2Length, ignoreWidth, ignoreKana);
         const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
-        const casePicker = (options & 0x1f) % 8;
+        const string1  = get_uft16_string_for_comparison(str1, str1Length, locale, options);
+        const string2 = get_uft16_string_for_comparison(str2, str2Length, locale, options);
+        const casePicker = (options & 0x1f);
         const result = compare_strings(string1, string2, locale, casePicker);
         if (result == -2)
             throw new Error(`${options} is an invalid comparison option.`);
@@ -472,52 +468,79 @@ export function compare_strings(string1: string, string2: string, locale: string
     switch (casePicker)
     {
         case 0:
+        case 1:
+        case 8:
+        case 9:
+        case 16:
+        case 17:
+        case 24:
             // 0: None - default algorithm for the platform OR StringSort - since .Net 5 it gives the same result as None, even for hyphen etc.
+            // 1: IgnoreCase - string case got unified
             // 8: IgnoreKanaType
+            // 9: IgnoreKanaType | IgnoreCase
             // 16: IgnoreWidth
+            // 17: IgnoreWidth | IgnoreCase
             // 24: IgnoreKanaType | IgnoreWidth
             return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
-        case 1:
-            // 1: IgnoreCase
-            // 9: IgnoreKanaType | IgnoreCase
-            // 17: IgnoreWidth | IgnoreCase
-            // 25: IgnoreKanaType | IgnoreWidth | IgnoreCase
+        case 25:
+            // 25: IgnoreKanaType | IgnoreWidth | IgnoreCase - accent ignores all of them
             return string1.localeCompare(string2, locale, { sensitivity: "accent" }); // a ≠ b, a ≠ á, a = A
+        case 26:
+            // 26: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace - case ignores all of them
+            return string1.localeCompare(string2, locale, { sensitivity: "case" });// a ≠ b, a = á, a ≠ A
         case 2:
+        case 6:
+        case 7:
+        case 10:
+        case 14:
+        case 15:
+        case 18:
+        case 22:
+        case 23:
+            // sensitivity: "case" works as IgnoreNonSpace | IgnoreKanaType | IgnoreWidth combined
+            // if user wants to ignore only 1 or 2 of them, the result would be incorrect - PNSE
             // 2: IgnoreNonSpace
+            // 6: IgnoreSymbols | IgnoreNonSpace
+            // 7: IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             // 10: IgnoreKanaType | IgnoreNonSpace
+            // 14: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace
+            // 15: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             // 18: IgnoreWidth | IgnoreNonSpace
-            // 26: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace
-            return string1.localeCompare(string2, locale, { sensitivity: "case" }); // a ≠ b, a = á, a ≠ A
+            // 22: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
+            // 23: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+            return -2;
         case 3:
+        case 11:
+        case 19:
+        case 27:
             // 3: IgnoreNonSpace | IgnoreCase
             // 11: IgnoreKanaType | IgnoreNonSpace | IgnoreCase
             // 19: IgnoreWidth | IgnoreNonSpace | IgnoreCase
             // 27: IgnoreKanaType | IgnoreWidth | IgnoreNonSpace | IgnoreCase
-            return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a ≠ A
+            return string1.localeCompare(string2, locale, { sensitivity: "base" }); // a ≠ b, a = á, a = A
         case 4:
+        case 12:
+        case 20:
+        case 28:
             // 4: IgnoreSymbols - does not ignore currency symbols
             // 12: IgnoreKanaType | IgnoreSymbols
             // 20: IgnoreWidth | IgnoreSymbols
             // 28: IgnoreKanaType | IgnoreWidth | IgnoreSymbols
             return string1.localeCompare(string2, locale, { ignorePunctuation: true }); // by default ignorePunctuation: false
         case 5:
+        case 13:
+        case 21:
+        case 29:
             // 5: IgnoreSymbols | IgnoreCase
             // 13: IgnoreKanaType | IgnoreSymbols | IgnoreCase
             // 21: IgnoreWidth | IgnoreSymbols | IgnoreCase
             // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreCase
             return string1.localeCompare(string2, locale, { sensitivity: "accent", ignorePunctuation: true });
-        case 6:
-            // 6: IgnoreSymbols | IgnoreNonSpace
-            // 14: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace
-            // 22: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
-            // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
+        case 30:
+            // 30: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace
             return string1.localeCompare(string2, locale, { sensitivity: "case", ignorePunctuation: true });
-        case 7:
-            // 7: IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-            // 15: IgnoreKanaType | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-            // 23: IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
-            // 29: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
+        case 31:
+            // 31: IgnoreKanaType | IgnoreWidth | IgnoreSymbols | IgnoreNonSpace | IgnoreCase
             return string1.localeCompare(string2, locale, { sensitivity: "base", ignorePunctuation: true });
         default:
             return -2;
@@ -532,7 +555,12 @@ export function get_uft16_string(ptr: number, length: number): string{
     return string;
 }
 
-export function get_uft16_string_for_comparison(ptr: number, length: number, isIgnoreWidth: boolean, isIgnoreKana: boolean): string{
+export function get_uft16_string_for_comparison(
+    ptr: number, length: number, locale: string | undefined, options: number): string{
+
+    const ignoreKana = (options & 0x8) == 0x8;
+    const ignoreWidth = (options & 0x10) == 0x10;
+    const ignoreCase = (options & 0x1) == 0x1;
     const view = new Uint16Array(Module.HEAPU16.buffer, ptr, length);
     let string = "";
     for (let i = 0; i < length; i++)
@@ -540,11 +568,11 @@ export function get_uft16_string_for_comparison(ptr: number, length: number, isI
         let code = view[i];
         // check if we are in hiragana range:   [0x3040; 0x309F]
         // if so, shift it to katakana:         [0x30A0; 0x30FF]
-        if (isIgnoreKana && code <= 12447 && code >= 12352)
+        if (ignoreKana && code <= 12447 && code >= 12352)
         {
             code += 96;
         }
-        if (isIgnoreWidth)
+        if (ignoreWidth)
         {
             // change all to lower for consistency
             code = map_higher_char_to_lower(code);
@@ -552,14 +580,16 @@ export function get_uft16_string_for_comparison(ptr: number, length: number, isI
 
         string += String.fromCharCode(code);
     }
+    if (ignoreCase)
+        return string.toLocaleLowerCase(locale);
     return string;
 }
 
 export function map_higher_char_to_lower(code: number): number
 {
     // check if mapping is allowed
-    if (is_half_full_higher_symbol(code)) // ToDo: use it to fix IgnoreSymbols
-        return code;
+    // if (is_half_full_higher_symbol(code)) // ToDo: use it to fix IgnoreSymbols
+    //     return code;
 
     // for some ranges, chars are just shifted by a constant value between higherChar and lowerChar
     if (0xff01 <= code && code <= 0xff5e && code != 0xff3c) // [65281; 65339] U [65374; 65374]
@@ -662,5 +692,20 @@ const higherCharsMappedToLower: { [name: number]: number; } = {
     0xffcf: 0x315a,
     0xffda: 0x3161,
     0xffdb: 0x3162,
-    0xffdc: 0x3163
+    0xffdc: 0x3163,
+    // chars considered symbols:
+    // [65504;65510]
+    0xffe0: 0x00a2,
+    0xffe1: 0x00a3,
+    0xffe2: 0x00ac,
+    0xffe3: 0x00af,
+    0xffe4: 0x00a6,
+    0xffe5: 0x00a5,
+    0xffe6: 0x20a9,
+    // [65377;65381]
+    0xff61: 0x3002,
+    0xff62: 0x300c,
+    0xff63: 0x300d,
+    0xff64: 0x3001,
+    0xff65: 0x30fb
 };

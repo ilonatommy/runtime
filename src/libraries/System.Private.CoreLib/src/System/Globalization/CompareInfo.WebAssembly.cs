@@ -25,6 +25,9 @@ namespace System.Globalization
             Debug.Assert(GlobalizationMode.Hybrid);
             Debug.Assert((options & (CompareOptions.Ordinal | CompareOptions.OrdinalIgnoreCase)) == 0);
 
+            if (ShouldCompareOptionsThrowOnWasm(options))
+                throw new PlatformNotSupportedException(GetPNSE(options));
+
             // GetReference may return nullptr if the input span is defaulted. The native layer handles
             // this appropriately; no workaround is needed on the managed side.
 
@@ -42,11 +45,28 @@ namespace System.Globalization
             Debug.Assert(GlobalizationMode.Hybrid);
             Debug.Assert(target.Length != 0);
 
+            if (ShouldCompareOptionsThrowOnWasm(options))
+                throw new PlatformNotSupportedException(GetPNSE(options));
+
             fixed (char* pSource = &MemoryMarshal.GetReference(source))
             fixed (char* pTarget = &MemoryMarshal.GetReference(target))
             {
                 return CompareInfoInterop.IndexOfJS(m_name, pTarget, target.Length, pSource, source.Length, options, matchLengthPtr, fromBeginning);
             }
         }
+
+        private static bool ShouldCompareOptionsThrowOnWasm(CompareOptions options) => (options == CompareOptions.IgnoreNonSpace ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreKanaType) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreWidth) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols | CompareOptions.IgnoreKanaType) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols | CompareOptions.IgnoreWidth) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols | CompareOptions.IgnoreCase) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols | CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType) ||
+                options == (CompareOptions.IgnoreNonSpace | CompareOptions.IgnoreSymbols | CompareOptions.IgnoreCase | CompareOptions.IgnoreWidth));
+
+        private static string GetPNSE(CompareOptions options) => $"CompareOptions = {options} are not supported when HybridGlobalization=true. Disable it to load all bigger ICU bundle, then use this option.";
     }
 }
