@@ -422,7 +422,7 @@ namespace Wasm.Build.Tests
                                          options.MainJS ?? "test-main.js",
                                          options.HasV8Script,
                                          options.TargetFramework ?? DefaultTargetFramework,
-                                         options.HasIcudt,
+                                         options.GlobalizationMode,
                                          options.DotnetWasmFromRuntimePack ?? !buildArgs.AOT);
                 }
 
@@ -615,7 +615,7 @@ namespace Wasm.Build.Tests
                                                    string mainJS,
                                                    bool hasV8Script,
                                                    string targetFramework,
-                                                   IcuMode hasIcudt = IcuMode.Standard,
+                                                   GlobalizationMode globalizationMode = GlobalizationMode.Standard,
                                                    bool dotnetWasmFromRuntimePack = true)
         {
             AssertFilesExist(bundleDir, new []
@@ -629,8 +629,8 @@ namespace Wasm.Build.Tests
             });
 
             AssertFilesExist(bundleDir, new[] { "run-v8.sh" }, expectToExist: hasV8Script);
-            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: hasIcudt == IcuMode.Standard);
-            AssertFilesExist(bundleDir, new[] { "icudt_wasm.dat" }, expectToExist: hasIcudt == IcuMode.Hybrid);
+            AssertFilesExist(bundleDir, new[] { "icudt.dat" }, expectToExist: globalizationMode == GlobalizationMode.Standard);
+            AssertFilesExist(bundleDir, new[] { "icudt_wasm.dat" }, expectToExist: globalizationMode == GlobalizationMode.Hybrid);
 
             string managedDir = Path.Combine(bundleDir, "managed");
             AssertFilesExist(managedDir, new[] { $"{projectName}.dll" });
@@ -1084,26 +1084,26 @@ namespace Wasm.Build.Tests
 
     public record BuildProjectOptions
     (
-        Action?     InitProject               = null,
-        bool?       DotnetWasmFromRuntimePack = null,
-        IcuMode     HasIcudt                  = IcuMode.Standard,
-        bool        UseCache                  = true,
-        bool        ExpectSuccess             = true,
-        bool        AssertAppBundle           = true,
-        bool        CreateProject             = true,
-        bool        Publish                   = true,
-        bool        BuildOnlyAfterPublish     = true,
-        bool        HasV8Script               = true,
-        string?     Verbosity                 = null,
-        string?     Label                     = null,
-        string?     TargetFramework           = null,
-        string?     MainJS                    = null,
+        Action?                 InitProject               = null,
+        bool?                   DotnetWasmFromRuntimePack = null,
+        GlobalizationMode       GlobalizationMode         = GlobalizationMode.Standard,
+        bool                    UseCache                  = true,
+        bool                    ExpectSuccess             = true,
+        bool                    AssertAppBundle           = true,
+        bool                    CreateProject             = true,
+        bool                    Publish                   = true,
+        bool                    BuildOnlyAfterPublish     = true,
+        bool                    HasV8Script               = true,
+        string?                 Verbosity                 = null,
+        string?                 Label                     = null,
+        string?                 TargetFramework           = null,
+        string?                 MainJS                    = null,
         IDictionary<string, string>? ExtraBuildEnvironmentVariables = null
     );
 
-    public enum IcuMode
+    public enum GlobalizationMode
     {
-        None,
+        Invariant,
         Standard,
         Hybrid
     }

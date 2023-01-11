@@ -23,8 +23,9 @@ namespace Wasm.Build.NativeRebuild.Tests
         [MemberData(nameof(NativeBuildData))]
         public void ReferenceNewAssembly(BuildArgs buildArgs, bool nativeRelink, bool invariant, RunHost host, string id)
         {
+            GlobalizationMode icuMode = invariant ? GlobalizationMode.Invariant : GlobalizationMode.Standard;
             buildArgs = buildArgs with { ProjectName = $"rebuild_tasks_{buildArgs.Config}" };
-            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink, invariant: invariant, buildArgs, id);
+            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink, icuMode, buildArgs, id);
 
             var pathsDict = GetFilesTable(buildArgs, paths, unchanged: false);
             pathsDict.UpdateTo(unchanged: true, "corebindings.o");
@@ -49,7 +50,7 @@ namespace Wasm.Build.NativeRebuild.Tests
                 }}";
             File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), programText);
 
-            Rebuild(nativeRelink, invariant, buildArgs, id);
+            Rebuild(nativeRelink, icuMode, buildArgs, id);
             var newStat = StatFiles(pathsDict.Select(kvp => kvp.Value.fullPath));
 
             CompareStat(originalStat, newStat, pathsDict.Values);

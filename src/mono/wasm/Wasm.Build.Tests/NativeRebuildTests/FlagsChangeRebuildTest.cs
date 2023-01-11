@@ -33,7 +33,7 @@ namespace Wasm.Build.NativeRebuild.Tests
         public void ExtraEmccFlagsSetButNoRealChange(BuildArgs buildArgs, string extraCFlags, string extraLDFlags, RunHost host, string id)
         {
             buildArgs = buildArgs with { ProjectName = $"rebuild_flags_{buildArgs.Config}" };
-            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink: true, invariant: false, buildArgs, id);
+            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink: true, GlobalizationMode.Standard, buildArgs, id);
             var pathsDict = GetFilesTable(buildArgs, paths, unchanged: true);
             if (extraLDFlags.Length > 0)
                 pathsDict.UpdateTo(unchanged: false, "dotnet.wasm", "dotnet.js");
@@ -44,7 +44,7 @@ namespace Wasm.Build.NativeRebuild.Tests
 
             string mainAssembly = $"{buildArgs.ProjectName}.dll";
             string extraBuildArgs = $" {extraCFlags} {extraLDFlags}";
-            string output = Rebuild(nativeRelink: true, invariant: false, buildArgs, id, extraBuildArgs: extraBuildArgs, verbosity: "normal");
+            string output = Rebuild(nativeRelink: true, GlobalizationMode.Standard, buildArgs, id, extraBuildArgs: extraBuildArgs, verbosity: "normal");
 
             var newStat = StatFiles(pathsDict.Select(kvp => kvp.Value.fullPath));
             CompareStat(originalStat, newStat, pathsDict.Values);

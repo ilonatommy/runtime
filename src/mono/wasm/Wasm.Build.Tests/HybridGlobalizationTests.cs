@@ -20,37 +20,39 @@ namespace Wasm.Build.Tests
         public static IEnumerable<object?[]> HybridGlobalizationTestData(bool aot, RunHost host)
             => ConfigWithAOTData(aot)
                 .Multiply(
-                    new object?[] { IcuMode.None },
-                    new object?[] { IcuMode.Hybrid })
+                    new object?[] { GlobalizationMode.Invariant },
+                    new object?[] { GlobalizationMode.Hybrid })
                 .WithRunHosts(host)
                 .UnwrapItemsAsArrays();
 
         [Theory]
         [MemberData(nameof(HybridGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
         [MemberData(nameof(HybridGlobalizationTestData), parameters: new object[] { /*aot*/ true, RunHost.All })]
-        public void AOT_HybridGlobalization(BuildArgs buildArgs, IcuMode icuMode, RunHost host, string id)
-            => TestHybridGlobalization(buildArgs, icuMode, host, id);
+        public void AOT_HybridGlobalization(BuildArgs buildArgs, GlobalizationMode globalizationMode, RunHost host, string id)
+            => TestHybridGlobalization(buildArgs, globalizationMode, host, id);
 
         [Theory]
         [MemberData(nameof(HybridGlobalizationTestData), parameters: new object[] { /*aot*/ false, RunHost.All })]
-        public void RelinkingWithoutAOT(BuildArgs buildArgs, IcuMode icuMode, RunHost host, string id)
-            => TestHybridGlobalization(buildArgs, icuMode, host, id,
+        public void RelinkingWithoutAOT(BuildArgs buildArgs, GlobalizationMode globalizationMode, RunHost host, string id)
+            => TestHybridGlobalization(buildArgs, globalizationMode, host, id,
                                             extraProperties: "<WasmBuildNative>true</WasmBuildNative>",
                                             dotnetWasmFromRuntimePack: false);
 
-        public void TestHybridGlobalization(
+        private void TestHybridGlobalization(
             BuildArgs buildArgs,
-            IcuMode icuMode,
+            GlobalizationMode globalizationMode,
             RunHost host,
             string id,
             string extraProperties="",
             bool? dotnetWasmFromRuntimePack=null)
         {
-            string projectName = $"hybrid_{icuMode}_{buildArgs.Config}_{buildArgs.AOT}";
+            string projectName = $"hybrid_{globalizationMode}_{buildArgs.Config}_{buildArgs.AOT}";
+            if (dotnetWasmFromRuntimePack == null)
+                dotnetWasmFromRuntimePack = !(buildArgs.AOT || buildArgs.Config == "Release");
 
             extraProperties = $"{extraProperties}<HybridGlobalization>true</HybridGlobalization>";
             // hybrid + invariant should remain invariant
-            if (icuMode == icuMode.Node)
+            if (globalizationMode == GlobalizationMode.Invariant)
                 extraProperties = $"{extraProperties}<InvariantGlobalization>true</InvariantGlobalization>";
 
             buildArgs = buildArgs with { ProjectName = projectName };
@@ -60,8 +62,8 @@ namespace Wasm.Build.Tests
                             id: id,
                             new BuildProjectOptions(
                                 InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), s_mainReturns42),
-                                DotnetWasmFromRuntimePack: false,
-                                HasIcudt: icuMode));
+                                DotnetWasmFromRuntimePack: dotnetWasmFromRuntimePack,
+                                GlobalizationMode: globalizationMode));
 
             RunAndTestWasmApp(buildArgs, buildDir: _projectDir, expectedExitCode: 42,
                         test: output => {},

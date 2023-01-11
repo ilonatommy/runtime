@@ -22,8 +22,9 @@ namespace Wasm.Build.NativeRebuild.Tests
         [MemberData(nameof(NativeBuildData))]
         public void SimpleStringChangeInSource(BuildArgs buildArgs, bool nativeRelink, bool invariant, RunHost host, string id)
         {
+            GlobalizationMode globalizationMode = invariant ? GlobalizationMode.Invariant : GlobalizationMode.Standard;
             buildArgs = buildArgs with { ProjectName = $"rebuild_simple_{buildArgs.Config}" };
-            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink, invariant: invariant, buildArgs, id);
+            (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink, globalizationMode, buildArgs, id);
 
             string mainAssembly = $"{buildArgs.ProjectName}.dll";
             var pathsDict = GetFilesTable(buildArgs, paths, unchanged: true);
@@ -46,7 +47,7 @@ namespace Wasm.Build.NativeRebuild.Tests
             File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), mainResults55);
 
             // Rebuild
-            Rebuild(nativeRelink, invariant, buildArgs, id);
+            Rebuild(nativeRelink, globalizationMode, buildArgs, id);
             var newStat = StatFiles(pathsDict.Select(kvp => kvp.Value.fullPath));
 
             CompareStat(originalStat, newStat, pathsDict.Values);

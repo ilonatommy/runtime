@@ -33,7 +33,7 @@ public class OptimizationFlagChangeTests : NativeRebuildTestsBase
     {
         // force _WasmDevel=false, so we don't get -O0
         buildArgs = buildArgs with { ProjectName = $"rebuild_flags_{buildArgs.Config}", ExtraBuildArgs = "/p:_WasmDevel=false" };
-        (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink: true, invariant: false, buildArgs, id);
+        (buildArgs, BuildPaths paths) = FirstNativeBuild(s_mainReturns42, nativeRelink: true, GlobalizationMode.Standard, buildArgs, id);
 
         string mainAssembly = $"{buildArgs.ProjectName}.dll";
         var pathsDict = GetFilesTable(buildArgs, paths, unchanged: false);
@@ -60,7 +60,7 @@ public class OptimizationFlagChangeTests : NativeRebuildTestsBase
 
         // Rebuild
 
-        string output = Rebuild(nativeRelink: true, invariant: false, buildArgs, id, extraBuildArgs: $" {cflags} {ldflags}", verbosity: "normal");
+        string output = Rebuild(nativeRelink: true, GlobalizationMode.Standard, buildArgs, id, extraBuildArgs: $" {cflags} {ldflags}", verbosity: "normal");
         var newStat = StatFiles(pathsDict.Select(kvp => kvp.Value.fullPath));
         CompareStat(originalStat, newStat, pathsDict.Values);
 
