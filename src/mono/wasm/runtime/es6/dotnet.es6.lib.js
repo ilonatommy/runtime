@@ -83,6 +83,7 @@ const linked_functions = [
     "mono_wasm_change_case",
     "mono_wasm_compare_string",
     "mono_wasm_index_of",
+    "mono_wasm_starts_with",
 
     // jiterpreter.c / interp.c / transform.c
     "mono_interp_tier_prepare_jiterpreter",

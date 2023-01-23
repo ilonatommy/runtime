@@ -363,6 +363,50 @@ export function mono_wasm_index_of(culture: MonoStringRef, str1: number, str1Len
     }
 }
 
+export function mono_wasm_starts_with(culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number, matchLengthPointer: number): boolean{
+    const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
+    try{
+        const cultureName = conv_string_root(cultureRoot);
+        const locale = (cultureName && cultureName?.trim()) ? cultureName : undefined;
+        const prefix = get_uft16_string_for_comparison(str2, str2Length, locale, options); // searched value in source string
+        // no need to look for an empty string
+        const result = "".localeCompare(prefix, undefined);
+        if (result === 0)
+            return true;
+
+        const source = get_uft16_string_for_comparison(str1, str1Length, locale, options); // source string
+        const casePicker = (options & 0x1f);
+        const ignoreSymbols = (options & 0x4) == 0x4;
+        const originalGraphemesSource = segment_string_locale_sensitive(source, locale, ignoreSymbols);
+        const originalGraphemesPrefix = segment_string_locale_sensitive(prefix, locale, ignoreSymbols);
+        // empty chars should not matter in string comparison but are useful for calculating the match length
+        const noEmptyCharsGraphemeSource = originalGraphemesSource.filter(ch => "".localeCompare(ch.segment, undefined) !== 0);
+        const noEmptyCharsGraphemePrefix = originalGraphemesPrefix.filter(ch => "".localeCompare(ch.segment, undefined) !== 0);
+        if (noEmptyCharsGraphemePrefix.length > noEmptyCharsGraphemeSource.length)
+            return false;
+
+        for (let i = 0; i < noEmptyCharsGraphemePrefix.length; i++)
+        {
+            const isEqual = compare_strings(noEmptyCharsGraphemeSource[i].segment, noEmptyCharsGraphemePrefix[i].segment, locale, casePicker);
+            if (isEqual !== 0)
+                return false;
+        }
+        const lastCharIdx = noEmptyCharsGraphemeSource[noEmptyCharsGraphemePrefix.length - 1].index;
+        const lastCharLen = originalGraphemesSource.length > originalGraphemesPrefix.length ?
+            originalGraphemesSource[originalGraphemesPrefix.length].index - lastCharIdx :
+            str1Length - lastCharIdx;
+        const matchLen = lastCharIdx + lastCharLen;
+        setU32(matchLengthPointer, matchLen);
+        return true;
+    }
+    catch (ex: any) {
+        throw new Error(`${ex}`);
+    }
+    finally {
+        cultureRoot.release();
+    }
+}
+
 export function segment_string_locale_sensitive(string: string, locale: string | undefined, ignoreSymbols: boolean) : Intl.SegmentData[]
 {
     // FixMe: some letters consist of more than one grapheme,

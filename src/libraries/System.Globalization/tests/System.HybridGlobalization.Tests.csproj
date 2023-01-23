@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompareInfo\CompareInfoTests.IndexOf.cs" />
+    <Compile Include="CompareInfo\CompareInfoTests.IsPrefix.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.Compare.cs" />
     <Compile Include="CompareInfo\CompareInfoTests.LastIndexOf.cs" />
     <Compile Include="System\Globalization\TextInfoTests.cs" />

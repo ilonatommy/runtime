@@ -14,6 +14,9 @@ namespace System.Globalization
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal static extern unsafe int IndexOfJS(in string culture, char* str1, int str1Len, char* str2, int str2Len, global::System.Globalization.CompareOptions options, int* matchLengthPtr, bool fromBeginning);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal static extern unsafe bool StartsWithJS(in string culture, char* str1, int str1Len, char* str2, int str2Len, global::System.Globalization.CompareOptions options, int* matchLengthPtr);
     }
 
     public partial class CompareInfo
@@ -264,6 +267,25 @@ namespace System.Globalization
 
             InteropCall:
                 return CompareInfoInterop.IndexOfJS(m_name, b, target.Length, a, source.Length, options, matchLengthPtr, fromBeginning);
+            }
+        }
+
+        private unsafe bool JsStartsWith(ReadOnlySpan<char> source, ReadOnlySpan<char> prefix, CompareOptions options, int* matchLengthPtr)
+        {
+            Debug.Assert(!GlobalizationMode.Invariant);
+            Debug.Assert(!GlobalizationMode.UseNls);
+            Debug.Assert(GlobalizationMode.Hybrid);
+
+            Debug.Assert(!prefix.IsEmpty);
+            Debug.Assert((options & (CompareOptions.Ordinal | CompareOptions.OrdinalIgnoreCase)) == 0);
+
+            if (!CompareOptionsSupported(options))
+                throw new PlatformNotSupportedException(GetPNSE(options));
+
+            fixed (char* pSource = &MemoryMarshal.GetReference(source))
+            fixed (char* pPrefix = &MemoryMarshal.GetReference(prefix))
+            {
+                return CompareInfoInterop.StartsWithJS(m_name,  pSource, source.Length, pPrefix, prefix.Length, options, matchLengthPtr);
             }
         }
 

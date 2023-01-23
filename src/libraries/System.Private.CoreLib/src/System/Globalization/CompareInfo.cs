@@ -626,6 +626,8 @@ namespace System.Globalization
         private unsafe bool StartsWithCore(ReadOnlySpan<char> source, ReadOnlySpan<char> prefix, CompareOptions options, int* matchLengthPtr) =>
             GlobalizationMode.UseNls ?
                 NlsStartsWith(source, prefix, options, matchLengthPtr) :
+            GlobalizationMode.Hybrid ?
+                JsStartsWith(source, prefix, options, matchLengthPtr) :
                 IcuStartsWith(source, prefix, options, matchLengthPtr);
 
         public bool IsPrefix(string source, string prefix)
