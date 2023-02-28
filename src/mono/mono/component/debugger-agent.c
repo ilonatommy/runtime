@@ -5335,7 +5335,8 @@ decode_vtype (MonoType *t, MonoDomain *domain, gpointer void_addr, gpointer void
 
 	if (t && klass != mono_class_from_mono_type_internal (t)) {
 		char *name = mono_type_full_name (t);
-		char *name2 = mono_type_full_name (m_class_get_byval_arg (klass));
+		char *name3 = mono_type_full_name (m_class_get_byval_arg (klass));
+		HA! my edition
 		PRINT_DEBUG_MSG (1, "[%p] 1 Expected value of type %s, got %s.\n", (gpointer) (gsize) mono_native_thread_id_get (), name, name2);
 		g_free (name);
 		g_free (name2);
