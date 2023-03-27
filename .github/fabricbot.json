@@ -79,7 +79,8 @@
             "area-System.Transactions"
           ],
           "mentionees": [
-            "roji"
+            "roji",
+            "ajcvickers"
           ]
         },
         {
@@ -95,7 +96,8 @@
             "area-Codegen-Interpreter-mono"
           ],
           "mentionees": [
-            "brzvlad"
+            "brzvlad",
+            "kotlarmilos"
           ]
         },
         {
@@ -388,8 +390,9 @@
             "area-System.Data.SqlClient"
           ],
           "mentionees": [
-            "cheenamalhotra",
-            "david-engel"
+            "davoudeshtehari",
+            "david-engel",
+            "jrahnama"
           ]
         },
         {
@@ -397,9 +400,7 @@
             "area-System.ComponentModel.DataAnnotations"
           ],
           "mentionees": [
-            "ajcvickers",
-            "bricelam",
-            "roji"
+            "jeffhandley"
           ]
         },
         {
@@ -868,7 +869,7 @@
         {
           "name": "addReply",
           "parameters": {
-            "comment": "Added `needs-breaking-change-doc-created` label because this issue has the `breaking-change` label. \n\n1. [ ] Create and link to this issue a matching issue in the dotnet/docs repo using the [breaking change documentation template](https://github.com/dotnet/docs/issues/new?assignees=gewarren&labels=breaking-change%2CPri1%2Cdoc-idea&template=breaking-change.yml&title=%5BBreaking+change%5D%3A+), then remove this `needs-breaking-change-doc-created` label.\n\nTagging @dotnet/compat for awareness of the breaking change."
+            "comment": "Added `needs-breaking-change-doc-created` label because this issue has the `breaking-change` label. \n\n1. [ ] Create and link to this issue a matching issue in the dotnet/docs repo using the [breaking change documentation template](https://aka.ms/dotnet/docs/new-breaking-change-issue), then remove this `needs-breaking-change-doc-created` label.\n\nTagging @dotnet/compat for awareness of the breaking change."
           }
         }
       ],
@@ -909,7 +910,7 @@
         {
           "name": "addReply",
           "parameters": {
-            "comment": "Added `needs-breaking-change-doc-created` label because this PR has the `breaking-change` label. \n\nWhen you commit this breaking change:\n\n1. [ ] Create and link to this PR and the issue a matching issue in the dotnet/docs repo using the [breaking change documentation template](https://github.com/dotnet/docs/issues/new?assignees=gewarren&labels=breaking-change%2CPri1%2Cdoc-idea&template=breaking-change.yml&title=%5BBreaking+change%5D%3A+), then remove this `needs-breaking-change-doc-created` label.\n2. [ ] Ask a committer to mail the `.NET Breaking Change Notification` DL.\n\nTagging @dotnet/compat for awareness of the breaking change."
+            "comment": "Added `needs-breaking-change-doc-created` label because this PR has the `breaking-change` label. \n\nWhen you commit this breaking change:\n\n1. [ ] Create and link to this PR and the issue a matching issue in the dotnet/docs repo using the [breaking change documentation template](https://aka.ms/dotnet/docs/new-breaking-change-issue), then remove this `needs-breaking-change-doc-created` label.\n2. [ ] Ask a committer to mail the `.NET Breaking Change Notification` DL.\n\nTagging @dotnet/compat for awareness of the breaking change."
           }
         }
       ],
@@ -14845,6 +14846,17 @@
                     }
                   }
                 ]
+              },
+              {
+                "operator": "not",
+                "operands": [
+                  {
+                    "name": "hasLabel",
+                    "parameters": {
+                      "label": "needs-area-label"
+                    }
+                  }
+                ]
               }
             ]
           },
@@ -14911,6 +14923,12 @@
                         "parameters": {
                           "label": "area-Meta"
                         }
+                      },
+                      {
+                        "name": "hasLabel",
+                        "parameters": {
+                          "label": "needs-area-label"
+                        }
                       }
                     ]
                   },
@@ -14943,6 +14961,12 @@
                     "name": "labelAdded",
                     "parameters": {
                       "label": "area-Meta"
+                    }
+                  },
+                  {
+                    "name": "labelAdded",
+                    "parameters": {
+                      "label": "needs-area-label"
                     }
                   }
                 ]
@@ -15021,6 +15045,12 @@
                 "name": "hasLabel",
                 "parameters": {
                   "label": "area-Meta"
+                }
+              },
+              {
+                "name": "hasLabel",
+                "parameters": {
+                  "label": "needs-area-label"
                 }
               }
             ]
@@ -15520,6 +15550,17 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "operator": "not",
+                    "operands": [
+                      {
+                        "name": "hasLabel",
+                        "parameters": {
+                          "label": "needs-area-label"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -15567,6 +15608,12 @@
                 "name": "hasLabel",
                 "parameters": {
                   "label": "area-Meta"
+                }
+              },
+              {
+                "name": "hasLabel",
+                "parameters": {
+                  "label": "needs-area-label"
                 }
               }
             ]
@@ -15705,6 +15752,12 @@
                 "parameters": {
                   "label": "area-Meta"
                 }
+              },
+              {
+                "name": "hasLabel",
+                "parameters": {
+                  "label": "needs-area-label"
+                }
               }
             ]
           },
@@ -15802,6 +15855,12 @@
                 "name": "hasLabel",
                 "parameters": {
                   "label": "area-Meta"
+                }
+              },
+              {
+                "name": "hasLabel",
+                "parameters": {
+                  "label": "needs-area-label"
                 }
               }
             ]
@@ -15914,6 +15973,12 @@
                 "name": "hasLabel",
                 "parameters": {
                   "label": "area-Meta"
+                }
+              },
+              {
+                "name": "hasLabel",
+                "parameters": {
+                  "label": "needs-area-label"
                 }
               }
             ]
