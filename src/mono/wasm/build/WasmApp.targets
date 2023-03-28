@@ -329,7 +329,6 @@
   <Target Name="_GetWasmGenerateAppBundleDependencies">
     <PropertyGroup>
       <HybridGlobalization Condition="'$(InvariantGlobalization)' == 'true'">false</HybridGlobalization>
-
       <_HasDotnetWasm Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.wasm'">true</_HasDotnetWasm>
       <_HasDotnetJsWorker Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.worker.js'">true</_HasDotnetJsWorker>
       <_HasDotnetJsSymbols Condition="'%(WasmNativeAsset.FileName)%(WasmNativeAsset.Extension)' == 'dotnet.js.symbols'">true</_HasDotnetJsSymbols>
@@ -338,14 +337,8 @@
       <_WasmIcuDataFileName Condition="'$(WasmIcuDataFileName)' != '' and !Exists('$(WasmIcuDataFileName)')">$(MicrosoftNetCoreAppRuntimePackRidNativeDir)$(WasmIcuDataFileName)</_WasmIcuDataFileName>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(InvariantGlobalization)' != 'true'">
-      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
-      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' == 'true'">icudt_wasm.dat</WasmIcuDataFileName>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(InvariantGlobalization)' != 'true'">
-      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' != 'true'">icudt.dat</WasmIcuDataFileName>
-      <WasmIcuDataFileName Condition="'$(HybridGlobalization)' == 'true'">icudt_wasm.dat</WasmIcuDataFileName>
+    <PropertyGroup Condition="'$(HybridGlobalization)' == 'true' and '$(WasmIcuDataFileName)' == ''">
+      <_WasmIcuDataFileName>$(MicrosoftNetCoreAppRuntimePackRidNativeDir)icudt_wasm.dat</_WasmIcuDataFileName>
     </PropertyGroup>
 
     <ItemGroup>
