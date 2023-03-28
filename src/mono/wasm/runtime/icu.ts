@@ -49,9 +49,6 @@ export function init_globalization() {
             console.info("MONO_WASM: failed to detect timezone, will fallback to UTC");
         }
     }
-
-    // Set globalization mode to PredefinedCulturesOnly
-    cwraps.mono_wasm_setenv("DOTNET_SYSTEM_GLOBALIZATION_PREDEFINED_CULTURES_ONLY", "1");
 }
 
 export function get_preferred_icu_asset(): string | null {

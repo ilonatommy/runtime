@@ -19,7 +19,6 @@ namespace Microsoft.WebAssembly.Build.Tasks;
 public class WasmAppBuilder : WasmAppBuilderBaseTask
 {
     public ITaskItem[]? RemoteSources { get; set; }
-    public string? MainHTMLPath { get; set; }
     public bool IncludeThreadsWorker {get; set; }
     public int PThreadPoolSize {get; set; }
     public bool UseWebcil { get; set; }

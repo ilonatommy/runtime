@@ -441,9 +441,6 @@ get_native_to_interp (MonoMethod *method, void *extra_arg)
 	return addr;
 }
 
-typedef void (*background_job_cb)(void);
-void mono_threads_schedule_background_job (background_job_cb cb);
-
 void mono_initialize_internals (void)
 {
 	// Blazor specific custom routines - see dotnet_support.js for backing code
@@ -453,12 +450,6 @@ void mono_initialize_internals (void)
 	mono_add_internal_call ("System.Globalization.CompareInfoInterop::CompareStringJS", mono_wasm_compare_string);
 	mono_add_internal_call ("System.Globalization.CompareInfoInterop::IndexOfJS", mono_wasm_index_of);
 	mono_add_internal_call ("System.Globalization.CompareInfoInterop::StartsWithJS", mono_wasm_starts_with);
-
-#ifdef CORE_BINDINGS
-	core_initialize_internals();
-#endif
-
-	mono_add_internal_call ("System.Runtime.InteropServices.JavaScript.JSSynchronizationContext::ScheduleBackgroundJob", mono_threads_schedule_background_job);
 }
 
 EMSCRIPTEN_KEEPALIVE void
