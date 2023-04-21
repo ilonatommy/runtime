@@ -84,26 +84,30 @@ export function pass_exception_details(ex: any, exceptionMessage: Int32Ptr){
     exceptionRoot.release();
 }
 
-export function mono_wasm_starts_with(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
+export function mono_wasm_index_of(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
-        const cultureName = conv_string_root(cultureRoot);
-        const prefix = get_clean_string(str2, str2Length);
+        const target = get_clean_string(str1, str1Length);
         // no need to look for an empty string
-        if (prefix.length == 0)
+        if (target.length == 0)
             return 1; // true
 
-        const source = get_clean_string(str1, str1Length);
-        if (source.length < prefix.length)
-            return 0; //false
-        const sourceOfPrefixLength = source.slice(0, prefix.length);
-
-        const casePicker = (options & 0x1f);
+        const cultureName = conv_string_root(cultureRoot);
         const locale = cultureName ? cultureName : undefined;
-        const result = compare_strings(sourceOfPrefixLength, prefix, locale, casePicker);
-        if (result == -2)
-            throw new Error("$Invalid comparison option.");
-        return result === 0 ? 1 : 0; // equals ? true : false
+
+        // on 16kB (64kB hovers the browser)
+        // | String, String IndexOf |   835.0571ms |
+
+        const lenDiff = str2Length - str1Length;
+        for (let i = 0; i < lenDiff; i+=2)
+        {
+            const result = starts_with(str2 + i, str2Length - i, target, locale, options);
+            if (result)
+            {
+                return i;
+            }
+        }
+        return -1; // false
     }
     catch (ex: any) {
         pass_exception_details(ex, exceptionMessage);
@@ -112,6 +116,42 @@ export function mono_wasm_starts_with(exceptionMessage: Int32Ptr, culture: MonoS
     finally {
         cultureRoot.release();
     }
+}
+
+export function mono_wasm_starts_with(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
+    const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
+    try{
+        const prefix = get_clean_string(str2, str2Length);
+        // no need to look for an empty string
+        if (prefix.length == 0)
+            return 1; // true
+
+        const cultureName = conv_string_root(cultureRoot);
+        const locale = cultureName ? cultureName : undefined;
+
+        return starts_with(str1, str1Length, prefix, locale, options);
+    }
+    catch (ex: any) {
+        pass_exception_details(ex, exceptionMessage);
+        return -1;
+    }
+    finally {
+        cultureRoot.release();
+    }
+}
+
+function starts_with(str1: number, str1Length: number, prefix: string, locale: string | undefined, options: number)
+{
+    const source = get_clean_string(str1, str1Length);
+    if (source.length < prefix.length)
+        return 0; //false
+    const sourceOfPrefixLength = source.slice(0, prefix.length);
+
+    const casePicker = (options & 0x1f);
+    const result = compare_strings(sourceOfPrefixLength, prefix, locale, casePicker);
+    if (result == -2)
+        throw new Error("$Invalid comparison option.");
+    return result === 0 ? 1 : 0; // equals ? true : false
 }
 
 export function mono_wasm_ends_with(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
