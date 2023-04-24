@@ -87,7 +87,19 @@ export function pass_exception_details(ex: any, exceptionMessage: Int32Ptr){
 export function mono_wasm_index_of(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
-        const target = get_clean_string(str1, str1Length);
+        // non-linear
+        // 1kB:
+        // |                 String, String IndexOf |     1.6395ms |
+
+        // 4kB:
+        // |                 String, String IndexOf |    20.8663ms |
+
+        // 16 kB:
+        // |                 String, String IndexOf |   274.6250ms |
+
+        // 64kB:
+        // |                 String, String IndexOf |  3185.0000ms |
+        const target = decode_to_clean_string(str1, str1Length);
         // no need to look for an empty string
         if (target.length == 0)
             return 1; // true
@@ -95,14 +107,10 @@ export function mono_wasm_index_of(exceptionMessage: Int32Ptr, culture: MonoStri
         const cultureName = conv_string_root(cultureRoot);
         const locale = cultureName ? cultureName : undefined;
 
-        // on 16kB (64kB hovers the browser)
-        // | String, String IndexOf |   835.0571ms |
-
-        const lenDiff = str2Length - str1Length;
-        for (let i = 0; i < lenDiff; i+=2)
+        const source = string_decoder.decode(<any>str2, <any>(str2 + 2*str2Length));
+        for (let i = 0; i < source.length; i++)
         {
-            // what about decoding source only once and only normalizing in starts_with?
-            const result = starts_with(str2 + i, str2Length - i, target, locale, options);
+            const result = starts_with(source.slice(i, source.length - i), target, locale, options);
             if (result)
             {
                 return i;
@@ -122,15 +130,16 @@ export function mono_wasm_index_of(exceptionMessage: Int32Ptr, culture: MonoStri
 export function mono_wasm_starts_with(exceptionMessage: Int32Ptr, culture: MonoStringRef, str1: number, str1Length: number, str2: number, str2Length: number, options: number): number{
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
-        const prefix = get_clean_string(str2, str2Length);
+        const prefix = decode_to_clean_string(str2, str2Length);
         // no need to look for an empty string
         if (prefix.length == 0)
             return 1; // true
 
         const cultureName = conv_string_root(cultureRoot);
         const locale = cultureName ? cultureName : undefined;
+        const source = decode_to_clean_string(str1, str1Length);
 
-        return starts_with(str1, str1Length, prefix, locale, options);
+        return starts_with(source, prefix, locale, options);
     }
     catch (ex: any) {
         pass_exception_details(ex, exceptionMessage);
@@ -141,9 +150,9 @@ export function mono_wasm_starts_with(exceptionMessage: Int32Ptr, culture: MonoS
     }
 }
 
-function starts_with(str1: number, str1Length: number, prefix: string, locale: string | undefined, options: number)
+function starts_with(rawSource: string, prefix: string, locale: string | undefined, options: number)
 {
-    const source = get_clean_string(str1, str1Length);
+    const source = clean_string(rawSource);
     if (source.length < prefix.length)
         return 0; //false
     const sourceOfPrefixLength = source.slice(0, prefix.length);
@@ -159,11 +168,11 @@ export function mono_wasm_ends_with(exceptionMessage: Int32Ptr, culture: MonoStr
     const cultureRoot = mono_wasm_new_external_root<MonoString>(culture);
     try{
         const cultureName = conv_string_root(cultureRoot);
-        const suffix = get_clean_string(str2, str2Length);
+        const suffix = decode_to_clean_string(str2, str2Length);
         if (suffix.length == 0)
             return 1; // true
 
-        const source = get_clean_string(str1, str1Length);
+        const source = decode_to_clean_string(str1, str1Length);
         const diff = source.length - suffix.length;
         if (diff < 0)
             return 0; //false
@@ -185,9 +194,13 @@ export function mono_wasm_ends_with(exceptionMessage: Int32Ptr, culture: MonoStr
     }
 }
 
-function get_clean_string(strPtr: number, strLen: number)
+function decode_to_clean_string(strPtr: number, strLen: number)
 {
-    const str = string_decoder.decode(<any>strPtr, <any>(strPtr + 2*strLen));
+    return string_decoder.decode(<any>strPtr, <any>(strPtr + 2*strLen));
+}
+
+function clean_string(str: string)
+{
     const nStr = str.normalize();
     return nStr.replace(/[\u200B-\u200D\uFEFF\0]/g, "");
 }
@@ -199,12 +212,12 @@ export function compare_strings(string1: string, string2: string, locale: string
             // 0: None - default algorithm for the platform OR
             //    StringSort - since .Net 5 StringSort gives the same result as None, even for hyphen etc.
             //    does not work for "ja"
-            if (locale && locale.split("-")[0] === "ja")
+            if (locale && locale.startsWith("ja"))
                 return -2;
             return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
         case 8:
             // 8: IgnoreKanaType works only for "ja"
-            if (locale && locale.split("-")[0] !== "ja")
+            if (locale && locale.startsWith("ja"))
                 return -2;
             return string1.localeCompare(string2, locale); // a ≠ b, a ≠ á, a ≠ A
         case 1:
