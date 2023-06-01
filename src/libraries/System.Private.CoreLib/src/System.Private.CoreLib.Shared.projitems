@@ -1246,6 +1246,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\UInt64.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\UInt128.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\UIntPtr.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)System\InternalNormalizationForm.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\UnauthorizedAccessException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\UnhandledExceptionEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)System\UnhandledExceptionEventHandler.cs" />

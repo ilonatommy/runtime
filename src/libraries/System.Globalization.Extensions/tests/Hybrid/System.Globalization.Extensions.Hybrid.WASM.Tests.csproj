@@ -7,6 +7,14 @@
   <ItemGroup>
     <Compile Include="..\Normalization\NormalizationAll.cs" />
     <Compile Include="..\Normalization\StringNormalizationTests.cs" />
+    <Compile Include="..\IdnMapping\Data\ConformanceIdnaUnicodeTestResult.cs" />
+    <Compile Include="..\IdnMapping\Data\Unicode_IdnaTest.cs" />
+    <Compile Include="..\IdnMapping\Data\Unicode_13_0\Unicode_13_0_IdnaTest.cs" />
+    <!-- ToDo: add older Unicode versions to tests when 13 is finished -->
+    <Compile Include="..\IdnMapping\IdnMappingIdnaConformanceTests.cs" />
+    <Compile Include="..\IdnMapping\Data\Factory.cs" />
+    <Compile Include="..\IdnMapping\Data\ConformanceIdnaTestResult.cs" />
+    <Compile Include="..\IdnMapping\Data\IConformanceIdnaTest.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,5 +24,6 @@
     <EmbeddedResource Include="..\Normalization\Data\win7.txt">
       <LogicalName>NormalizationDataWin7</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\IdnMapping\Data\Unicode_13_0\IdnaTest_13.txt" />
   </ItemGroup>
 </Project>

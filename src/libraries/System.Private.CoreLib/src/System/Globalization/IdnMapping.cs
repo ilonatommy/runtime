@@ -88,6 +88,25 @@ namespace System.Globalization
                 return GetAsciiInvariant(unicode, index, count);
             }
 
+#if TARGET_BROWSER
+            if (GlobalizationMode.Hybrid)
+            {
+                string result = GetAsciiHybrid(unicode, index, count);
+                foreach (var c in result)
+                {
+                    if (!char.IsAscii(c))
+                    {
+                        throw new ArgumentException($"SR.Argument_IdnIllegalName, ILONA1 c = {c}, {c:X4}, {(int)c} {nameof(unicode)}");
+                    }
+                }
+                if (!result.IsNormalized())
+                {
+                    throw new ArgumentException($"SR.Argument_IdnIllegalName, ILONA2 {nameof(unicode)}");
+                }
+                return result;
+            }
+#endif
+
             unsafe
             {
                 fixed (char* pUnicode = unicode)
@@ -214,6 +233,82 @@ namespace System.Globalization
             return PunycodeEncode(unicode);
         }
 
+#if TARGET_BROWSER
+        private string GetAsciiHybrid(string unicode, int index, int count)
+        {
+            if (index > 0 || count < unicode.Length)
+            {
+                unicode = unicode.Substring(index, count);
+            }
+
+            // Check for ASCII only string, which will be unchanged,
+            // for UseStd3AsciiRules=false we don't have mapping tables, so it should not be supported
+            // P1: map ?
+            if (ValidateStd3AndAscii(unicode, UseStd3AsciiRules, true))
+            {
+                return unicode.ToLower(CultureInfo.InvariantCulture);
+            }
+
+            // Cannot be null terminated (normalization won't help us with this one, and
+            // may have returned false before checking the whole string above)
+            Debug.Assert(count >= 1, "[IdnMapping.GetAscii] Expected 0 length strings to fail before now.");
+            if (unicode[^1] <= 0x1f)
+            {
+                throw new ArgumentException(SR.Format(SR.Argument_InvalidCharSequence, unicode.Length - 1), nameof(unicode));
+            }
+
+            CheckInvalidIdnCharacters(unicode, nameof(unicode));
+            // Have to correctly IDNA normalize the string and Unassigned flags
+            bool bHasLastDot = (unicode.Length > 0) && IsDot(unicode[unicode.Length - 1]);
+            unicode = unicode.Normalize(InternalNormalizationForm.FormKC);
+            // get rid of ifnored chars: zero width spaces, soft hyphens, full width hyphen-minus -> hyphen minus, mongolian free variation selector two
+            // ToDo: maybe regex instead of multiple replace? What other code points we should replace beyond these?
+            // unicode = unicode.Replace("\u200B", "").Replace("\u00AD", "").Replace("\u034F", "").Replace("\uFF0D", "\u002D").Replace("\u180C", "").Replace("\uFE00", "").Replace("\u2064", "");
+            // // remove all private use area range \uE000 — \uF8FF as non valid unicode points, here I am removing only one sample but we should get rid of all in the range:
+            // unicode = unicode.Replace("\uE01E", "");
+
+            // Make sure we didn't normalize away something after a last dot
+            if ((!bHasLastDot) && unicode.Length > 0 && IsDot(unicode[unicode.Length - 1]))
+            {
+                throw new ArgumentException($"SR.Argument_IdnBadLabelSize, ILONA2 {nameof(unicode)}");
+            }
+
+            // capital sigma has 2 lower equivalents: \u03C3 and \u03C2, depending on position (JS knows it but ICU does not)
+            // ToDo: optimize with a StringBuilder
+            if (unicode[^1] == '\u03A3')
+            {
+                unicode = $"{unicode.Substring(0, unicode.Length - 1).ToLower(CultureInfo.InvariantCulture)}\u03C3";
+            }
+            else
+            {
+                unicode = unicode.ToLower(CultureInfo.InvariantCulture);
+            }
+
+            // May need to check Std3 rules again for non-ascii
+            if (UseStd3AsciiRules)
+            {
+                ValidateStd3AndAscii(unicode, true, false);
+            }
+
+            // Go ahead and encode it
+            string encoded = PunycodeEncode(unicode);
+            return encoded;
+        }
+
+        private static void CheckInvalidIdnCharacters(string s, string paramName)
+        {
+            foreach (char c in s)
+            {
+                // These characters are prohibited regardless of the UseStd3AsciiRules property.
+                // See https://msdn.microsoft.com/en-us/library/system.globalization.idnmapping.usestd3asciirules(v=vs.110).aspx
+                if (c <= 0x1F || c == 0x7F)
+                {
+                    throw new ArgumentException(SR.Argument_IdnIllegalName, paramName);
+                }
+            }
+        }
+#endif
+
         // See if we're only ASCII
         private static bool ValidateStd3AndAscii(string unicode, bool bUseStd3, bool bCheckAscii)
         {
@@ -324,6 +419,8 @@ namespace System.Globalization
                 // Find end of this segment
                 iNextDot = unicode.AsSpan(iAfterLastDot).IndexOfAny(DotSeparators);
                 iNextDot = iNextDot < 0 ? unicode.Length : iNextDot + iAfterLastDot;
+                ReadOnlySpan<char> segment = unicode.AsSpan(iAfterLastDot, iNextDot - iAfterLastDot);
+                CheckValidityCriteria(segment);
 
                 // Only allowed to have empty . section at end (www.microsoft.com.)
                 if (iNextDot == iAfterLastDot)
@@ -338,58 +435,17 @@ namespace System.Globalization
                 // We'll need an Ace prefix
                 output.Append(c_strAcePrefix);
 
-                // Everything resets every segment.
-                bool bRightToLeft = false;
-
-                // Check for RTL.  If right-to-left, then 1st & last chars must be RTL
-                StrongBidiCategory eBidi = CharUnicodeInfo.GetBidiCategory(unicode, iAfterLastDot);
-                if (eBidi == StrongBidiCategory.StrongRightToLeft)
-                {
-                    // It has to be right to left.
-                    bRightToLeft = true;
-
-                    // Check last char
-                    int iTest = iNextDot - 1;
-                    if (char.IsLowSurrogate(unicode, iTest))
-                    {
-                        iTest--;
-                    }
-
-                    eBidi = CharUnicodeInfo.GetBidiCategory(unicode, iTest);
-                    if (eBidi != StrongBidiCategory.StrongRightToLeft)
-                    {
-                        // Oops, last wasn't RTL, last should be RTL if first is RTL
-                        throw new ArgumentException(SR.Argument_IdnBadBidi, nameof(unicode));
-                    }
-                }
-
                 // Handle the basic code points
                 int basicCount;
                 int numProcessed = 0;           // Num code points that have been processed so far (this segment)
+                // you're missing exchanging: Replace("\uFF0D", "\u002D")
                 for (basicCount = iAfterLastDot; basicCount < iNextDot; basicCount++)
                 {
                     // Can't be lonely surrogate because it would've thrown in normalization
                     Debug.Assert(!char.IsLowSurrogate(unicode, basicCount), "[IdnMapping.punycode_encode]Unexpected low surrogate");
 
-                    // Double check our bidi rules
-                    StrongBidiCategory testBidi = CharUnicodeInfo.GetBidiCategory(unicode, basicCount);
-
-                    // If we're RTL, we can't have LTR chars
-                    if (bRightToLeft && testBidi == StrongBidiCategory.StrongLeftToRight)
-                    {
-                        // Oops, throw error
-                        throw new ArgumentException(SR.Argument_IdnBadBidi, nameof(unicode));
-                    }
-
-                    // If we're not RTL we can't have RTL chars
-                    if (!bRightToLeft && testBidi == StrongBidiCategory.StrongRightToLeft)
-                    {
-                        // Oops, throw error
-                        throw new ArgumentException(SR.Argument_IdnBadBidi, nameof(unicode));
-                    }
-
                     // If its basic then add it
-                    if (Basic(unicode[basicCount]))
+                    if (Basic(unicode[basicCount])) // this check if not enough, we should check for empty and ignored code points as well
                     {
                         output.Append(EncodeBasic(unicode[basicCount]));
                         numProcessed++;
@@ -495,8 +551,6 @@ namespace System.Globalization
                         Debug.Assert(delta > 0, "[IdnMapping.cs]3 punycode_encode - delta overflowed int");
                     }
                 }
-
-                // Make sure its not too big
                 if (output.Length - iOutputAfterLastDot > c_labelLimit)
                     throw new ArgumentException(SR.Argument_IdnBadLabelSize, nameof(unicode));
 
@@ -512,8 +566,47 @@ namespace System.Globalization
             if (output.Length > c_defaultNameLimit - (IsDot(unicode[^1]) ? 0 : 1))
                 throw new ArgumentException(SR.Format(SR.Argument_IdnBadNameSize,
                                                 c_defaultNameLimit - (IsDot(unicode[^1]) ? 0 : 1)), nameof(unicode));
+
             // Return our output string
             return output.ToString();
+        }
+
+        private static void CheckValidityCriteria(ReadOnlySpan<char> unicode)
+        {
+            bool checkHyphens = false;
+            if (unicode.Length == 0)
+                return;
+            if (checkHyphens)
+            {
+                // V3: the label must neither begin nor end with a U+002D HYPHEN-MINUS character.
+                if (unicode[0] == '\u002D' || unicode[unicode.Length - 1] == '\u002D')
+                    throw new ArgumentException("SR.Argument_IdnIllegalName 1", nameof(unicode));
+                // V2: the label must not contain a U+002D HYPHEN-MINUS character in both the third and fourth positions
+                if ((unicode.Length > 2 && unicode[2] == '\u002D') || (unicode.Length > 3 && unicode[3] == '\u002D'))
+                    throw new ArgumentException("SR.Argument_IdnIllegalName 2", nameof(unicode));
+            }
+
+            // V4: the label must not contain a U+002E ( . ) FULL STOP. is impossible to happen -  we split on FULL STOPs
+            // V5: the label must not begin with a combining mark, that is: General_Category=Mark
+            // Combining Diacritical Marks Unicode block (U+0300-U+036F). // DONE
+            // Combining Diacritical Marks Extended Unicode block (U+1AB0-U+1AFF).
+            // Combining Diacritical Marks for Symbols Unicode block (U+20D0-U+20FF).
+            // Combining Diacritical Marks Supplement Unicode block (U+1DC0-U+1DFF).
+            // Combining Half Marks Unicode block (U+FE20-U+FE2F).
+            if ('\u0300' <= unicode[0] && unicode[0] <= '\u036F' ||
+                '\u1AB0' <= unicode[0] && unicode[0] <= '\u1AFF' ||
+                '\u20D0' <= unicode[0] && unicode[0] <= '\u20FF' ||
+                '\u1DC0' <= unicode[0] && unicode[0] <= '\u1DFF')
+                throw new ArgumentException("SR.Argument_IdnIllegalName 3", nameof(unicode));
+
+            // V6 Each code point in the label must only be valid (For Transitional Processing) or valid/deviation (For Nontransitional Processing)
+            // according to https://www.unicode.org/Public/idna/13.0.0/IdnaMappingTable.txt
+            // a lot of rules... most of V6 fails with P1 (mapping step)
+
+            // V7 is for CheckJoiners=true, we operate for CheckJoiners=false
+            // V8 is for CheckBidi=true, we operate for CheckBidi=false
+
+            // P4 xn--0.pt should fail with it
         }
 
         // Is it a dot?

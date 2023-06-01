@@ -717,6 +717,11 @@ namespace System
             return Normalization.Normalize(this, normalizationForm);
         }
 
+        internal string Normalize(InternalNormalizationForm normalizationForm)
+        {
+            return Normalize((NormalizationForm)normalizationForm);
+        }
+
         // Gets the character at a specified position.
         //
         [IndexerName("Chars")]

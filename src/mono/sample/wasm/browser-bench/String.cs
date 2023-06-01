@@ -31,6 +31,7 @@ namespace Sample
                 new StringEndsWithMeasurement(),
                 new StringIndexOfMeasurement(),
                 new StringLastIndexOfMeasurement(),
+                new StringGetAscii(),
             };
         }
 
@@ -284,6 +285,13 @@ namespace Sample
             }
             public override string Name => "String LastIndexOf";
             public override void RunStep() => compareInfo.LastIndexOf(str, needleSameAsStrStart, CompareOptions.None);
+        }
+
+        public class StringGetAscii : StringMeasurement
+        {
+            protected IdnMapping idn = new IdnMapping();
+            public override string Name => "IdnMapping GetAscii";
+            public override void RunStep() => idn.GetAscii(str);
         }
     }
 }

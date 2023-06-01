@@ -26,16 +26,17 @@ namespace System.Globalization.Tests
         private static Stream GetIdnaTestTxt()
         {
             string fileName = null;
-            if (PlatformDetection.ICUVersion >= new Version(66, 0))
-                fileName = "IdnaTest_13.txt";
-            else if (PlatformDetection.IsWindows7)
-                fileName = "IdnaTest_Win7.txt";
-            else if (PlatformDetection.IsWindows10Version1903OrGreater)
-                fileName = "IdnaTest_11.txt";
-            else if (PlatformDetection.IsWindows10Version1703OrGreater)
-                fileName = "IdnaTest_9.txt";
-            else
-                fileName = "IdnaTest_6.txt";
+            fileName = "IdnaTest_13.txt";
+            // if (PlatformDetection.ICUVersion >= new Version(66, 0))
+            //     fileName = "IdnaTest_13.txt";
+            // else if (PlatformDetection.IsWindows7)
+            //     fileName = "IdnaTest_Win7.txt";
+            // else if (PlatformDetection.IsWindows10Version1903OrGreater)
+            //     fileName = "IdnaTest_11.txt";
+            // else if (PlatformDetection.IsWindows10Version1703OrGreater)
+            //     fileName = "IdnaTest_9.txt";
+            // else
+            //     fileName = "IdnaTest_6.txt";
 
             // test file 'IdnaTest.txt' is included as an embedded resource
             var name = typeof(Factory).GetTypeInfo().Assembly.GetManifestResourceNames().First(n => n.EndsWith(fileName, StringComparison.Ordinal));
@@ -61,16 +62,17 @@ namespace System.Globalization.Tests
 
         private static IConformanceIdnaTest GetConformanceIdnaTest(string line, int lineCount)
         {
-            if (PlatformDetection.ICUVersion >= new Version(66, 0))
-                return new Unicode_13_0_IdnaTest(line, lineCount);
-            else if (PlatformDetection.IsWindows7)
-                return new Unicode_Win7_IdnaTest(line, lineCount);
-            else if (PlatformDetection.IsWindows10Version1903OrGreater)
-                return new Unicode_11_0_IdnaTest(line, lineCount);
-            else if (PlatformDetection.IsWindows10Version1703OrGreater)
-                return new Unicode_9_0_IdnaTest(line, lineCount);
-            else
-                return new Unicode_6_0_IdnaTest(line, lineCount);
+            return new Unicode_13_0_IdnaTest(line, lineCount);
+            // if (PlatformDetection.ICUVersion >= new Version(66, 0))
+            //     return new Unicode_13_0_IdnaTest(line, lineCount);
+            // else if (PlatformDetection.IsWindows7)
+            //     return new Unicode_Win7_IdnaTest(line, lineCount);
+            // else if (PlatformDetection.IsWindows10Version1903OrGreater)
+            //     return new Unicode_11_0_IdnaTest(line, lineCount);
+            // else if (PlatformDetection.IsWindows10Version1703OrGreater)
+            //     return new Unicode_9_0_IdnaTest(line, lineCount);
+            // else
+            //     return new Unicode_6_0_IdnaTest(line, lineCount);
         }
 
         /// <summary>
