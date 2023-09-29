@@ -57,13 +57,21 @@ namespace DebuggerTests
 
             await CheckArray(props, "Items", "int[]", "int[4]");
 
-            await CheckObject(locals, "b", "DebuggerTests.WithProxy", description:"DebuggerTests.WithProxy");
-            props = await GetObjectOnFrame(frame, "b");
-            await CheckString(props, "Val2", "one");
+            await CheckObject(locals, "proxiedClass", "DebuggerTests.WithProxy", description:"DebuggerTests.WithProxy");
+            props = await GetObjectOnFrame(frame, "proxiedClass");
+            await CheckString(props, "ProxiedVal", "proxied field");
 
-            await CheckValueType(locals, "bs", "DebuggerTests.WithProxyStruct", description:"DebuggerTests.WithProxyStruct");
-            props = await GetObjectOnFrame(frame, "bs");
-            await CheckString(props, "Val2", "one struct");
+            await CheckObject(locals, "proxiedClassStatic", "DebuggerTests.WithProxyStatic", description:"DebuggerTests.WithProxyStatic");
+            props = await GetObjectOnFrame(frame, "proxiedClassStatic");
+            await CheckString(props, "ProxiedVal", "proxied s_field");
+
+            await CheckValueType(locals, "proxiedStruct", "DebuggerTests.WithProxyStruct", description:"DebuggerTests.WithProxyStruct");
+            props = await GetObjectOnFrame(frame, "proxiedStruct");
+            await CheckString(props, "ProxiedVal", "proxied field struct");
+
+            await CheckValueType(locals, "proxiedStructStatic", "DebuggerTests.WithProxyStructStatic", description:"DebuggerTests.WithProxyStructStatic");
+            props = await GetObjectOnFrame(frame, "proxiedStructStatic");
+            await CheckString(props, "ProxiedVal", "proxied s_field struct");
 
             await CheckObject(locals, "openWith", "System.Collections.Generic.Dictionary<string, string>", description: "Count = 3");
             props = await GetObjectOnFrame(frame, "openWith");

@@ -27,15 +27,35 @@ namespace DebuggerTests
     [DebuggerTypeProxy(typeof(TheProxy))]
     class WithProxy
     {
-        public string Val1 {
-            get { return "one"; }
-        }
+        public string Field = "field";
+        public string Prop => "prop";
+        public string AutoProp { get { return "autoprop"; } }
+    }
+
+    [DebuggerTypeProxy(typeof(TheProxy))]
+    class WithProxyStatic
+    {
+        public static string s_Field = "s_field";
+        public static string s_Prop => "s_prop";
+        public static string s_AutoProp { get { return "s_autoprop"; } }
     }
 
     [DebuggerTypeProxy(typeof(TheProxy))]
     struct WithProxyStruct
     {
-        public string Val1 => "one struct";
+        public string Field = "field struct";
+        public string Prop => "prop struct";
+        public string AutoProp { get { return "autoprop struct"; } }
+        public WithProxyStruct() {}
+    }
+
+    [DebuggerTypeProxy(typeof(TheProxy))]
+    struct WithProxyStructStatic
+    {
+        public static string s_Field = "s_field struct";
+        public static string s_Prop => "s_prop struct";
+        public static string s_AutoProp { get { return "s_autoprop struct"; } }
+        public WithProxyStructStatic() {}
     }
 
     class TheProxy
@@ -49,14 +69,15 @@ namespace DebuggerTests
             Console.WriteLine($"I'm an empty TheProxy constructor with two params: 1: {text}, 2: {num}");
         }
 
-        public TheProxy(WithProxy wp) => message = wp.Val1;
+        public TheProxy(WithProxy wp) => message = $"proxied {wp.Field}";
 
-        public TheProxy(WithProxyStruct wp) => message = wp.Val1;
+        public TheProxy(WithProxyStatic wp) => message = $"proxied {WithProxyStatic.s_Field}";
 
+        public TheProxy(WithProxyStruct wp) => message = $"proxied {wp.Field}";
 
-        public string Val2 {
-            get { return message; }
-        }
+        public TheProxy(WithProxyStructStatic wp) => message = $"proxied {WithProxyStructStatic.s_Field}";
+
+        public string ProxiedVal { get { return message; } }
     }
 
     [DebuggerDisplay("{GetDebuggerDisplay(), nq}")]
@@ -83,8 +104,10 @@ namespace DebuggerTests
         public static void run()
         {
             var a = new WithDisplayString();
-            var b = new WithProxy();
-            var bs = new WithProxyStruct();
+            var proxiedClass = new WithProxy();
+            var proxiedClassStatic = new WithProxyStatic();
+            var proxiedStruct = new WithProxyStruct();
+            var proxiedStructStatic = new WithProxyStructStatic();
             var c = new DebuggerDisplayMethodTest();
             List<int> myList = new List<int>{ 1, 2, 3, 4 };
             var listToTestToList = System.Linq.Enumerable.Range(1, 11);
