@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Collections.Generic;
 
+[assembly: DebuggerTypeProxy(typeof(DebuggerTypeProxyTestsOnAssembly.AssemblyProxy), Target = typeof(DebuggerTypeProxyTestsOnAssembly.AssemblyProxyTarget))]
+
 namespace DebuggerTests
 {
     [DebuggerDisplay("Some {Val1} Value {Val2} End")]
@@ -142,6 +144,31 @@ namespace DebuggerTests
             myList2.Add(1);
             myList2.Add(1);
 
+        }
+    }
+}
+
+namespace DebuggerTypeProxyTestsOnAssembly
+{
+    public class AssemblyProxyTarget
+    {
+        public string Value;
+        public AssemblyProxyTarget(string i) => Value = i;
+    }
+
+    public class AssemblyProxy
+    {
+        private readonly AssemblyProxyTarget target;
+        public AssemblyProxy(AssemblyProxyTarget t) => target = t;
+
+        public string ProxyValue => $"proxied {target.Value}";
+    }
+    
+    public class DebuggerCustomViewTest
+    {
+        public static void run()
+        {
+            var target = new AssemblyProxyTarget("original");
         }
     }
 }

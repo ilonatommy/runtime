@@ -79,7 +79,24 @@ namespace DebuggerTests
 
             await EvaluateOnCallFrameAndCheck(frame["callFrameId"].Value<string>(),
                 ("listToTestToList.ToList()", TObject("System.Collections.Generic.List<int>", description: "Count = 11")));
+        }
 
+        [ConditionalFact(nameof(RunningOnChrome))]
+        public async Task UsingDebuggerTypeProxyOnAssembly()
+        {
+            var bp = await SetBreakpointInMethod("debugger-test.dll", "DebuggerTypeProxyTestsOnAssembly.DebuggerCustomViewTest", "run", 2);
+            var pause_location = await EvaluateAndCheck(
+                "window.setTimeout(function() { invoke_static_method ('[debugger-test] DebuggerTypeProxyTestsOnAssembly.DebuggerCustomViewTest:run'); }, 1);",
+                "dotnet://debugger-test.dll/debugger-custom-view-test.cs",
+                bp.Value["locations"][0]["lineNumber"].Value<int>(),
+                bp.Value["locations"][0]["columnNumber"].Value<int>(),
+                "DebuggerTypeProxyTestsOnAssembly.DebuggerCustomViewTest.run");
+
+            var frame = pause_location["callFrames"][0];
+            var locals = await GetProperties(frame["callFrameId"].Value<string>());
+            await CheckObject(locals, "target", "DebuggerTypeProxyTestsOnAssembly.AssemblyProxyTarget", description:"DebuggerTypeProxyTestsOnAssembly.AssemblyProxyTarget");
+            var props = await GetObjectOnFrame(frame, "target");
+            await CheckString(props, "ProxiedVal", "proxied original");
         }
 
         [ConditionalFact(nameof(RunningOnChrome))]
