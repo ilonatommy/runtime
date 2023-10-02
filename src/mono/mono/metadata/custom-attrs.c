@@ -1978,20 +1978,25 @@ mono_custom_attrs_from_index_checked (MonoImage *image, guint32 idx, gboolean ig
 		g_array_free (attr_array, TRUE);
 		return NULL;
 	}
+	g_print ("[ILONA] image->name=%s\n", image->name);
 	ainfo = (MonoCustomAttrInfo *)g_malloc0 (MONO_SIZEOF_CUSTOM_ATTR_INFO + sizeof (MonoCustomAttrEntry) * len);
 	ainfo->num_attrs = len;
 	ainfo->image = image;
+	g_print ("[ILONA] len=%d\n", len);
 	for (i = 0; i < len; ++i) {
 		mono_metadata_decode_row (ca, g_array_index (attr_array, guint32, i), cols, MONO_CUSTOM_ATTR_SIZE);
 		mtoken = cols [MONO_CUSTOM_ATTR_TYPE] >> MONO_CUSTOM_ATTR_TYPE_BITS;
 		switch (cols [MONO_CUSTOM_ATTR_TYPE] & MONO_CUSTOM_ATTR_TYPE_MASK) {
 		case MONO_CUSTOM_ATTR_TYPE_METHODDEF:
+			g_print ("[ILONA] MONO_CUSTOM_ATTR_TYPE_METHODDEF\n");
 			mtoken |= MONO_TOKEN_METHOD_DEF;
 			break;
 		case MONO_CUSTOM_ATTR_TYPE_MEMBERREF:
+			g_print ("[ILONA] MONO_CUSTOM_ATTR_TYPE_MEMBERREF\n");
 			mtoken |= MONO_TOKEN_MEMBER_REF;
 			break;
 		default:
+			g_print ("[ILONA] default\n");
 			g_error ("Unknown table for custom attr type %08x", cols [MONO_CUSTOM_ATTR_TYPE]);
 			break;
 		}
@@ -2011,11 +2016,16 @@ mono_custom_attrs_from_index_checked (MonoImage *image, guint32 idx, gboolean ig
 
 		data = mono_metadata_blob_heap (image, cols [MONO_CUSTOM_ATTR_VALUE]);
 		attr->data_size = mono_metadata_decode_value (data, &data);
+		g_print ("[ILONA] attr->data_size:%d\n", attr->data_size);
 		attr->data = (guchar*)data;
+		g_print ("[ILONA] ========================\n");
+		for (int j=0; j<attr->data_size; j++)
+			g_print("data[%d]=%d, ", j, data[j]);
+		g_print ("[ILONA] ========================\n");
 	}
 	g_array_free (attr_array, TRUE);
 
-	return ainfo;
+	return ainfo; // here we are packing the data
 }
 
 /**

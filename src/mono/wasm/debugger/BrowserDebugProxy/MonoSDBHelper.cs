@@ -205,6 +205,7 @@ namespace Microsoft.WebAssembly.Diagnostics
         GetTypeFromToken = 11,
         GetMethodFromToken = 12,
         HasDebugInfo = 13,
+        GetCattrs = 14,
         HasDebugInfoLoaded = 18
     }
 
@@ -1676,6 +1677,63 @@ namespace Microsoft.WebAssembly.Diagnostics
             return null;
         }
 
+        internal async Task<MonoBinaryReader> GetCAttrsFromAssembly(int typeId, string attrName, CancellationToken token)
+        {
+            // function created for debugging purposes:
+            using var commandParamsWriter = new MonoBinaryWriter();
+            commandParamsWriter.Write(typeId);
+            commandParamsWriter.Write(0);
+            var retDebuggerCmdReader = await SendDebuggerAgentCommand(CmdAssembly.GetCattrs, commandParamsWriter, token);
+            var count = retDebuggerCmdReader.ReadInt32(); // 14
+            Console.WriteLine($"count={count}, attrName={attrName}");
+            if (count == 0)
+                return null;
+            for (int i=0; i<100; i++)
+            {
+                if (i ==0 || i == 1 || i == 3 || i == 4 || i == 5 || i == 6|| i == 7)
+                    Console.WriteLine($"i={retDebuggerCmdReader.ReadInt32()}, ");
+                if (i ==2)
+                    Console.WriteLine($"b={retDebuggerCmdReader.ReadByte()}, ");
+                // how to read the 2nd attribute's param? It does not fit any rules
+                if (i == 8)
+                    Console.WriteLine($"?={retDebuggerCmdReader.ReadByte()}, "); // 84
+            }
+            // for (int i = 0 ; i < count; i++)
+            // {
+            //     var methodId = retDebuggerCmdReader.ReadInt32();
+            //     Console.WriteLine($"methodId={methodId}");
+            //     using var commandCattrParamsWriter = new MonoBinaryWriter();
+            //     commandCattrParamsWriter.Write(methodId);
+            //     using var retDebuggerCmdReader2 = await SendDebuggerAgentCommand(CmdMethod.GetDeclaringType, commandCattrParamsWriter, token);
+            //     var customAttributeTypeId = retDebuggerCmdReader2.ReadInt32();
+            //     var customAttributeName = await GetTypeName(customAttributeTypeId, token);
+            //     if (customAttributeName == attrName)
+            //         return retDebuggerCmdReader;
+            //     // up to here it's good because we are getting attribute names in that string
+            //     Console.WriteLine($"customAttributeName={customAttributeName}");
+
+            //     // I am getting 14 attributes but I do not know yet how to read them properly
+            //     // check mono_custom_attrs_from_index_checked
+            //     // maybe print its bytes and check if we are reading them here fine
+            //     // customAttributeName=System.Runtime.CompilerServices.CompilationRelaxationsAttribute with int param - OK
+            //     // customAttributeName=System.Runtime.CompilerServices.RuntimeCompatibilityAttribute with bool param - the param has type 84 not bool, here the data gets messy
+            //     // then error
+
+            //     //reading buffer only to advance the reader to the next cattr
+            //     for (int k = 0; k < 2; k++)
+            //     {
+            //         var parmCount = retDebuggerCmdReader.ReadInt32();
+            //         Console.WriteLine($"parmCount={parmCount}");
+            //         for (int j = 0; j < parmCount; j++)
+            //         {
+            //             //to typed_args
+            //             await ValueCreator.ReadAsVariableValue(retDebuggerCmdReader, "varName", token);
+            //         }
+            //     }
+            // }
+            return null;
+        }
+
         public async Task<int> GetAssemblyFromType(int type_id, CancellationToken token)
         {
             using var commandParamsWriter = new MonoBinaryWriter();
@@ -2258,11 +2316,11 @@ namespace Microsoft.WebAssembly.Diagnostics
             return retDebuggerCmdReader.ReadInt32();
         }
 
-        public async Task<GetMembersResult> GetValuesFromDebuggerProxyAttributeForObject(int objectId, int typeId, CancellationToken token)
+        public async Task<GetMembersResult> GetValuesFromDebuggerProxyAttributeForObject(int objectId, int typeId, CancellationToken token, bool forAssembly=false)
         {
             try
             {
-                int methodId = await FindDebuggerProxyConstructorIdFor(typeId, token);
+                int methodId = await FindDebuggerProxyConstructorIdFor(typeId, token, forAssembly);
                 if (methodId == -1)
                     return null;
 
@@ -2325,11 +2383,13 @@ namespace Microsoft.WebAssembly.Diagnostics
             }
         }
 
-        private async Task<int> FindDebuggerProxyConstructorIdFor(int typeId, CancellationToken token)
+        private async Task<int> FindDebuggerProxyConstructorIdFor(int typeId, CancellationToken token, bool forAssembly=false)
         {
             try
             {
-                var getCAttrsRetReader = await GetCAttrsFromType(typeId, "System.Diagnostics.DebuggerTypeProxyAttribute", token);
+                var getCAttrsRetReader = forAssembly ?
+                    await GetCAttrsFromAssembly(typeId, "System.Diagnostics.DebuggerTypeProxyAttribute", token) :
+                    await GetCAttrsFromType(typeId, "System.Diagnostics.DebuggerTypeProxyAttribute", token);
                 if (getCAttrsRetReader == null)
                     return -1;
 

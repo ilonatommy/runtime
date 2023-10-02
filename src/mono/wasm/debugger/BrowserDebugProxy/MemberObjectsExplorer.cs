@@ -545,13 +545,20 @@ namespace BrowserDebugProxy
             }
 
             // 1
-            var typeIdsIncludingParents = await sdbHelper.GetTypeIdsForObject(objectId, true, token);
+            List<int> typeIdsIncludingParents = await sdbHelper.GetTypeIdsForObject(objectId, true, token);
 
             // 2
             if (!getCommandType.HasFlag(GetObjectCommandOptions.ForDebuggerDisplayAttribute))
             {
                 GetMembersResult debuggerProxy = await sdbHelper.GetValuesFromDebuggerProxyAttributeForObject(
                     objectId, typeIdsIncludingParents[0], token);
+                if (debuggerProxy == null)
+                {
+                    // try assembly
+                    int assemblyId = await sdbHelper.GetAssemblyIdFromType(typeIdsIncludingParents[0], token);
+                    debuggerProxy = await sdbHelper.GetValuesFromDebuggerProxyAttributeForObject(
+                        objectId, assemblyId, token, forAssembly: true);
+                }
                 if (debuggerProxy != null)
                     return debuggerProxy;
             }

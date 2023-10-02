@@ -8101,7 +8101,7 @@ assembly_commands (int command, guint8 *p, guint8 *end, Buffer *buf)
 		buffer_add_byte (buf, !ass->dynamic && mono_debug_image_has_debug_info (ass->image));
 		break;
 	}
-	case CMD_ASSEMBLY_GET_CATTRS: {
+	case CMD_ASSEMBLY_GET_CATTRS: { // HERE
 		ERROR_DECL (error);
 		MonoClass *attr_klass;
 		MonoCustomAttrInfo *cinfo;
