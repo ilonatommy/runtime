@@ -12,7 +12,11 @@ namespace System.Xml
     // XmlReaderSettings class specifies basic features of an XmlReader.
     public sealed class XmlReaderSettings
     {
+#if FEATURE_WASM_THREADS
+        internal static readonly XmlReaderSettings s_defaultReaderSettings = new() { Async = true };
+#else
         internal static readonly XmlReaderSettings s_defaultReaderSettings = new() { ReadOnly = true };
+#endif
         private bool _useAsync;
         private XmlNameTable? _nameTable;
         private XmlResolver? _xmlResolver;
