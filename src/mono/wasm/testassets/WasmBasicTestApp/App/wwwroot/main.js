@@ -178,6 +178,7 @@ try {
                 joinStringArray
             });
             exports.MemoryTest.Run();
+            exit(0);
             break;
         default:
             console.error(`Unknown test case: ${testCase}`);

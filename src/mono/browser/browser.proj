@@ -337,7 +337,8 @@
       { "identity": "WasmNativeStrip",              "defaultValueInRuntimePack": "$(WasmNativeStrip)" },
       { "identity": "WasmSingleFileBundle",         "defaultValueInRuntimePack": "$(WasmSingleFileBundle)" },
       { "identity": "WasmEnableSIMD",               "defaultValueInRuntimePack": "$(WasmEnableSIMD)" },
-      { "identity": "WasmEnableExceptionHandling",  "defaultValueInRuntimePack": "$(WasmEnableExceptionHandling)" }
+      { "identity": "WasmEnableExceptionHandling",  "defaultValueInRuntimePack": "$(WasmEnableExceptionHandling)" },
+      { "identity": "EmccMaximumHeapSize",          "defaultValueInRuntimePack": "$(EmccMaximumHeapSize)" }
     ]
   }
 }
