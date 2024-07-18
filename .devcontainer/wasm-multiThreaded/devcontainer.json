@@ -1,5 +1,6 @@
 // For format details, see https://aka.ms/devcontainer.json.
 {
+	"image": "mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-webassembly-amd64-net9.0",
 	"name": "WASM multithreaded development (prebuilt)",
 	"build": {
 		"dockerfile": "Dockerfile",
