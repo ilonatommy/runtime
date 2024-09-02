@@ -154,6 +154,30 @@ namespace Wasm.Build.Tests
                                 host: host, id: id);
         }
 
+        [Theory]
+        [BuildAndRun(host: RunHost.Chrome, aot: true, config: "Release")]
+        [BuildAndRun(host: RunHost.Chrome, aot: true, config: "Debug")]
+        public void BuildThenPublishWithAOT(BuildArgs buildArgs, RunHost host, string id)
+        {
+            string config = "Release";
+            string projectName = GetTestProjectPath(
+                prefix: $"build_aot_TEST_OF_EXTREMELY_LONG_PATH", config: config, appendUnicode: false);
+
+            buildArgs = buildArgs with { ProjectName = projectName };
+            buildArgs = ExpandBuildArgs(buildArgs, extraProperties: $"<RunAOTCompilation>true</RunAOTCompilation><WasmNativeStrip>false</WasmNativeStrip>");
+
+            (_, string output) = BuildProject(buildArgs,
+                                    id,
+                                    new BuildProjectOptions(
+                                        InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), s_mainReturns42),
+                                        DotnetWasmFromRuntimePack: true,
+                                        CreateProject: true,
+                                        Publish: true,
+                                        ProjectSubDir: "here_more_chars_are_needed_to_have_a_long_path"));
+            Console.WriteLine(output);
+            Console.WriteLine(host);
+        }
+
         void CheckOutputForNativeBuild(bool expectAOT, bool expectRelinking, BuildArgs buildArgs, string buildOutput, bool testUnicode)
         {
             if (testUnicode)

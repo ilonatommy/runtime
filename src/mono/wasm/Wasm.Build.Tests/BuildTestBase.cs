@@ -330,10 +330,19 @@ namespace Wasm.Build.Tests
         }
 
         [MemberNotNull(nameof(_projectDir), nameof(_logPath))]
-        protected void InitPaths(string id)
+        protected void InitPaths(string id, string? projectSubDir = null)
         {
             if (_projectDir == null)
-                _projectDir = Path.Combine(BuildEnvironment.TmpPath, id);
+            {
+                if (projectSubDir != null)
+                {
+                    _projectDir = Path.Combine(BuildEnvironment.TmpPath, projectSubDir, id);
+                }
+                else
+                {
+                    _projectDir = Path.Combine(BuildEnvironment.TmpPath, id);
+                }
+            }
             _logPath = Path.Combine(s_buildEnv.LogRootPath, id);
             _nugetPackagesDir = Path.Combine(BuildEnvironment.TmpPath, "nuget", id);
 

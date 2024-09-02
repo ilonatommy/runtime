@@ -40,7 +40,7 @@ public abstract class TestMainJsTestBase : BuildTestBase
 
         if (options.CreateProject)
         {
-            InitPaths(id);
+            InitPaths(id, options.ProjectSubDir);
             InitProjectDir(_projectDir);
             options.InitProject?.Invoke();
 
