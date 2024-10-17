@@ -31,8 +31,21 @@ public class WasmTemplateTestsBase : BuildTestBase
             { "partial class StopwatchSample", $"return 42;{Environment.NewLine}partial class StopwatchSample" }
         };
 
-    public string CreateWasmTemplateProject(string id, string template = "wasmbrowser", string extraArgs = "", bool runAnalyzers = true, bool addFrameworkArg = false, string? extraProperties = null)
+    public ProjectInfo CreateWasmTemplateProject(
+        Template template,
+        string config,
+        bool aot,
+        string idPrefix = "wbt",
+        bool appendUnicodeToProjectName = true,
+        string extraArgs = "",
+        bool runAnalyzers = true,
+        bool addFrameworkArg = false,
+        string extraProperties = "")
     {
+        // toDo: if we have aot then we should add code from ExpandBuildArgsForAOT
+        string id = appendUnicodeToProjectName ?
+            $"{idPrefix}_{config}_{aot}_{s_unicodeChars}_{GetRandomId()}" :
+            $"{idPrefix}_{config}_{aot}_{GetRandomId()}";
         InitPaths(id);
         InitProjectDir(_projectDir, addNuGetSourceForLocalPackages: true);
 
@@ -52,51 +65,47 @@ public class WasmTemplateTestsBase : BuildTestBase
 
         if (addFrameworkArg)
             extraArgs += $" -f {DefaultTargetFramework}";
+
         using DotNetCommand cmd = new DotNetCommand(s_buildEnv, _testOutput, useDefaultArgs: false);
         CommandResult result = cmd.WithWorkingDirectory(_projectDir!)
-            .ExecuteWithCapturedOutput($"new {template} {extraArgs}")
+            .ExecuteWithCapturedOutput($"new {template.ToString().ToLower()} {extraArgs}")
             .EnsureSuccessful();
 
-        string projectfile = Path.Combine(_projectDir!, $"{id}.csproj");
+        string projectName = $"{id}.csproj";
+        string projectFilePath = Path.Combine(_projectDir!, projectName);
 
-        if (extraProperties == null)
-            extraProperties = string.Empty;
-
+        if (aot)
+        {
+            extraProperties += $"\n<RunAOTCompilation>true</RunAOTCompilation>";
+            extraProperties += $"\n<EmccVerbose>{s_isWindows}</EmccVerbose>";
+        }
         extraProperties += "<TreatWarningsAsErrors>true</TreatWarningsAsErrors>";
         if (runAnalyzers)
             extraProperties += "<RunAnalyzers>true</RunAnalyzers>";
 
-        AddItemsPropertiesToProject(projectfile, extraProperties);
+        AddItemsPropertiesToProject(projectFilePath, extraProperties);
 
-        return projectfile;
+        return new ProjectInfo(config, aot, id, projectName, projectFilePath);
     }
 
     public (string projectDir, string buildOutput) BuildTemplateProject(
-        BuildArgs buildArgs,
-        string id,
-        BuildProjectOptions buildProjectOptions,
+        ProjectInfo projectInfo,
+        BuildProjectOptions buildOptions,
         params string[] extraArgs)
     {
-        if (buildProjectOptions.ExtraBuildEnvironmentVariables is null)
-            buildProjectOptions = buildProjectOptions with { ExtraBuildEnvironmentVariables = new Dictionary<string, string>() };
+        if (buildOptions.ExtraBuildEnvironmentVariables is null)
+            buildOptions = buildOptions with { ExtraBuildEnvironmentVariables = new Dictionary<string, string>() };
 
         // TODO: reenable this when the SDK supports targetting net10.0
-        //buildProjectOptions.ExtraBuildEnvironmentVariables["TreatPreviousAsCurrent"] = "false";
+        //buildOptions.ExtraBuildEnvironmentVariables["TreatPreviousAsCurrent"] = "false";
 
-        (CommandResult res, string logFilePath) = BuildProjectWithoutAssert(id, buildArgs.Config, buildProjectOptions, extraArgs);
-        if (buildProjectOptions.UseCache)
-            _buildContext.CacheBuild(buildArgs, new BuildProduct(_projectDir!, logFilePath, true, res.Output));
+        (CommandResult res, string logFilePath) = BuildProjectWithoutAssert(buildOptions, extraArgs);
+        if (buildOptions.UseCache)
+            _buildContext.CacheBuild(projectInfo, new BuildProduct(_projectDir!, logFilePath, true, res.Output));
 
-        if (buildProjectOptions.AssertAppBundle)
+        if (buildOptions.AssertAppBundle)
         {
-            if (buildProjectOptions.IsBrowserProject)
-            {
-                _provider.AssertWasmSdkBundle(buildArgs, buildProjectOptions, res.Output);
-            }
-            else
-            {
-                _provider.AssertTestMainJsBundle(buildArgs, buildProjectOptions, res.Output);
-            }
+            _provider.AssertWasmSdkBundle(buildOptions, res.Output);
         }
         return (_projectDir!, res.Output);
     }
@@ -160,22 +169,6 @@ public class WasmTemplateTestsBase : BuildTestBase
 
 
         File.WriteAllText(mainJsPath, updatedMainJsContent);
-    }
-
-    protected void UpdateMainJsEnvironmentVariables(params (string key, string value)[] variables)
-    {
-        string mainJsPath = Path.Combine(_projectDir!, "main.mjs");
-        string mainJsContent = File.ReadAllText(mainJsPath);
-
-        StringBuilder js = new();
-        foreach (var variable in variables)
-        {
-            js.Append($".withEnvironmentVariable(\"{variable.key}\", \"{variable.value}\")");
-        }
-
-        mainJsContent = StringReplaceWithAssert(mainJsContent, ".create()", js.ToString() + ".create()");
-
-        File.WriteAllText(mainJsPath, mainJsContent);
     }
 
     // ToDo: consolidate with BlazorRunTest

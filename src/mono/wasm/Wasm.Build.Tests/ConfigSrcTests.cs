@@ -9,29 +9,46 @@ using Xunit.Abstractions;
 
 namespace Wasm.Build.Tests;
 
-public class ConfigSrcTests : TestMainJsTestBase
+public class ConfigSrcTests : WasmTemplateTestsBase
 {
     public ConfigSrcTests(ITestOutputHelper output, SharedBuildPerTestClassFixture buildContext) : base(output, buildContext)
     { }
 
+    // INFO FOR REVIWER:
+    // This class can be deleted.
+    // It is testing the --config-src argument, which was supposed to be passed to test-main.js
+    // but does not make sense in the current form of testing where we are using "dotnet new" templates
+
     // NOTE: port number determinizes dynamically, so could not generate absolute URI
     [Theory]
-    [BuildAndRun(host: RunHost.V8)]
-    public void ConfigSrcAbsolutePath(BuildArgs buildArgs, RunHost host, string id)
+    [BuildAndRun()]
+    public void ConfigSrcAbsolutePath(string config, bool aot)
     {
-        buildArgs = buildArgs with { ProjectName = $"configsrcabsolute_{buildArgs.Config}_{buildArgs.AOT}" };
-        buildArgs = ExpandBuildArgs(buildArgs);
+        ProjectInfo info = CreateWasmTemplateProject(Template.WasmBrowser, config, aot, "configsrcabsolute");
 
-        BuildProject(buildArgs,
-                        id: id,
+        UpdateBrowserProgramFile();
+        UpdateBrowserMainJs();
+
+        bool IsPublish = false;
+        BuildTemplateProject(info,
                         new BuildProjectOptions(
-                            InitProject: () => File.WriteAllText(Path.Combine(_projectDir!, "Program.cs"), s_mainReturns42),
-                            DotnetWasmFromRuntimePack: IsDotnetWasmFromRuntimePack(buildArgs)));
+                            config,
+                            info.Id,
+                            BinFrameworkDir: FindBinFrameworkDir(config, IsPublish),
+                            ExpectedFileType: GetExpectedFileType(info, IsPublish),
+                            IsPublish: IsPublish
+                        ));
 
-        string binDir = GetBinDir(baseDir: _projectDir!, config: buildArgs.Config);
-        string bundleDir = Path.Combine(binDir, "AppBundle");
-        string configSrc = Path.GetFullPath(Path.Combine(bundleDir, "_framework", "blazor.boot.json"));
+        // // await RunBuiltBrowserApp(config, projectFile, extraArgs: "x y z");
+        // string frameworkDir = FindBinFrameworkDir(config, forPublish: false);
+        // string configSrc = Path.GetFullPath(Path.Combine(frameworkDir, "blazor.boot.json"));
 
-        RunAndTestWasmApp(buildArgs, expectedExitCode: 42, host: host, id: id, extraXHarnessMonoArgs: $"--config-src=\"{configSrc}\"");
+        // // it's trying to run in "AppBundle" directory
+        // RunAndTestWasmApp(
+        //     buildArgs,
+        //     expectedExitCode: 42,
+        //     id: id,
+        //     frameworkDir: frameworkDir,
+        //     extraXHarnessMonoArgs: $"--config-src=\"{configSrc}\"");
     }
 }

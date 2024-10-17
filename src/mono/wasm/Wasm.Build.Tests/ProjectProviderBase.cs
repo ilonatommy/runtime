@@ -20,6 +20,7 @@ using Xunit.Sdk;
 namespace Wasm.Build.Tests;
 
 // For projects using WasmAppBuilder
+// ToDo: REMOVE, use WasmSdkBasedProjectProvider only
 public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string? _projectDir)
 {
     public static string WasmAssemblyExtension = BuildTestBase.s_buildEnv.UseWebcil ? ".wasm" : ".dll";
@@ -43,15 +44,15 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
     public bool IsFingerprintingEnabled => IsFingerprintingSupported && EnvironmentVariables.UseFingerprinting;
 
     // Returns the actual files on disk
-    public IReadOnlyDictionary<string, DotNetFileName> AssertBasicBundle(AssertBundleOptionsBase assertOptions)
+    public IReadOnlyDictionary<string, DotNetFileName> AssertBasicBundle(AssertBundleOptions assertOptions)
     {
         EnsureProjectDirIsSet();
-        var dotnetFiles = FindAndAssertDotnetFiles(assertOptions);
+        var dotnetFiles = FindAndAssertDotnetFiles(assertOptions); // HERE, why binFrameworkDir empty?
 
-        TestUtils.AssertFilesExist(assertOptions.BinFrameworkDir,
+        TestUtils.AssertFilesExist(assertOptions.BuildOptions.BinFrameworkDir,
                                    new[] { "System.Private.CoreLib.dll" },
                                    expectToExist: IsFingerprintingEnabled ? false : !BuildTestBase.UseWebcil);
-        TestUtils.AssertFilesExist(assertOptions.BinFrameworkDir,
+        TestUtils.AssertFilesExist(assertOptions.BuildOptions.BinFrameworkDir,
                                    new[] { "System.Private.CoreLib.wasm" },
                                    expectToExist: IsFingerprintingEnabled ? false : BuildTestBase.UseWebcil);
 
@@ -77,17 +78,17 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
         return dotnetFiles;
     }
 
-    public IReadOnlyDictionary<string, DotNetFileName> FindAndAssertDotnetFiles(AssertBundleOptionsBase assertOptions)
+    public IReadOnlyDictionary<string, DotNetFileName> FindAndAssertDotnetFiles(AssertBundleOptions assertOptions)
     {
         EnsureProjectDirIsSet();
-        return FindAndAssertDotnetFiles(binFrameworkDir: assertOptions.BinFrameworkDir,
+        return FindAndAssertDotnetFiles(binFrameworkDir: assertOptions.BuildOptions.BinFrameworkDir,
                                         expectFingerprintOnDotnetJs: assertOptions.ExpectFingerprintOnDotnetJs,
                                         superSet: GetAllKnownDotnetFilesToFingerprintMap(assertOptions),
                                         expected: GetDotNetFilesExpectedSet(assertOptions));
     }
 
-    protected abstract IReadOnlyDictionary<string, bool> GetAllKnownDotnetFilesToFingerprintMap(AssertBundleOptionsBase assertOptions);
-    protected abstract IReadOnlySet<string> GetDotNetFilesExpectedSet(AssertBundleOptionsBase assertOptions);
+    protected abstract IReadOnlyDictionary<string, bool> GetAllKnownDotnetFilesToFingerprintMap(AssertBundleOptions assertOptions);
+    protected abstract IReadOnlySet<string> GetDotNetFilesExpectedSet(AssertBundleOptions assertOptions);
 
     public IReadOnlyDictionary<string, DotNetFileName> FindAndAssertDotnetFiles(
         string binFrameworkDir,
@@ -276,7 +277,7 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
         return dict;
     }
 
-    public IDictionary<string, (string fullPath, bool unchanged)> GetFilesTable(BuildArgs buildArgs, BuildPaths paths, bool unchanged)
+    public IDictionary<string, (string fullPath, bool unchanged)> GetFilesTable(ProjectInfo buildArgs, BuildPaths paths, bool unchanged)
     {
         List<string> files = new()
         {
@@ -337,23 +338,23 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
             throw new XunitException($"Runtime pack path doesn't match.{Environment.NewLine}Expected: '{expectedRuntimePackDir}'{Environment.NewLine}Actual:   '{actualPath}'");
     }
 
-    public static void AssertDotNetJsSymbols(AssertBundleOptionsBase assertOptions)
+    public static void AssertDotNetJsSymbols(AssertBundleOptions assertOptions)
     {
-        TestUtils.AssertFilesExist(assertOptions.BinFrameworkDir, new[] { "dotnet.native.js.symbols" }, expectToExist: assertOptions.ExpectSymbolsFile);
+        TestUtils.AssertFilesExist(assertOptions.BuildOptions.BinFrameworkDir, new[] { "dotnet.native.js.symbols" }, expectToExist: assertOptions.ExpectSymbolsFile);
 
-        if (assertOptions.ExpectedFileType == NativeFilesType.FromRuntimePack)
+        if (assertOptions.BuildOptions.ExpectedFileType == NativeFilesType.FromRuntimePack)
         {
             TestUtils.AssertFile(
-                    Path.Combine(BuildTestBase.s_buildEnv.GetRuntimeNativeDir(assertOptions.TargetFramework, assertOptions.RuntimeType), "dotnet.native.js.symbols"),
-                    Path.Combine(assertOptions.BinFrameworkDir, "dotnet.native.js.symbols"),
+                    Path.Combine(BuildTestBase.s_buildEnv.GetRuntimeNativeDir(assertOptions.BuildOptions.TargetFramework, assertOptions.BuildOptions.RuntimeType), "dotnet.native.js.symbols"),
+                    Path.Combine(assertOptions.BuildOptions.BinFrameworkDir, "dotnet.native.js.symbols"),
                     same: true);
         }
     }
 
-    public void AssertIcuAssets(AssertBundleOptionsBase assertOptions, BootJsonData bootJson)
+    public void AssertIcuAssets(AssertBundleOptions assertOptions, BootJsonData bootJson)
     {
         List<string> expected = new();
-        switch (assertOptions.GlobalizationMode)
+        switch (assertOptions.BuildOptions.GlobalizationMode)
         {
             case GlobalizationMode.Invariant:
                 break;
@@ -365,11 +366,11 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
                 expected.Add("segmentation-rules.json");
                 break;
             case GlobalizationMode.Custom:
-                if (string.IsNullOrEmpty(assertOptions.CustomIcuFile))
+                if (string.IsNullOrEmpty(assertOptions.BuildOptions.CustomIcuFile))
                     throw new ArgumentException("WasmBuildTest is invalid, value for Custom globalization mode is required when GlobalizationMode=Custom.");
 
                 // predefined ICU name can be identical with the icu files from runtime pack
-                expected.Add(Path.GetFileName(assertOptions.CustomIcuFile));
+                expected.Add(Path.GetFileName(assertOptions.BuildOptions.CustomIcuFile));
                 break;
             case GlobalizationMode.Sharded:
                 // icu shard chosen based on the locale
@@ -378,12 +379,12 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
                 expected.Add("icudt_no_CJK.dat");
                 break;
             default:
-                throw new NotImplementedException($"Unknown {nameof(assertOptions.GlobalizationMode)} = {assertOptions.GlobalizationMode}");
+                throw new NotImplementedException($"Unknown {nameof(assertOptions.BuildOptions.GlobalizationMode)} = {assertOptions.BuildOptions.GlobalizationMode}");
         }
 
-        IEnumerable<string> actual = Directory.EnumerateFiles(assertOptions.BinFrameworkDir, "icudt*dat");
-        if (assertOptions.GlobalizationMode == GlobalizationMode.Hybrid)
-            actual = actual.Union(Directory.EnumerateFiles(assertOptions.BinFrameworkDir, "segmentation-rules*json"));
+        IEnumerable<string> actual = Directory.EnumerateFiles(assertOptions.BuildOptions.BinFrameworkDir, "icudt*dat");
+        if (assertOptions.BuildOptions.GlobalizationMode == GlobalizationMode.Hybrid)
+            actual = actual.Union(Directory.EnumerateFiles(assertOptions.BuildOptions.BinFrameworkDir, "segmentation-rules*json"));
 
         if (IsFingerprintingEnabled)
         {
@@ -401,21 +402,21 @@ public abstract class ProjectProviderBase(ITestOutputHelper _testOutput, string?
         }
 
         AssertFileNames(expected, actual);
-        if (assertOptions.GlobalizationMode is GlobalizationMode.Custom)
+        if (assertOptions.BuildOptions.GlobalizationMode is GlobalizationMode.Custom)
         {
-            string srcPath = assertOptions.CustomIcuFile!;
-            string runtimePackDir = BuildTestBase.s_buildEnv.GetRuntimeNativeDir(assertOptions.TargetFramework, assertOptions.RuntimeType);
+            string srcPath = assertOptions.BuildOptions.CustomIcuFile!;
+            string runtimePackDir = BuildTestBase.s_buildEnv.GetRuntimeNativeDir(assertOptions.BuildOptions.TargetFramework, assertOptions.BuildOptions.RuntimeType);
             if (!Path.IsPathRooted(srcPath))
-                srcPath = Path.Combine(runtimePackDir, assertOptions.CustomIcuFile!);
+                srcPath = Path.Combine(runtimePackDir, assertOptions.BuildOptions.CustomIcuFile!);
             TestUtils.AssertSameFile(srcPath, actual.Single());
         }
     }
 
-    public BootJsonData AssertBootJson(AssertBundleOptionsBase options)
+    public BootJsonData AssertBootJson(AssertBundleOptions options)
     {
         EnsureProjectDirIsSet();
-        string binFrameworkDir = options.BinFrameworkDir;
-        string bootJsonPath = Path.Combine(binFrameworkDir, options.BootJsonFileName);
+        string binFrameworkDir = options.BuildOptions.BinFrameworkDir;
+        string bootJsonPath = Path.Combine(binFrameworkDir, options.BuildOptions.BootConfigFileName);
         Assert.True(File.Exists(bootJsonPath), $"Expected to find {bootJsonPath}");
 
         BootJsonData bootJson = ParseBootData(bootJsonPath);
