@@ -53,6 +53,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             public bool hasMethodCalls;
             public bool hasElementAccesses;
             public bool hasStringExpressionStatement;
+            public bool hasBinaryExpressions;
             internal List<VariableDefinition> variableDefinitions = new();
 
             public void VisitInternal(SyntaxNode node)
@@ -100,6 +101,7 @@ namespace Microsoft.WebAssembly.Diagnostics
 
                 if (node is BinaryExpressionSyntax)
                 {
+                    hasBinaryExpressions = true;
                     var binaryExpression = node as BinaryExpressionSyntax;
                     if (binaryExpression.Left.Kind() == SyntaxKind.StringLiteralExpression || binaryExpression.Right.Kind() == SyntaxKind.StringLiteralExpression)
                         hasStringExpressionStatement = true;
@@ -227,19 +229,19 @@ namespace Microsoft.WebAssembly.Diagnostics
                     if (localsSet.Contains(idName))
                         return;
                     localsSet.Add(idName);
-                    variableDefinitions.Add(new(idName, value, ConvertJSToCSharpLocalVariableAssignment(idName, value)));
+                    variableDefinitions.Add(new(idName, value, ConvertJSToCSharpLocalVariableAssignment(idName, value, useDeclaredType: hasBinaryExpressions)));
                 }
             }
         }
 
-        public static string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable)
+        public static string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable, bool useDeclaredType = false)
         {
             string typeRet;
             object valueRet;
             JToken value = variable["value"];
             string type = variable["type"].Value<string>();
             string subType = variable["subtype"]?.Value<string>();
-            string declaredType = variable["declaredType"]?.Value<string>();
+            string declaredType = useDeclaredType ? variable["declaredType"]?.Value<string>() : null;
             switch (type)
             {
                 case "string":
@@ -302,11 +304,12 @@ namespace Microsoft.WebAssembly.Diagnostics
                     throw new Exception($"Evaluate of this datatype {type} not implemented yet");//, "Unsupported");
             }
 
-            // When the declared (compile-time) type differs from the runtime type, use it
-            // so that Roslyn resolves operators using compile-time semantics.
-            // e.g. a local declared as IEquatable<string> holding a string value should
-            // generate: IEquatable<string> x = (IEquatable<string>)"test";
-            // instead of: string x = "test";
+            // When the expression contains binary operators (==, !=, <, > etc.) and
+            // the declared (compile-time) type differs from the runtime type, use the
+            // declared type so Roslyn resolves operators with compile-time semantics.
+            // This is ONLY applied when hasBinaryExpressions is true (via useDeclaredType)
+            // to avoid breaking member access expressions like "x.Length" where using
+            // the runtime type (string) is more helpful than the declared type (IEquatable<string>).
             if (declaredType != null)
             {
                 string csharpDeclaredType = ConvertClrTypeToCSharp(declaredType);

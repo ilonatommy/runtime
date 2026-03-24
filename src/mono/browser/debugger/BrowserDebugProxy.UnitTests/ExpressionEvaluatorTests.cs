@@ -24,14 +24,14 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
     // These are exact copies from EvaluateExpression.cs with the fix applied.
     // ====================================================================
 
-    private static string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable)
+    private static string ConvertJSToCSharpLocalVariableAssignment(string idName, JToken variable, bool useDeclaredType = false)
     {
         string typeRet;
         object valueRet;
         JToken value = variable["value"];
         string type = variable["type"].Value<string>();
         string subType = variable["subtype"]?.Value<string>();
-        string declaredType = variable["declaredType"]?.Value<string>();
+        string declaredType = useDeclaredType ? variable["declaredType"]?.Value<string>() : null;
         switch (type)
         {
             case "string":
@@ -109,9 +109,7 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
         });
 
         // Act
-        string result = ConvertJSToCSharpLocalVariableAssignment("left", variable);
-
-        // Assert: should use the declared interface type, not "string"
+        string result = ConvertJSToCSharpLocalVariableAssignment("left", variable, useDeclaredType: true);
         Assert.Equal("System.IEquatable<string> left = (System.IEquatable<string>)\"test\";", result);
     }
 
@@ -125,7 +123,7 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
             declaredType = "System.IComparable<System.String>"
         });
 
-        string result = ConvertJSToCSharpLocalVariableAssignment("x", variable);
+        string result = ConvertJSToCSharpLocalVariableAssignment("x", variable, useDeclaredType: true);
 
         Assert.Equal("System.IComparable<string> x = (System.IComparable<string>)\"hello\";", result);
     }
@@ -140,7 +138,7 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
             declaredType = "System.Object"
         });
 
-        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable);
+        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable, useDeclaredType: true);
 
         Assert.Equal("object s = (object)\"test\";", result);
     }
@@ -175,7 +173,7 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
             declaredType = "System.String"
         });
 
-        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable);
+        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable, useDeclaredType: true);
 
         // "string" == "string" so no cast
         Assert.Equal("string s = \"test\";", result);
@@ -219,9 +217,48 @@ public class ConvertJSToCSharpLocalVariableAssignmentTests
             declaredType = "System.IEquatable<System.String>"
         });
 
-        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable);
+        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable, useDeclaredType: true);
 
         Assert.Equal("System.IEquatable<string> s = (System.IEquatable<string>)\"say \\\"hello\\\"\";", result);
+    }
+
+    // ====================================================================
+    // Regression safety: useDeclaredType=false preserves runtime type
+    // even when declaredType is present on the variable, so member
+    // access like "s.Length" continues to work in the watch window.
+    // ====================================================================
+
+    [Fact]
+    public void String_WithDeclaredType_IEquatable_WhenNotUsing_KeepsStringType()
+    {
+        // declaredType is present but useDeclaredType is false (e.g., member access expression)
+        var variable = JObject.FromObject(new
+        {
+            type = "string",
+            value = "test",
+            declaredType = "System.IEquatable<System.String>"
+        });
+
+        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable, useDeclaredType: false);
+
+        // Should use runtime type "string", NOT the declared interface type
+        Assert.Equal("string s = \"test\";", result);
+    }
+
+    [Fact]
+    public void String_WithDeclaredType_Object_WhenNotUsing_KeepsStringType()
+    {
+        var variable = JObject.FromObject(new
+        {
+            type = "string",
+            value = "hello",
+            declaredType = "System.Object"
+        });
+
+        string result = ConvertJSToCSharpLocalVariableAssignment("s", variable, useDeclaredType: false);
+
+        // Should use runtime type "string", so s.Length works
+        Assert.Equal("string s = \"hello\";", result);
     }
 
     // ====================================================================
