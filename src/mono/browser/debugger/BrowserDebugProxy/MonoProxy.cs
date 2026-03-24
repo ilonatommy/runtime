@@ -1574,10 +1574,32 @@ namespace Microsoft.WebAssembly.Diagnostics
                     if (values == null || values.Count == 0)
                         return new GetMembersResult();
 
+                    // Fetch declared (compile-time) types for locals so the expression
+                    // evaluator can use them for correct operator resolution.
+                    Dictionary<string, string> declaredTypes = null;
+                    try
+                    {
+                        declaredTypes = await context.SdbAgent.GetLocalDeclaredTypes(scope.Method.DebugId, token);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug($"Failed to get declared types for scope {scopeId}: {ex.Message}");
+                    }
+
                     PerScopeCache frameCache = context.GetCacheForScope(scopeId);
                     foreach (JObject value in values)
                     {
-                        frameCache.Locals[value["name"]?.Value<string>()] = value;
+                        string name = value["name"]?.Value<string>();
+
+                        // If we have a declared type that differs from the runtime type,
+                        // store it so ConvertJSToCSharpLocalVariableAssignment can use it.
+                        if (declaredTypes != null && name != null
+                            && declaredTypes.TryGetValue(name, out string declaredType))
+                        {
+                            value["declaredType"] = declaredType;
+                        }
+
+                        frameCache.Locals[name] = value;
                     }
                     return GetMembersResult.FromValues(values);
                 }

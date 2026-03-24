@@ -2237,6 +2237,72 @@ namespace Microsoft.WebAssembly.Diagnostics
 
         }
 
+        /// <summary>
+        /// Gets the declared (compile-time) types of local variables for a method.
+        /// Returns a dictionary mapping local variable name to its declared CLR type name.
+        /// Uses CmdMethod.GetLocalsInfo which reads the IL method body's local signature.
+        /// </summary>
+        public async Task<Dictionary<string, string>> GetLocalDeclaredTypes(int methodId, CancellationToken token)
+        {
+            var result = new Dictionary<string, string>();
+            try
+            {
+                using var commandParamsWriter = new MonoBinaryWriter();
+                commandParamsWriter.Write(methodId);
+
+                using var reader = await SendDebuggerAgentCommand(CmdMethod.GetLocalsInfo, commandParamsWriter, token);
+
+                // Protocol response format (from debugger-agent.c CMD_METHOD_GET_LOCALS_INFO):
+                //   [scopes_count, scope_offsets...] (if protocol >= 2.43)
+                //   num_locals
+                //   type_id_1, type_id_2, ... (num_locals type IDs)
+                //   name_1, name_2, ...       (num_locals names)
+                //   scope_start_1, scope_end_1, ... (num_locals scope ranges)
+                //   [index_1, index_2, ...] (if protocol >= 2.65)
+
+                (int MajorVersion, int MinorVersion) = await GetVMVersion(token);
+
+                // Skip scope blocks (protocol >= 2.43)
+                if (MajorVersion >= 2 && MinorVersion >= 43)
+                {
+                    int numBlocks = reader.ReadInt32();
+                    for (int i = 0; i < numBlocks; i++)
+                    {
+                        reader.ReadInt32(); // start offset
+                        reader.ReadInt32(); // length
+                    }
+                }
+
+                int numLocals = reader.ReadInt32();
+
+                // Read type IDs
+                var typeIds = new int[numLocals];
+                for (int i = 0; i < numLocals; i++)
+                    typeIds[i] = reader.ReadInt32();
+
+                // Read names
+                var names = new string[numLocals];
+                for (int i = 0; i < numLocals; i++)
+                    names[i] = reader.ReadString();
+
+                // Resolve type IDs to names and build the dictionary
+                for (int i = 0; i < numLocals; i++)
+                {
+                    if (!string.IsNullOrEmpty(names[i]) && typeIds[i] != 0)
+                    {
+                        string typeName = await GetTypeName(typeIds[i], token);
+                        if (!string.IsNullOrEmpty(typeName))
+                            result[names[i]] = typeName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug($"Failed to get declared types for method {methodId}: {ex}");
+            }
+            return result;
+        }
+
         public async Task<JArray> GetArrayValues(int arrayId, CancellationToken token)
         {
             var dimensions = await GetArrayDimensions(arrayId, token);

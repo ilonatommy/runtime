@@ -239,6 +239,7 @@ namespace Microsoft.WebAssembly.Diagnostics
             JToken value = variable["value"];
             string type = variable["type"].Value<string>();
             string subType = variable["subtype"]?.Value<string>();
+            string declaredType = variable["declaredType"]?.Value<string>();
             switch (type)
             {
                 case "string":
@@ -300,6 +301,22 @@ namespace Microsoft.WebAssembly.Diagnostics
                 default:
                     throw new Exception($"Evaluate of this datatype {type} not implemented yet");//, "Unsupported");
             }
+
+            // When the declared (compile-time) type differs from the runtime type, use it
+            // so that Roslyn resolves operators using compile-time semantics.
+            // e.g. a local declared as IEquatable<string> holding a string value should
+            // generate: IEquatable<string> x = (IEquatable<string>)"test";
+            // instead of: string x = "test";
+            if (declaredType != null)
+            {
+                string csharpDeclaredType = ConvertClrTypeToCSharp(declaredType);
+                if (csharpDeclaredType != typeRet)
+                {
+                    typeRet = csharpDeclaredType;
+                    valueRet = $"({csharpDeclaredType}){valueRet}";
+                }
+            }
+
             return $"{typeRet} {idName} = {valueRet};";
 
             static (string, string) GetNullObject(string className = "object")
@@ -310,6 +327,32 @@ namespace Microsoft.WebAssembly.Diagnostics
                 + $"subtype = \"null\""
                 + "})",
                 "object");
+        }
+
+        /// <summary>
+        /// Converts a CLR type name (e.g. "System.IEquatable&lt;System.String&gt;")
+        /// to a C# source-compatible type name (e.g. "System.IEquatable&lt;string&gt;").
+        /// </summary>
+        internal static string ConvertClrTypeToCSharp(string clrTypeName)
+        {
+            // Replace well-known CLR type names with C# keywords
+            var result = clrTypeName
+                .Replace("System.String", "string")
+                .Replace("System.Int32", "int")
+                .Replace("System.Int64", "long")
+                .Replace("System.Int16", "short")
+                .Replace("System.Boolean", "bool")
+                .Replace("System.Double", "double")
+                .Replace("System.Single", "float")
+                .Replace("System.Decimal", "decimal")
+                .Replace("System.Byte", "byte")
+                .Replace("System.SByte", "sbyte")
+                .Replace("System.Char", "char")
+                .Replace("System.Object", "object")
+                .Replace("System.UInt32", "uint")
+                .Replace("System.UInt64", "ulong")
+                .Replace("System.UInt16", "ushort");
+            return result;
         }
 
         private static async Task<IList<JObject>> Resolve<T>(IList<T> collectionToResolve, MemberReferenceResolver resolver,
